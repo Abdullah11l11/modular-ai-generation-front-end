@@ -48,15 +48,15 @@ The `scope` is optional. It describes the area of the project affected by the ch
 
 ### Common Commit Types
 
-| Type | Meaning | Example |
-| --- | --- | --- |
-| `feat` | Adds a new feature | `feat: add project creation flow` |
-| `fix` | Fixes a bug | `fix: prevent crash on empty project list` |
-| `docs` | Documentation-only change | `docs: add Git workflow guide` |
-| `style` | Formatting-only change that does not affect behavior | `style: format sidebar component` |
-| `refactor` | Improves code structure without adding a feature or fixing a bug | `refactor: simplify project query hooks` |
-| `chore` | Tooling, dependency, or maintenance work | `chore: update npm dependencies` |
-| `test` | Adds or updates tests | `test: add auth hook tests` |
+| Type       | Meaning                                                          | Example                                    |
+| ---------- | ---------------------------------------------------------------- | ------------------------------------------ |
+| `feat`     | Adds a new feature                                               | `feat: add project creation flow`          |
+| `fix`      | Fixes a bug                                                      | `fix: prevent crash on empty project list` |
+| `docs`     | Documentation-only change                                        | `docs: add Git workflow guide`             |
+| `style`    | Formatting-only change that does not affect behavior             | `style: format sidebar component`          |
+| `refactor` | Improves code structure without adding a feature or fixing a bug | `refactor: simplify project query hooks`   |
+| `chore`    | Tooling, dependency, or maintenance work                         | `chore: update npm dependencies`           |
+| `test`     | Adds or updates tests                                            | `test: add auth hook tests`                |
 
 ### Why It Matters
 
@@ -103,14 +103,14 @@ release/v1.2.0
 
 ### Common Branch Prefixes
 
-| Prefix | Use Case | Example |
-| --- | --- | --- |
-| `feature/` | Building a new feature | `feature/payment-integration` |
-| `bugfix/` | Fixing a bug in development | `bugfix/currency-conversion` |
-| `hotfix/` | Fixing an urgent production issue | `hotfix/login-outage` |
-| `release/` | Preparing a release | `release/v1.2.0` |
-| `chore/` | Maintenance or tooling work | `chore/update-eslint-config` |
-| `docs/` | Documentation work | `docs/git-workflow-guide` |
+| Prefix     | Use Case                          | Example                       |
+| ---------- | --------------------------------- | ----------------------------- |
+| `feature/` | Building a new feature            | `feature/payment-integration` |
+| `bugfix/`  | Fixing a bug in development       | `bugfix/currency-conversion`  |
+| `hotfix/`  | Fixing an urgent production issue | `hotfix/login-outage`         |
+| `release/` | Preparing a release               | `release/v1.2.0`              |
+| `chore/`   | Maintenance or tooling work       | `chore/update-eslint-config`  |
+| `docs/`    | Documentation work                | `docs/git-workflow-guide`     |
 
 ### Practical Example
 
@@ -177,6 +177,8 @@ This means the naming system is not just for organization. It can directly contr
 
 ---
 
+<div dir='rtl'>
+
 # دليل سير عمل Git للمبتدئين
 
 ## العربية
@@ -227,15 +229,15 @@ docs: update README setup steps
 
 ### أشهر أنواع الالتزامات
 
-| النوع | المعنى | مثال |
-| --- | --- | --- |
-| `feat` | إضافة ميزة جديدة | `feat: add project creation flow` |
-| `fix` | إصلاح خطأ برمجي | `fix: prevent crash on empty project list` |
-| `docs` | تعديل في الوثائق فقط | `docs: add Git workflow guide` |
-| `style` | تعديل تنسيق لا يغير سلوك الكود | `style: format sidebar component` |
-| `refactor` | تحسين بنية الكود بدون إضافة ميزة أو إصلاح خطأ | `refactor: simplify project query hooks` |
-| `chore` | صيانة، إعدادات، أو تحديث أدوات ومكتبات | `chore: update npm dependencies` |
-| `test` | إضافة أو تعديل اختبارات | `test: add auth hook tests` |
+| النوع      | المعنى                                        | مثال                                       |
+| ---------- | --------------------------------------------- | ------------------------------------------ |
+| `feat`     | إضافة ميزة جديدة                              | `feat: add project creation flow`          |
+| `fix`      | إصلاح خطأ برمجي                               | `fix: prevent crash on empty project list` |
+| `docs`     | تعديل في الوثائق فقط                          | `docs: add Git workflow guide`             |
+| `style`    | تعديل تنسيق لا يغير سلوك الكود                | `style: format sidebar component`          |
+| `refactor` | تحسين بنية الكود بدون إضافة ميزة أو إصلاح خطأ | `refactor: simplify project query hooks`   |
+| `chore`    | صيانة، إعدادات، أو تحديث أدوات ومكتبات        | `chore: update npm dependencies`           |
+| `test`     | إضافة أو تعديل اختبارات                       | `test: add auth hook tests`                |
 
 ### لماذا هذا مهم؟
 
@@ -282,14 +284,14 @@ release/v1.2.0
 
 ### أشهر بادئات الفروع
 
-| البادئة | متى تستخدم؟ | مثال |
-| --- | --- | --- |
-| `feature/` | لتطوير ميزة جديدة | `feature/payment-integration` |
-| `bugfix/` | لإصلاح خطأ في نسخة التطوير | `bugfix/currency-conversion` |
-| `hotfix/` | لإصلاح خطأ عاجل في الإنتاج | `hotfix/login-outage` |
-| `release/` | للتحضير لإصدار جديد | `release/v1.2.0` |
-| `chore/` | للصيانة أو إعدادات الأدوات | `chore/update-eslint-config` |
-| `docs/` | للعمل على الوثائق | `docs/git-workflow-guide` |
+| البادئة    | متى تستخدم؟                | مثال                          |
+| ---------- | -------------------------- | ----------------------------- |
+| `feature/` | لتطوير ميزة جديدة          | `feature/payment-integration` |
+| `bugfix/`  | لإصلاح خطأ في نسخة التطوير | `bugfix/currency-conversion`  |
+| `hotfix/`  | لإصلاح خطأ عاجل في الإنتاج | `hotfix/login-outage`         |
+| `release/` | للتحضير لإصدار جديد        | `release/v1.2.0`              |
+| `chore/`   | للصيانة أو إعدادات الأدوات | `chore/update-eslint-config`  |
+| `docs/`    | للعمل على الوثائق          | `docs/git-workflow-guide`     |
 
 ### مثال عملي
 
@@ -353,3 +355,5 @@ final version
 - `semantic-release` لإنشاء Changelog ونشر الإصدارات تلقائيا.
 
 لذلك، هذا النظام ليس مجرد تنظيم شكلي. يمكنه التحكم مباشرة في الاختبارات، والإصدارات، والنشر، وترقيم النسخ.
+
+<div>
