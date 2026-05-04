@@ -10,8 +10,12 @@ Before implementing frontend work, read the relevant docs:
 - `docs/openapi_api_contract.yaml` for backend endpoints, request/response shapes, and API tags.
 - `docs/FRONTEND_STRUCTURE_GUIDE.md` for the current frontend structure.
 - `docs/design.md` for visual direction when building real UI.
+- `docs/GIT_WORKFLOW_GUIDE.ar-en.md` for beginner-friendly Git branch and commit conventions.
 
-The Arabic structure guide is maintained at `docs/FRONTEND_STRUCTURE_GUIDE.ar.md`.
+Arabic docs are maintained at:
+
+- `docs/FRONTEND_STRUCTURE_GUIDE.ar.md`
+- `docs/PRD.ar.md`
 
 ## Current Project State
 
@@ -241,6 +245,37 @@ npm run lint
 ```
 
 Docs-only changes do not require a build.
+
+## Git Workflow Rules
+
+Follow `docs/GIT_WORKFLOW_GUIDE.ar-en.md` when proposing or creating branches and commits.
+
+Branch names should use a clear prefix:
+
+- `feature/` for new features.
+- `bugfix/` for normal development bug fixes.
+- `hotfix/` for urgent production fixes.
+- `release/` for release preparation.
+- `chore/` for tooling or maintenance.
+- `docs/` for documentation-only work.
+
+Commit messages should follow Conventional Commits:
+
+```txt
+<type>[optional scope]: <description>
+```
+
+Common commit types:
+
+- `feat` for new user-facing or product features.
+- `fix` for bug fixes.
+- `docs` for documentation-only changes.
+- `style` for formatting-only changes.
+- `refactor` for code restructuring without behavior changes.
+- `chore` for tooling, dependency, or maintenance work.
+- `test` for test additions or updates.
+
+When proposing a commit, prefer a concise Conventional Commit subject and include a short body only when it clarifies the scope.
 
 ## Git Safety
 

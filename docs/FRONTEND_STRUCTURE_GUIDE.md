@@ -16,39 +16,58 @@ Stack:
 
 The project is intentionally ready for development: route paths, providers, config, API client, feature API modules, feature hooks, and feature types are scaffolded, but visual pages and placeholder UI components have been removed.
 
+## Documentation Index
+
+Primary project docs:
+
+| File                               | Purpose                                                    |
+| ---------------------------------- | ---------------------------------------------------------- |
+| `docs/PRD.md`                      | Product goals, personas, MVP scope, and feature priorities |
+| `docs/openapi_api_contract.yaml`   | Backend API endpoints, schemas, and tags                   |
+| `docs/design.md`                   | Visual direction for real UI implementation                |
+| `docs/FRONTEND_STRUCTURE_GUIDE.md` | Current frontend architecture and implementation rules     |
+| `docs/GIT_WORKFLOW_GUIDE.ar-en.md` | Beginner guide for Git branches and Conventional Commits   |
+
+Arabic docs:
+
+| File                                  | Purpose                         |
+| ------------------------------------- | ------------------------------- |
+| `docs/PRD.ar.md`                      | Arabic PRD                      |
+| `docs/FRONTEND_STRUCTURE_GUIDE.ar.md` | Arabic frontend structure guide |
+
 ## Installed Libraries
 
 Versions are taken from `package.json`.
 
 Runtime dependencies:
 
-| Library | Version | Purpose |
-| --- | --- | --- |
-| `react` | `^19.2.5` | React UI runtime |
-| `react-dom` | `^19.2.5` | React DOM renderer |
-| `react-router-dom` | `^7.14.2` | Client-side routing |
+| Library                 | Version    | Purpose                                     |
+| ----------------------- | ---------- | ------------------------------------------- |
+| `react`                 | `^19.2.5`  | React UI runtime                            |
+| `react-dom`             | `^19.2.5`  | React DOM renderer                          |
+| `react-router-dom`      | `^7.14.2`  | Client-side routing                         |
 | `@tanstack/react-query` | `^5.100.9` | Server state and API query/mutation caching |
-| `axios` | `^1.16.0` | HTTP client used by `src/lib/api/client.ts` |
-| `tailwindcss` | `^4.2.4` | Utility CSS framework |
-| `@tailwindcss/vite` | `^4.2.4` | Tailwind integration for Vite |
+| `axios`                 | `^1.16.0`  | HTTP client used by `src/lib/api/client.ts` |
+| `tailwindcss`           | `^4.2.4`   | Utility CSS framework                       |
+| `@tailwindcss/vite`     | `^4.2.4`   | Tailwind integration for Vite               |
 
 Development and tooling dependencies:
 
-| Library | Version | Purpose |
-| --- | --- | --- |
-| `vite` | `^8.0.10` | Development server and bundler |
-| `typescript` | `~6.0.2` | TypeScript compiler |
-| `@vitejs/plugin-react` | `^6.0.1` | React plugin for Vite |
-| `eslint` | `^10.2.1` | Linting |
-| `@eslint/js` | `^10.0.1` | ESLint JavaScript rules |
-| `typescript-eslint` | `^8.58.2` | TypeScript linting integration |
-| `eslint-plugin-react-hooks` | `^7.1.1` | React Hooks lint rules |
-| `eslint-plugin-react-refresh` | `^0.5.2` | React Refresh lint rules |
-| `globals` | `^17.5.0` | Global variable definitions for ESLint |
-| `shadcn` | `^4.6.0` | shadcn CLI/tooling for UI primitives |
-| `@types/node` | `^24.12.2` | Node.js type declarations |
-| `@types/react` | `^19.2.14` | React type declarations |
-| `@types/react-dom` | `^19.2.3` | React DOM type declarations |
+| Library                       | Version    | Purpose                                |
+| ----------------------------- | ---------- | -------------------------------------- |
+| `vite`                        | `^8.0.10`  | Development server and bundler         |
+| `typescript`                  | `~6.0.2`   | TypeScript compiler                    |
+| `@vitejs/plugin-react`        | `^6.0.1`   | React plugin for Vite                  |
+| `eslint`                      | `^10.2.1`  | Linting                                |
+| `@eslint/js`                  | `^10.0.1`  | ESLint JavaScript rules                |
+| `typescript-eslint`           | `^8.58.2`  | TypeScript linting integration         |
+| `eslint-plugin-react-hooks`   | `^7.1.1`   | React Hooks lint rules                 |
+| `eslint-plugin-react-refresh` | `^0.5.2`   | React Refresh lint rules               |
+| `globals`                     | `^17.5.0`  | Global variable definitions for ESLint |
+| `shadcn`                      | `^4.6.0`   | shadcn CLI/tooling for UI primitives   |
+| `@types/node`                 | `^24.12.2` | Node.js type declarations              |
+| `@types/react`                | `^19.2.14` | React type declarations                |
+| `@types/react-dom`            | `^19.2.3`  | React DOM type declarations            |
 
 ## Current Top-Level Structure
 
@@ -312,21 +331,21 @@ This keeps navigation paths available without rendering placeholder UI.
 
 ## Domain Mapping
 
-| API Tag | Frontend Feature Folder | Responsibility |
-| --- | --- | --- |
-| Auth | `features/auth` | Register, login, logout, auth token updates |
-| Me | `features/me` | Current user profile and AI provider settings |
-| Types | `features/types` | Output type catalogue |
-| Templates | `features/templates` | Template API and query hooks |
-| Projects | `features/projects` | Project API and query hooks |
-| Files | `features/files` | Project/template file API and query hooks |
-| Generation | `features/generation` | Generation API and query hooks |
-| Export | `features/export` | Export API and query hooks |
-| Resources | `features/resources` | Resource API and query hooks |
-| Social | `features/social` | Upvote, bookmark, and comment API/hooks |
-| Users | `features/users` | Public user API and query hooks |
-| Admin | `features/admin` | Admin API and query hooks |
-| Editor | `features/editor` | Reserved for future editor orchestration |
+| API Tag    | Frontend Feature Folder | Responsibility                                |
+| ---------- | ----------------------- | --------------------------------------------- |
+| Auth       | `features/auth`         | Register, login, logout, auth token updates   |
+| Me         | `features/me`           | Current user profile and AI provider settings |
+| Types      | `features/types`        | Output type catalogue                         |
+| Templates  | `features/templates`    | Template API and query hooks                  |
+| Projects   | `features/projects`     | Project API and query hooks                   |
+| Files      | `features/files`        | Project/template file API and query hooks     |
+| Generation | `features/generation`   | Generation API and query hooks                |
+| Export     | `features/export`       | Export API and query hooks                    |
+| Resources  | `features/resources`    | Resource API and query hooks                  |
+| Social     | `features/social`       | Upvote, bookmark, and comment API/hooks       |
+| Users      | `features/users`        | Public user API and query hooks               |
+| Admin      | `features/admin`        | Admin API and query hooks                     |
+| Editor     | `features/editor`       | Reserved for future editor orchestration      |
 
 ## API Layer Rules
 
@@ -457,6 +476,36 @@ Editor dependencies should remain separate:
 - API functions: verb first, for example `listTemplates`, `createProject`, `updateProjectFile`
 - Imports should use the `@/*` alias for cross-feature or shared imports.
 
+## Git Workflow
+
+Use `docs/GIT_WORKFLOW_GUIDE.ar-en.md` for the project Git workflow.
+
+Branch names should make the work type clear:
+
+```txt
+feature/payment-integration
+bugfix/currency-conversion
+hotfix/login-outage
+release/v1.2.0
+docs/git-workflow-guide
+chore/update-eslint-config
+```
+
+Commit messages should follow Conventional Commits:
+
+```txt
+<type>[optional scope]: <description>
+```
+
+Examples:
+
+```txt
+feat: add dashboard page
+fix: handle missing user avatar
+docs: add Git workflow guide
+chore: update vite config
+```
+
 ## Path Alias
 
 `@/*` points to `src/*`.
@@ -477,19 +526,19 @@ Editor dependencies should remain separate:
 `vite.config.ts`:
 
 ```ts
-import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { fileURLToPath, URL } from "node:url";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
-})
+});
 ```
 
 ## Remaining TODOs

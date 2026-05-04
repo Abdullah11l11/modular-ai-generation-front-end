@@ -24,33 +24,33 @@
 
 اعتماديات التشغيل:
 
-| المكتبة | الإصدار | الاستخدام |
-| --- | --- | --- |
-| `react` | `^19.2.5` | تشغيل واجهات React |
-| `react-dom` | `^19.2.5` | ربط React مع DOM |
-| `react-router-dom` | `^7.14.2` | التوجيه داخل التطبيق |
-| `@tanstack/react-query` | `^5.100.9` | إدارة server state وتخزين نتائج API |
-| `axios` | `^1.16.0` | عميل HTTP المستخدم في `src/lib/api/client.ts` |
-| `tailwindcss` | `^4.2.4` | إطار CSS utility |
-| `@tailwindcss/vite` | `^4.2.4` | دمج Tailwind مع Vite |
+| المكتبة                 | الإصدار    | الاستخدام                                     |
+| ----------------------- | ---------- | --------------------------------------------- |
+| `react`                 | `^19.2.5`  | تشغيل واجهات React                            |
+| `react-dom`             | `^19.2.5`  | ربط React مع DOM                              |
+| `react-router-dom`      | `^7.14.2`  | التوجيه داخل التطبيق                          |
+| `@tanstack/react-query` | `^5.100.9` | إدارة server state وتخزين نتائج API           |
+| `axios`                 | `^1.16.0`  | عميل HTTP المستخدم في `src/lib/api/client.ts` |
+| `tailwindcss`           | `^4.2.4`   | إطار CSS utility                              |
+| `@tailwindcss/vite`     | `^4.2.4`   | دمج Tailwind مع Vite                          |
 
 اعتماديات التطوير والأدوات:
 
-| المكتبة | الإصدار | الاستخدام |
-| --- | --- | --- |
-| `vite` | `^8.0.10` | خادم التطوير والبناء |
-| `typescript` | `~6.0.2` | مترجم TypeScript |
-| `@vitejs/plugin-react` | `^6.0.1` | إضافة React لـ Vite |
-| `eslint` | `^10.2.1` | فحص جودة الكود |
-| `@eslint/js` | `^10.0.1` | قواعد JavaScript لـ ESLint |
-| `typescript-eslint` | `^8.58.2` | دمج TypeScript مع ESLint |
-| `eslint-plugin-react-hooks` | `^7.1.1` | قواعد React Hooks |
-| `eslint-plugin-react-refresh` | `^0.5.2` | قواعد React Refresh |
-| `globals` | `^17.5.0` | تعريفات globals لـ ESLint |
-| `shadcn` | `^4.6.0` | أدوات shadcn لمكونات UI |
-| `@types/node` | `^24.12.2` | تعريفات Node.js |
-| `@types/react` | `^19.2.14` | تعريفات React |
-| `@types/react-dom` | `^19.2.3` | تعريفات React DOM |
+| المكتبة                       | الإصدار    | الاستخدام                  |
+| ----------------------------- | ---------- | -------------------------- |
+| `vite`                        | `^8.0.10`  | خادم التطوير والبناء       |
+| `typescript`                  | `~6.0.2`   | مترجم TypeScript           |
+| `@vitejs/plugin-react`        | `^6.0.1`   | إضافة React لـ Vite        |
+| `eslint`                      | `^10.2.1`  | فحص جودة الكود             |
+| `@eslint/js`                  | `^10.0.1`  | قواعد JavaScript لـ ESLint |
+| `typescript-eslint`           | `^8.58.2`  | دمج TypeScript مع ESLint   |
+| `eslint-plugin-react-hooks`   | `^7.1.1`   | قواعد React Hooks          |
+| `eslint-plugin-react-refresh` | `^0.5.2`   | قواعد React Refresh        |
+| `globals`                     | `^17.5.0`  | تعريفات globals لـ ESLint  |
+| `shadcn`                      | `^4.6.0`   | أدوات shadcn لمكونات UI    |
+| `@types/node`                 | `^24.12.2` | تعريفات Node.js            |
+| `@types/react`                | `^19.2.14` | تعريفات React              |
+| `@types/react-dom`            | `^19.2.3`  | تعريفات React DOM          |
 
 ## البنية العامة الحالية
 
@@ -194,21 +194,21 @@ src/
 
 ## ربط النطاقات
 
-| وسم API | مجلد الميزة | المسؤولية |
-| --- | --- | --- |
-| Auth | `features/auth` | التسجيل، تسجيل الدخول، تسجيل الخروج، وتحديث token |
-| Me | `features/me` | بيانات المستخدم الحالي وإعدادات مزودي الذكاء الاصطناعي |
-| Types | `features/types` | قائمة أنواع المخرجات |
-| Templates | `features/templates` | API و hooks الخاصة بالقوالب |
-| Projects | `features/projects` | API و hooks الخاصة بالمشاريع |
-| Files | `features/files` | API و hooks الخاصة بملفات المشاريع والقوالب |
-| Generation | `features/generation` | API و hooks الخاصة بالتوليد |
-| Export | `features/export` | API و hooks الخاصة بالتصدير |
-| Resources | `features/resources` | API و hooks الخاصة بالموارد |
-| Social | `features/social` | API و hooks الخاصة بالتصويت والحفظ والتعليقات |
-| Users | `features/users` | API و hooks الخاصة بملف المستخدم العام |
-| Admin | `features/admin` | API و hooks الخاصة بالإدارة |
-| Editor | `features/editor` | محجوز لاحقا لتنسيق المحرر وواجهته |
+| وسم API    | مجلد الميزة           | المسؤولية                                              |
+| ---------- | --------------------- | ------------------------------------------------------ |
+| Auth       | `features/auth`       | التسجيل، تسجيل الدخول، تسجيل الخروج، وتحديث token      |
+| Me         | `features/me`         | بيانات المستخدم الحالي وإعدادات مزودي الذكاء الاصطناعي |
+| Types      | `features/types`      | قائمة أنواع المخرجات                                   |
+| Templates  | `features/templates`  | API و hooks الخاصة بالقوالب                            |
+| Projects   | `features/projects`   | API و hooks الخاصة بالمشاريع                           |
+| Files      | `features/files`      | API و hooks الخاصة بملفات المشاريع والقوالب            |
+| Generation | `features/generation` | API و hooks الخاصة بالتوليد                            |
+| Export     | `features/export`     | API و hooks الخاصة بالتصدير                            |
+| Resources  | `features/resources`  | API و hooks الخاصة بالموارد                            |
+| Social     | `features/social`     | API و hooks الخاصة بالتصويت والحفظ والتعليقات          |
+| Users      | `features/users`      | API و hooks الخاصة بملف المستخدم العام                 |
+| Admin      | `features/admin`      | API و hooks الخاصة بالإدارة                            |
+| Editor     | `features/editor`     | محجوز لاحقا لتنسيق المحرر وواجهته                      |
 
 ## قواعد طبقة API
 
@@ -336,6 +336,55 @@ form
 - أسماء hooks: `useCamelCase`
 - أسماء دوال API تبدأ بفعل مثل `listTemplates` و `createProject` و `updateProjectFile`
 - استخدم alias `@/*` للاستيراد بين الميزات أو من الملفات المشتركة.
+
+## فهرس الوثائق
+
+وثائق المشروع الأساسية:
+
+| الملف                              | الغرض                                                                |
+| ---------------------------------- | -------------------------------------------------------------------- |
+| `docs/PRD.md`                      | أهداف المنتج، الشخصيات، نطاق MVP، وأولويات الميزات                   |
+| `docs/openapi_api_contract.yaml`   | endpoints الخاصة بالـ backend، المخططات، ووسوم API                   |
+| `docs/design.md`                   | الاتجاه البصري عند تنفيذ واجهات UI حقيقية                            |
+| `docs/FRONTEND_STRUCTURE_GUIDE.md` | بنية الواجهة الأمامية وقواعد التنفيذ الحالية                         |
+| `docs/GIT_WORKFLOW_GUIDE.ar-en.md` | دليل مبسط بالعربية والإنجليزية لفروع Git ورسائل Conventional Commits |
+
+الوثائق العربية:
+
+| الملف                                 | الغرض                                     |
+| ------------------------------------- | ----------------------------------------- |
+| `docs/PRD.ar.md`                      | وثيقة المنتج باللغة العربية               |
+| `docs/FRONTEND_STRUCTURE_GUIDE.ar.md` | دليل بنية الواجهة الأمامية باللغة العربية |
+
+## سير عمل Git
+
+استخدم `docs/GIT_WORKFLOW_GUIDE.ar-en.md` كمرجع عربي لسير عمل Git في المشروع.
+
+يجب أن توضّح أسماء الفروع نوع العمل:
+
+```txt
+feature/payment-integration
+bugfix/currency-conversion
+hotfix/login-outage
+release/v1.2.0
+docs/git-workflow-guide
+chore/update-eslint-config
+```
+
+يجب أن تتبع رسائل commit نظام Conventional Commits:
+
+```txt
+<type>[optional scope]: <description>
+```
+
+أمثلة:
+
+```txt
+feat: add dashboard page
+fix: handle missing user avatar
+docs: add Git workflow guide
+chore: update vite config
+```
 
 ## Alias
 
