@@ -1,6 +1,6 @@
 # MGF Frontend Structure Guide
 
-This document describes the current frontend structure for the Modular Generation Framework application.
+This document describes the current empty-start frontend baseline for the Modular Generation Framework application.
 
 Stack:
 
@@ -11,9 +11,44 @@ Stack:
 - React Router
 - TanStack Query
 - Axios
+- shadcn MCP with the `@shadcn` registry for UI primitives
 - Laravel API using `docs/openapi_api_contract.yaml`
 
-The frontend is feature/domain based. Route pages stay thin and compose feature components. API calls, hooks, feature components, and feature-local types live inside `src/features`.
+The project is intentionally ready for development: route paths, providers, config, API client, feature API modules, feature hooks, and feature types are scaffolded, but visual pages and placeholder UI components have been removed.
+
+## Installed Libraries
+
+Versions are taken from `package.json`.
+
+Runtime dependencies:
+
+| Library | Version | Purpose |
+| --- | --- | --- |
+| `react` | `^19.2.5` | React UI runtime |
+| `react-dom` | `^19.2.5` | React DOM renderer |
+| `react-router-dom` | `^7.14.2` | Client-side routing |
+| `@tanstack/react-query` | `^5.100.9` | Server state and API query/mutation caching |
+| `axios` | `^1.16.0` | HTTP client used by `src/lib/api/client.ts` |
+| `tailwindcss` | `^4.2.4` | Utility CSS framework |
+| `@tailwindcss/vite` | `^4.2.4` | Tailwind integration for Vite |
+
+Development and tooling dependencies:
+
+| Library | Version | Purpose |
+| --- | --- | --- |
+| `vite` | `^8.0.10` | Development server and bundler |
+| `typescript` | `~6.0.2` | TypeScript compiler |
+| `@vitejs/plugin-react` | `^6.0.1` | React plugin for Vite |
+| `eslint` | `^10.2.1` | Linting |
+| `@eslint/js` | `^10.0.1` | ESLint JavaScript rules |
+| `typescript-eslint` | `^8.58.2` | TypeScript linting integration |
+| `eslint-plugin-react-hooks` | `^7.1.1` | React Hooks lint rules |
+| `eslint-plugin-react-refresh` | `^0.5.2` | React Refresh lint rules |
+| `globals` | `^17.5.0` | Global variable definitions for ESLint |
+| `shadcn` | `^4.6.0` | shadcn CLI/tooling for UI primitives |
+| `@types/node` | `^24.12.2` | Node.js type declarations |
+| `@types/react` | `^19.2.14` | React type declarations |
+| `@types/react-dom` | `^19.2.3` | React DOM type declarations |
 
 ## Current Top-Level Structure
 
@@ -35,36 +70,21 @@ src/
   main.tsx
 ```
 
-Responsibilities:
+Notes:
 
-- `app/`: app-level providers and setup.
-- `assets/`: static assets.
-- `components/`: shared UI and layout components with no feature-specific business logic.
-- `config/`: environment and app configuration.
-- `features/`: domain modules.
-- `hooks/`: shared cross-feature hooks.
-- `lib/`: shared infrastructure such as the API client.
-- `pages/`: route-level pages only.
-- `routes/`: React Router configuration.
-- `styles/`: shared theme and Tailwind-adjacent styles.
-- `types/`: shared application/API types used by multiple features.
+- `pages/` is currently empty. Add route pages here when real screens are implemented.
+- `components/` is currently empty. Add shared layout/UI components here when needed, preferably through shadcn.
+- `features/*/components/` placeholder files were removed. Add real feature components when implementing each domain.
+- `routes/router.tsx` keeps the required route paths, but every route currently renders an empty fragment.
+- The shadcn MCP reports the `@shadcn` registry is available, but no UI components are currently generated.
 
-## Current File Tree
+## Current Implemented Files
 
 ```txt
 src/
   app/
     providers/
       AppProviders.tsx
-
-  assets/
-
-  components/
-    layout/
-      AppLayout.tsx
-    ui/
-      PageHeader.tsx
-      PlaceholderPanel.tsx
 
   config/
     env.ts
@@ -76,8 +96,6 @@ src/
         listAdminTemplates.ts
         listAdminUsers.ts
         updateUserRole.ts
-      components/
-        AdminOverview.tsx
       hooks/
         useAdminResources.ts
         useAdminTemplates.ts
@@ -89,8 +107,6 @@ src/
         login.ts
         logout.ts
         register.ts
-      components/
-        AuthForm.tsx
       hooks/
         useLogin.ts
         useLogout.ts
@@ -99,10 +115,6 @@ src/
         authResponse.ts
         loginRequest.ts
         registerRequest.ts
-
-    editor/
-      components/
-        EditorWorkspace.tsx
 
     export/
       api/
@@ -153,8 +165,6 @@ src/
         listAiProviders.ts
         updateAiProvider.ts
         updateProfile.ts
-      components/
-        SettingsPanel.tsx
       hooks/
         useAiProviders.ts
         useCreateAiProvider.ts
@@ -173,8 +183,6 @@ src/
         getProject.ts
         listProjects.ts
         updateProject.ts
-      components/
-        DashboardSummary.tsx
       hooks/
         useCreateProject.ts
         useProject.ts
@@ -194,10 +202,6 @@ src/
         listResourceForks.ts
         listResources.ts
         updateResource.ts
-      components/
-        ResourceDetail.tsx
-        ResourceForm.tsx
-        ResourceGallery.tsx
       hooks/
         useCreateResource.ts
         useForkResource.ts
@@ -235,9 +239,6 @@ src/
         getTemplate.ts
         listTemplates.ts
         updateTemplate.ts
-      components/
-        TemplateDetail.tsx
-        TemplateGallery.tsx
       hooks/
         useCreateTemplate.ts
         useForkTemplate.ts
@@ -261,8 +262,6 @@ src/
         getUser.ts
         getUserResources.ts
         getUserTemplates.ts
-      components/
-        UserProfileView.tsx
       hooks/
         useUser.ts
         useUserResources.ts
@@ -271,22 +270,6 @@ src/
   lib/
     api/
       client.ts
-
-  pages/
-    AdminPage.tsx
-    DashboardPage.tsx
-    EditorPage.tsx
-    HomePage.tsx
-    LoginPage.tsx
-    NewResourcePage.tsx
-    NotFoundPage.tsx
-    RegisterPage.tsx
-    ResourceDetailPage.tsx
-    ResourcesPage.tsx
-    SettingsPage.tsx
-    TemplateDetailPage.tsx
-    TemplatesPage.tsx
-    UserProfilePage.tsx
 
   routes/
     router.tsx
@@ -298,6 +281,35 @@ src/
     api.ts
 ```
 
+## Route Baseline
+
+Routes are configured in `src/routes/router.tsx`.
+
+```txt
+/                         empty fragment
+/login                    empty fragment
+/register                 empty fragment
+/templates                empty fragment
+/templates/:templateId    empty fragment
+/dashboard                empty fragment
+/editor/projects/:projectId
+/settings                 empty fragment
+/resources                empty fragment
+/resources/new            empty fragment
+/resources/:resourceId    empty fragment
+/users/:userId            empty fragment
+/admin/*                  empty fragment
+/*                        empty fragment
+```
+
+Current route elements use:
+
+```tsx
+<></>
+```
+
+This keeps navigation paths available without rendering placeholder UI.
+
 ## Domain Mapping
 
 | API Tag | Frontend Feature Folder | Responsibility |
@@ -305,43 +317,20 @@ src/
 | Auth | `features/auth` | Register, login, logout, auth token updates |
 | Me | `features/me` | Current user profile and AI provider settings |
 | Types | `features/types` | Output type catalogue |
-| Templates | `features/templates` | Template listing, detail, CRUD, fork |
-| Projects | `features/projects` | Dashboard projects and project metadata |
-| Files | `features/files` | Project/template files and file mutations |
-| Generation | `features/generation` | Full project and file/layer generation jobs |
-| Export | `features/export` | Export queueing and export job lookup |
-| Resources | `features/resources` | Resource library, detail, CRUD, fork |
-| Social | `features/social` | Upvotes, bookmarks, comments |
-| Users | `features/users` | Public profile, user templates, user resources |
-| Admin | `features/admin` | Admin-only resource, template, and user management |
-| Editor | `features/editor` | Editor orchestration and workspace UI only |
-
-## Route Structure
-
-Routes are configured in `src/routes/router.tsx`.
-
-```txt
-/                         HomePage
-/login                    LoginPage
-/register                 RegisterPage
-/templates                TemplatesPage
-/templates/:templateId    TemplateDetailPage
-/dashboard                DashboardPage
-/editor/projects/:projectId
-/settings                 SettingsPage
-/resources                ResourcesPage
-/resources/new            NewResourcePage
-/resources/:resourceId    ResourceDetailPage
-/users/:userId            UserProfilePage
-/admin/*                  AdminPage
-/*                        NotFoundPage
-```
-
-Current routing is minimal. Route guards can be added later around protected, guest, and admin-only routes.
+| Templates | `features/templates` | Template API and query hooks |
+| Projects | `features/projects` | Project API and query hooks |
+| Files | `features/files` | Project/template file API and query hooks |
+| Generation | `features/generation` | Generation API and query hooks |
+| Export | `features/export` | Export API and query hooks |
+| Resources | `features/resources` | Resource API and query hooks |
+| Social | `features/social` | Upvote, bookmark, and comment API/hooks |
+| Users | `features/users` | Public user API and query hooks |
+| Admin | `features/admin` | Admin API and query hooks |
+| Editor | `features/editor` | Reserved for future editor orchestration |
 
 ## API Layer Rules
 
-The app uses a single reusable Axios client:
+The app uses one reusable Axios client:
 
 ```txt
 src/lib/api/client.ts
@@ -355,7 +344,7 @@ The client is responsible for:
 - Returning typed response data.
 - Normalizing Axios errors into `ApiError`.
 
-Components and pages should never call Axios or `fetch` directly. They should call feature hooks, and feature hooks should call feature API operation functions.
+Components and pages should not call Axios or `fetch` directly. When UI is added, feature components should use feature hooks, and hooks should call feature API operation functions.
 
 API files are split by operation:
 
@@ -366,17 +355,6 @@ features/templates/api/createTemplate.ts
 features/templates/api/updateTemplate.ts
 features/templates/api/deleteTemplate.ts
 features/templates/api/forkTemplate.ts
-```
-
-Example:
-
-```ts
-import { apiClient } from '@/lib/api/client'
-import type { PaginatedResponse, Template } from '@/types/api'
-import type { TemplateListParams } from '../types/templateListParams'
-
-export const listTemplates = (params?: TemplateListParams) =>
-  apiClient.get<PaginatedResponse<Template>>('templates', { params })
 ```
 
 ## Hook Rules
@@ -391,22 +369,6 @@ features/templates/hooks/useTemplate.ts
 features/templates/hooks/useCreateTemplate.ts
 features/templates/hooks/useUpdateTemplate.ts
 features/templates/hooks/useForkTemplate.ts
-```
-
-Example:
-
-```ts
-import { useQuery } from '@tanstack/react-query'
-import { listTemplates } from '../api/listTemplates'
-import type { TemplateListParams } from '../types/templateListParams'
-
-export const templatesQueryKey = ['templates']
-
-export const useTemplates = (params?: TemplateListParams) =>
-  useQuery({
-    queryKey: [...templatesQueryKey, params],
-    queryFn: () => listTemplates(params),
-  })
 ```
 
 ## Type Rules
@@ -427,39 +389,61 @@ features/resources/types/createResourceRequest.ts
 
 Types are split by type or closely related request shape. Avoid large grouped files such as `template.types.ts` unless a future generated OpenAPI workflow requires it.
 
-## Page Rules
+## Page and Component Rules
 
-Pages must stay thin. A page should:
+The project is currently empty of UI. When adding screens:
 
-- Read route params when needed.
-- Compose feature components.
-- Pass IDs or simple props into feature components.
-- Avoid direct API calls.
-- Avoid mutation orchestration.
-- Avoid fake business logic.
+- Put route-level files in `src/pages`.
+- Keep pages thin.
+- Put reusable UI/layout in `src/components`.
+- Put shadcn UI primitives in `src/components/ui`.
+- Put feature-specific UI in `src/features/<feature>/components`.
+- Do not put API calls directly in page files.
+- Do not add fake business logic in pages.
 
-Example:
+## shadcn Rules
 
-```tsx
-import { TemplateGallery } from '@/features/templates/components/TemplateGallery'
+Use shadcn as the default source for shared UI primitives when UI development starts.
 
-export function TemplatesPage() {
-  return <TemplateGallery />
-}
+Rules:
+
+- Use the shadcn MCP to inspect examples and component details before adding a primitive.
+- Add only the components needed for the feature being implemented.
+- Keep generated shadcn primitives in `src/components/ui`.
+- Keep layout wrappers and app shells in `src/components/layout` when they are needed.
+- Keep domain-specific composition in `src/features/<feature>/components`.
+- Do not recreate common primitives such as buttons, inputs, dialogs, tabs, dropdowns, tables, tooltips, badges, cards, skeletons, and forms by hand when shadcn provides a suitable component.
+- Do not add placeholder UI just to fill routes. Routes currently render empty fragments by design.
+
+Recommended first primitives when real screens begin:
+
+```txt
+button
+input
+label
+textarea
+select
+dialog
+dropdown-menu
+tabs
+badge
+card
+table
+tooltip
+skeleton
+form
 ```
 
 ## Editor Rules
 
-`features/editor` owns editor orchestration and editor UI. It should not own project, file, generation, or export API operations.
+`features/editor` is reserved for editor orchestration and editor UI. It should not own project, file, generation, or export API operations.
 
-Editor dependencies:
+Editor dependencies should remain separate:
 
-- Project metadata comes from `features/projects`.
-- Project files come from `features/files`.
-- AI generation comes from `features/generation`.
-- Export jobs come from `features/export`.
-
-This keeps the editor from becoming a second API layer.
+- Project metadata from `features/projects`.
+- Project files from `features/files`.
+- AI generation from `features/generation`.
+- Export jobs from `features/export`.
 
 ## Naming Conventions
 
@@ -508,56 +492,12 @@ export default defineConfig({
 })
 ```
 
-## Styling
-
-Tailwind CSS is enabled through `@tailwindcss/vite`.
-
-Global style entry:
-
-```txt
-src/index.css
-```
-
-Theme styles:
-
-```txt
-src/styles/theme.css
-```
-
-Feature components should use Tailwind utility classes. Shared design primitives belong in `src/components/ui`.
-
-## Current Dependencies
-
-Runtime dependencies currently include:
-
-```txt
-@tailwindcss/vite
-@tanstack/react-query
-axios
-react
-react-dom
-react-router-dom
-tailwindcss
-```
-
-Future additions can include form and editor-focused libraries when needed:
-
-```txt
-react-hook-form
-zod
-@hookform/resolvers
-zustand
-lucide-react
-clsx
-tailwind-merge
-@monaco-editor/react
-@dnd-kit/core
-```
-
 ## Remaining TODOs
 
-- Add auth, protected, and admin route guards when auth flow behavior is finalized.
-- Replace placeholder feature components with full UI.
-- Align any provisional admin endpoints with the final backend contract if needed.
-- Add form validation once real form behavior is implemented.
-- Add editor state hooks, autosave, preview rendering, and file selection flow when the editor UI is expanded.
+- Add real page files under `src/pages`.
+- Add needed shadcn UI primitives under `src/components/ui`.
+- Add shared layout components under `src/components/layout`.
+- Add feature UI components under each feature as implementation begins.
+- Add auth, protected, and admin route guards when auth behavior is finalized.
+- Align provisional admin endpoints with the final backend contract if needed.
+- Expand `features/editor` with editor state, autosave, preview rendering, and file selection when editor development starts.
