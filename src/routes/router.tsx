@@ -1,4 +1,4 @@
-import { PublicProfilePage } from '@/pages/PublicProfilePage'
+import { PublicProfilePage } from "@/pages/PublicProfilePage"
 import { createBrowserRouter } from 'react-router-dom'
 
 export const router = createBrowserRouter([

@@ -31,7 +31,7 @@ export function PublicProfilePage() {
   const {userId} =useParams<{userId : string}>()
    return (
    <div className='mx-auto max-w-4xl p-6'>
-   <UserProfileHeader user={MOCK_USER } />
+   <UserProfileHeader user={MOCK_USER } templatesCount={2} resourcesCount={1} upvotesCount={20} />
    <Tabs defaultValue='templates'>
     <TabsList>
       <TabsTrigger value='templates'>Templates</TabsTrigger>
