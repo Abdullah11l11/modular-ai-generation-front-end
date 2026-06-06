@@ -1,3 +1,4 @@
+import { PublicProfilePage } from '@/pages/PublicProfilePage'
 import { createBrowserRouter } from 'react-router-dom'
 
 export const router = createBrowserRouter([
@@ -12,7 +13,7 @@ export const router = createBrowserRouter([
   { path: '/resources', element: <></> },
   { path: '/resources/new', element: <></> },
   { path: '/resources/:resourceId', element: <></> },
-  { path: '/users/:userId', element: <></> },
+  { path: '/users/:userId', element: <PublicProfilePage/> },
   { path: '/admin/*', element: <></> },
   { path: '*', element: <></> },
 ])
