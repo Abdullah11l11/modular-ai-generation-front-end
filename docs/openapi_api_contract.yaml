@@ -19,12 +19,12 @@ info:
     ## Error Format
     All errors return `{ "message": "...", "errors": { "field": ["..."] } }` (422)
     or `{ "message": "..." }` for other status codes.
-  version: 1.0.0
+  version: 1.0.3
   contact:
     name: MGF Team
 
 servers:
-  - url: https://api.mgf.dev/v1
+  - url: http://mgf.vortex-tech.tech/api/v1/
     description: Production
   - url: http://localhost:8000/api/v1
     description: Local development
@@ -67,7 +67,6 @@ tags:
 # ─────────────────────────────────────────────────────────────────────────────
 
 components:
-
   securitySchemes:
     BearerAuth:
       type: http
@@ -119,16 +118,39 @@ components:
   # ── Schemas ─────────────────────────────────────────────────────────────────
 
   schemas:
-
     # ── Pagination ──────────────────────────────────────────────────────────
 
     PaginationMeta:
       type: object
       properties:
         current_page: { type: integer, example: 1 }
-        per_page:     { type: integer, example: 20 }
-        total:        { type: integer, example: 143 }
-        last_page:    { type: integer, example: 8 }
+        per_page: { type: integer, example: 20 }
+        total: { type: integer, example: 143 }
+        last_page: { type: integer, example: 8 }
+        from:
+          {
+            type: integer,
+            nullable: true,
+            description: "First item index (1-based)",
+          }
+        to: { type: integer, nullable: true, description: "Last item index" }
+        path: { type: string, description: "Current request path" }
+        link:
+          {
+            type: array,
+            description: "Pagination navigation links",
+            items:
+              {
+                type: object,
+                properties:
+                  {
+                    url: { type: string, nullable: true },
+                    label: { type: string },
+                    page: { type: integer, nullable: true },
+                    active: { type: boolean },
+                  },
+              },
+          }
 
     # ── Auth ────────────────────────────────────────────────────────────────
 
@@ -136,221 +158,263 @@ components:
       type: object
       required: [name, email, password, password_confirmation]
       properties:
-        name:                  { type: string, example: "Alex Johnson" }
-        email:                 { type: string, format: email }
-        password:              { type: string, minLength: 8 }
+        name: { type: string, example: "Alex Johnson" }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
         password_confirmation: { type: string }
 
     LoginRequest:
       type: object
       required: [email, password]
       properties:
-        email:    { type: string, format: email }
+        email: { type: string, format: email }
         password: { type: string }
 
     AuthResponse:
       type: object
       properties:
         token: { type: string, example: "1|abc123..." }
-        user:  { $ref: '#/components/schemas/User' }
+        user: { $ref: "#/components/schemas/User" }
 
     # ── User ────────────────────────────────────────────────────────────────
 
     User:
       type: object
       properties:
-        id:         { type: string, format: uuid }
-        name:       { type: string }
-        email:      { type: string, format: email }
-        role:       { type: string, enum: [user, admin] }
-        profile:    { $ref: '#/components/schemas/UserProfile' }
+        id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [user, admin] }
+        profile: { $ref: "#/components/schemas/UserProfile" }
         created_at: { type: string, format: date-time }
 
     UserProfile:
       type: object
       properties:
-        bio:        { type: string, nullable: true }
+        bio: { type: string, nullable: true }
         avatar_url: { type: string, nullable: true }
-        website:    { type: string, nullable: true }
-        location:   { type: string, nullable: true }
+        website: { type: string, nullable: true }
+        location: { type: string, nullable: true }
 
     UpdateProfileRequest:
       type: object
       properties:
-        name:       { type: string }
-        bio:        { type: string, nullable: true }
+        name: { type: string }
+        bio: { type: string, nullable: true }
         avatar_url: { type: string, nullable: true }
-        website:    { type: string, nullable: true }
-        location:   { type: string, nullable: true }
+        website: { type: string, nullable: true }
+        location: { type: string, nullable: true }
 
     # ── AI Provider ─────────────────────────────────────────────────────────
 
     AiProvider:
       type: object
       properties:
-        id:            { type: string, format: uuid }
-        provider:      { type: string, enum: [openai, anthropic, gemini, local, custom] }
-        display_name:  { type: string, example: "My LM Studio" }
-        base_url:      { type: string, example: "http://localhost:1234/v1" }
+        id: { type: string, format: uuid }
+        provider:
+          { type: string, enum: [openai, anthropic, gemini, local, custom] }
+        display_name: { type: string, example: "My LM Studio" }
+        base_url: { type: string, example: "http://localhost:1234/v1" }
         default_model: { type: string, example: "gpt-4o" }
-        has_key:       { type: boolean, description: "True if an API key is stored — key itself is never returned" }
-        is_active:     { type: boolean }
-        created_at:    { type: string, format: date-time }
+        has_key:
+          {
+            type: boolean,
+            description: "True if an API key is stored — key itself is never returned",
+          }
+        is_active: { type: boolean }
+        created_at: { type: string, format: date-time }
 
     CreateAiProviderRequest:
       type: object
       required: [provider, base_url]
       properties:
-        provider:      { type: string, enum: [openai, anthropic, gemini, local, custom] }
-        display_name:  { type: string }
-        api_key:       { type: string, description: "Encrypted server-side. Never returned in responses.", nullable: true }
-        base_url:      { type: string, example: "https://api.openai.com/v1" }
+        provider:
+          { type: string, enum: [openai, anthropic, gemini, local, custom] }
+        display_name: { type: string }
+        api_key:
+          {
+            type: string,
+            description: "Encrypted server-side. Never returned in responses.",
+            nullable: true,
+          }
+        base_url: { type: string, example: "https://api.openai.com/v1" }
         default_model: { type: string }
 
     UpdateAiProviderRequest:
       type: object
       properties:
-        display_name:  { type: string }
-        api_key:       { type: string, nullable: true, description: "Send to rotate the key" }
-        base_url:      { type: string }
+        display_name: { type: string }
+        api_key:
+          {
+            type: string,
+            nullable: true,
+            description: "Send to rotate the key",
+          }
+        base_url: { type: string }
         default_model: { type: string }
-        is_active:     { type: boolean }
+        is_active: { type: boolean }
 
     # ── Type ────────────────────────────────────────────────────────────────
 
     Type:
       type: object
       properties:
-        id:          { type: string, format: uuid }
-        name:        { type: string, example: "presentation" }
+        id: { type: string, format: uuid }
+        name: { type: string, example: "presentation" }
         description: { type: string }
-        icon:        { type: string, example: "slides" }
+        icon: { type: string, example: "slides" }
 
     # ── Template ────────────────────────────────────────────────────────────
 
     Template:
       type: object
       properties:
-        id:            { type: string, format: uuid }
-        user_id:       { type: string, format: uuid }
-        author:        { $ref: '#/components/schemas/UserSummary' }
-        type:          { $ref: '#/components/schemas/Type' }
-        name:          { type: string }
-        description:   { type: string, nullable: true }
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        author: { $ref: "#/components/schemas/UserSummary" }
+        type: { $ref: "#/components/schemas/Type" }
+        name: { type: string }
+        description: { type: string, nullable: true }
         thumbnail_url: { type: string, nullable: true }
-        visibility:    { type: string, enum: [public, private, unlisted] }
-        tags:          { type: array, items: { type: string } }
-        locale:        { type: string, example: "en" }
-        direction:     { type: string, enum: [ltr, rtl] }
-        fork_count:    { type: integer, description: "Derived — count of projects forked from this template" }
-        upvote_count:  { type: integer }
-        is_upvoted:    { type: boolean, description: "Authenticated user's upvote status" }
+        visibility: { type: string, enum: [public, private, unlisted] }
+        tags: { type: array, items: { type: string } }
+        locale: { type: string, example: "en" }
+        direction: { type: string, enum: [ltr, rtl] }
+        fork_count:
+          {
+            type: integer,
+            description: "Derived — count of projects forked from this template",
+          }
+        upvote_count: { type: integer }
+        is_upvoted:
+          { type: boolean, description: "Authenticated user's upvote status" }
         is_bookmarked: { type: boolean }
-        created_at:    { type: string, format: date-time }
-        updated_at:    { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
 
     CreateTemplateRequest:
       type: object
       required: [type_id, name]
       properties:
-        type_id:     { type: string, format: uuid }
-        name:        { type: string, minLength: 1 }
+        type_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1 }
         description: { type: string, nullable: true }
-        visibility:  { type: string, enum: [public, private, unlisted], default: private }
-        tags:        { type: array, items: { type: string } }
-        locale:      { type: string, default: "en" }
-        direction:   { type: string, enum: [ltr, rtl], default: ltr }
+        visibility:
+          { type: string, enum: [public, private, unlisted], default: private }
+        tags: { type: array, items: { type: string } }
+        locale: { type: string, default: "en" }
+        direction: { type: string, enum: [ltr, rtl], default: ltr }
 
     UpdateTemplateRequest:
       type: object
       properties:
-        name:          { type: string }
-        description:   { type: string, nullable: true }
+        name: { type: string }
+        description: { type: string, nullable: true }
         thumbnail_url: { type: string, nullable: true }
-        visibility:    { type: string, enum: [public, private, unlisted] }
-        tags:          { type: array, items: { type: string } }
+        visibility: { type: string, enum: [public, private, unlisted] }
+        tags: { type: array, items: { type: string } }
 
     # ── Project ─────────────────────────────────────────────────────────────
 
     Project:
       type: object
       properties:
-        id:                   { type: string, format: uuid }
-        user_id:              { type: string, format: uuid }
-        template_id:          { type: string, format: uuid, nullable: true }
-        type:                 { $ref: '#/components/schemas/Type' }
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        template_id: { type: string, format: uuid, nullable: true }
+        type: { $ref: "#/components/schemas/Type" }
         origin_template_name: { type: string, nullable: true }
-        name:                 { type: string }
-        description:          { type: string, nullable: true }
-        status:               { type: string, enum: [draft, published, archived] }
-        visibility:           { type: string, enum: [public, private, unlisted] }
-        tags:                 { type: array, items: { type: string } }
-        locale:               { type: string }
-        direction:            { type: string, enum: [ltr, rtl] }
-        cloned_at:            { type: string, format: date-time, nullable: true }
-        created_at:           { type: string, format: date-time }
-        updated_at:           { type: string, format: date-time }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        status: { type: string, enum: [draft, published, archived] }
+        visibility: { type: string, enum: [public, private, unlisted] }
+        tags: { type: array, items: { type: string } }
+        locale: { type: string }
+        direction: { type: string, enum: [ltr, rtl] }
+        cloned_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
 
     CreateProjectRequest:
       type: object
       required: [type_id, name]
       properties:
-        type_id:     { type: string, format: uuid }
-        name:        { type: string }
+        type_id: { type: string, format: uuid }
+        name: { type: string }
         description: { type: string, nullable: true }
-        visibility:  { type: string, enum: [public, private, unlisted], default: private }
-        tags:        { type: array, items: { type: string } }
-        locale:      { type: string, default: "en" }
-        direction:   { type: string, enum: [ltr, rtl], default: ltr }
+        visibility:
+          { type: string, enum: [public, private, unlisted], default: private }
+        tags: { type: array, items: { type: string } }
+        locale: { type: string, default: "en" }
+        direction: { type: string, enum: [ltr, rtl], default: ltr }
 
     UpdateProjectRequest:
       type: object
       properties:
-        name:        { type: string }
+        name: { type: string }
         description: { type: string, nullable: true }
-        status:      { type: string, enum: [draft, published, archived] }
-        visibility:  { type: string, enum: [public, private, unlisted] }
-        tags:        { type: array, items: { type: string } }
+        status: { type: string, enum: [draft, published, archived] }
+        visibility: { type: string, enum: [public, private, unlisted] }
+        tags: { type: array, items: { type: string } }
 
     ForkTemplateRequest:
       type: object
       required: [name]
       properties:
-        name: { type: string, description: "Name for the newly created project" }
+        name:
+          { type: string, description: "Name for the newly created project" }
 
     # ── File ────────────────────────────────────────────────────────────────
 
     File:
       type: object
       properties:
-        id:           { type: string, format: uuid }
-        template_id:  { type: string, format: uuid, nullable: true }
-        project_id:   { type: string, format: uuid, nullable: true }
-        layer:        { type: string, enum: [slide, style, layout, content, context, rules, meta, asset] }
-        name:         { type: string, example: "slide-01.html" }
-        extension:    { type: string, example: "html" }
-        sort_order:   { type: integer }
-        content:      { type: string, nullable: true, description: "File body (DB-stored, <~100KB)" }
-        storage_url:  { type: string, nullable: true, description: "Signed URL for S3-stored files" }
-        size_bytes:   { type: integer, nullable: true }
-        created_at:   { type: string, format: date-time }
-        updated_at:   { type: string, format: date-time }
+        id: { type: string, format: uuid }
+        template_id: { type: string, format: uuid, nullable: true }
+        project_id: { type: string, format: uuid, nullable: true }
+        layer:
+          {
+            type: string,
+            enum: [slide, style, layout, content, context, rules, meta, asset],
+          }
+        name: { type: string, example: "slide-01.html" }
+        extension: { type: string, example: "html" }
+        sort_order: { type: integer }
+        content:
+          {
+            type: string,
+            nullable: true,
+            description: "File body (DB-stored, <~100KB)",
+          }
+        storage_url:
+          {
+            type: string,
+            nullable: true,
+            description: "Signed URL for S3-stored files",
+          }
+        size_bytes: { type: integer, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
 
     CreateFileRequest:
       type: object
       required: [layer, name, extension]
       properties:
-        layer:      { type: string, enum: [slide, style, layout, content, context, rules, meta, asset] }
-        name:       { type: string, example: "slide-02.html" }
-        extension:  { type: string, example: "html" }
+        layer:
+          {
+            type: string,
+            enum: [slide, style, layout, content, context, rules, meta, asset],
+          }
+        name: { type: string, example: "slide-02.html" }
+        extension: { type: string, example: "html" }
         sort_order: { type: integer, default: 0 }
-        content:    { type: string, nullable: true }
+        content: { type: string, nullable: true }
 
     UpdateFileRequest:
       type: object
       properties:
-        name:       { type: string }
-        content:    { type: string }
+        name: { type: string }
+        content: { type: string }
         sort_order: { type: integer }
 
     ReorderFilesRequest:
@@ -368,33 +432,52 @@ components:
       type: object
       required: [provider_id]
       properties:
-        provider_id: { type: string, format: uuid, description: "Which user_ai_provider to use" }
-        model:       { type: string, description: "Overrides provider default_model if set" }
-        prompt:      { type: string, description: "Top-level generation prompt. Falls back to context.md if omitted." }
+        provider_id:
+          {
+            type: string,
+            format: uuid,
+            description: "Which user_ai_provider to use",
+          }
+        model:
+          {
+            type: string,
+            description: "Overrides provider default_model if set",
+          }
+        prompt:
+          {
+            type: string,
+            description: "Top-level generation prompt. Falls back to context.md if omitted.",
+          }
 
     GenerateLayerRequest:
       type: object
       required: [provider_id]
       properties:
         provider_id: { type: string, format: uuid }
-        model:       { type: string }
-        prompt:      { type: string, nullable: true, description: "Optional override — uses context.md + rules.md otherwise" }
+        model: { type: string }
+        prompt:
+          {
+            type: string,
+            nullable: true,
+            description: "Optional override — uses context.md + rules.md otherwise",
+          }
 
     AiJob:
       type: object
       properties:
-        id:           { type: string, format: uuid }
-        project_id:   { type: string, format: uuid, nullable: true }
-        template_id:  { type: string, format: uuid, nullable: true }
-        file_id:      { type: string, format: uuid, nullable: true }
-        provider:     { type: string }
-        model:        { type: string }
-        layer:        { type: string, nullable: true }
-        status:       { type: string, enum: [pending, running, success, failed] }
+        id: { type: string, format: uuid }
+        project_id: { type: string, format: uuid, nullable: true }
+        template_id: { type: string, format: uuid, nullable: true }
+        file_id: { type: string, format: uuid, nullable: true }
+        provider_id: { type: string, format: uuid, nullable: true }
+        provider: { type: string }
+        model: { type: string }
+        layer: { type: string, nullable: true }
+        status: { type: string, enum: [pending, running, success, failed] }
         error_message: { type: string, nullable: true }
-        tokens_used:  { type: integer, nullable: true }
-        duration_ms:  { type: integer, nullable: true }
-        created_at:   { type: string, format: date-time }
+        tokens_used: { type: integer, nullable: true }
+        duration_ms: { type: integer, nullable: true }
+        created_at: { type: string, format: date-time }
         completed_at: { type: string, format: date-time, nullable: true }
 
     # ── Export ──────────────────────────────────────────────────────────────
@@ -409,10 +492,18 @@ components:
         options:
           type: object
           properties:
-            page_size:  { type: string, enum: [A4, letter, custom], default: A4 }
-            width_px:   { type: integer, description: "For custom page_size or PNG/JPG" }
-            height_px:  { type: integer }
-            quality:    { type: integer, minimum: 1, maximum: 100, default: 90, description: "For JPG" }
+            page_size: { type: string, enum: [A4, letter, custom], default: A4 }
+            width_px:
+              { type: integer, description: "For custom page_size or PNG/JPG" }
+            height_px: { type: integer }
+            quality:
+              {
+                type: integer,
+                minimum: 1,
+                maximum: 100,
+                default: 90,
+                description: "For JPG",
+              }
             slides:
               type: array
               description: "Export specific slide IDs only. Omit to export all."
@@ -421,102 +512,132 @@ components:
     ExportJob:
       type: object
       properties:
-        id:           { type: string, format: uuid }
-        project_id:   { type: string, format: uuid }
-        format:       { type: string }
-        status:       { type: string, enum: [pending, processing, ready, failed] }
-        download_url: { type: string, nullable: true, description: "Signed URL — available when status=ready" }
-        expires_at:   { type: string, format: date-time, nullable: true }
-        created_at:   { type: string, format: date-time }
+        id: { type: string, format: uuid }
+        project_id: { type: string, format: uuid }
+        format: { type: string }
+        status: { type: string, enum: [pending, processing, ready, failed] }
+        download_url:
+          {
+            type: string,
+            nullable: true,
+            description: "Signed URL — available when status=ready",
+          }
+        expires_at: { type: string, format: date-time, nullable: true }
+        error_message:
+          {
+            type: string,
+            nullable: true,
+            description: "Available when status=failed",
+          }
+        created_at: { type: string, format: date-time }
 
     # ── Resource ────────────────────────────────────────────────────────────
 
     Resource:
       type: object
       properties:
-        id:              { type: string, format: uuid }
-        user_id:         { type: string, format: uuid }
-        author:          { $ref: '#/components/schemas/UserSummary' }
-        forked_from_id:  { type: string, format: uuid, nullable: true }
-        kind:            { type: string, enum: [prompt, skill, agent, rule, mcp, design_doc, hook] }
-        name:            { type: string }
-        description:     { type: string, nullable: true }
-        content:         { type: string }
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        author: { $ref: "#/components/schemas/UserSummary" }
+        forked_from_id: { type: string, format: uuid, nullable: true }
+        kind:
+          {
+            type: string,
+            enum: [prompt, skill, agent, rule, mcp, design_doc, hook],
+          }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        content: { type: string }
         placeholders:
           type: array
           nullable: true
           items:
             type: object
             properties:
-              key:     { type: string }
-              label:   { type: string }
+              key: { type: string }
+              label: { type: string }
               default: { type: string }
-              type:    { type: string, enum: [text, textarea, select] }
-        visibility:    { type: string, enum: [public, private, unlisted] }
-        tags:          { type: array, items: { type: string } }
-        upvote_count:  { type: integer }
-        fork_count:    { type: integer }
-        is_upvoted:    { type: boolean }
+              type: { type: string, enum: [text, textarea, select] }
+        visibility: { type: string, enum: [public, private, unlisted] }
+        tags: { type: array, items: { type: string } }
+        upvote_count: { type: integer }
+        fork_count: { type: integer }
+        is_upvoted: { type: boolean }
         is_bookmarked: { type: boolean }
-        created_at:    { type: string, format: date-time }
-        updated_at:    { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
 
     CreateResourceRequest:
       type: object
       required: [kind, name, content]
       properties:
-        kind:         { type: string, enum: [prompt, skill, agent, rule, mcp, design_doc, hook] }
-        name:         { type: string }
-        description:  { type: string, nullable: true }
-        content:      { type: string }
+        kind:
+          {
+            type: string,
+            enum: [prompt, skill, agent, rule, mcp, design_doc, hook],
+          }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        content: { type: string }
         placeholders: { type: array, items: { type: object } }
-        visibility:   { type: string, enum: [public, private, unlisted], default: private }
-        tags:         { type: array, items: { type: string } }
+        visibility:
+          { type: string, enum: [public, private, unlisted], default: private }
+        tags: { type: array, items: { type: string } }
 
     UpdateResourceRequest:
       type: object
       properties:
-        name:         { type: string }
-        description:  { type: string, nullable: true }
-        content:      { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        content: { type: string }
         placeholders: { type: array, items: { type: object } }
-        visibility:   { type: string, enum: [public, private, unlisted] }
-        tags:         { type: array, items: { type: string } }
+        visibility: { type: string, enum: [public, private, unlisted] }
+        tags: { type: array, items: { type: string } }
 
     ForkResourceRequest:
       type: object
       properties:
-        name: { type: string, description: "Optional custom name for the fork. Defaults to 'Fork of <original name>'" }
+        name:
+          {
+            type: string,
+            description: "Optional custom name for the fork. Defaults to 'Fork of <original name>'",
+          }
 
     # ── Social ──────────────────────────────────────────────────────────────
 
     Comment:
       type: object
       properties:
-        id:          { type: string, format: uuid }
-        user_id:     { type: string, format: uuid }
-        author:      { $ref: '#/components/schemas/UserSummary' }
-        target_id:   { type: string, format: uuid }
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        author: { $ref: "#/components/schemas/UserSummary" }
+        target_id: { type: string, format: uuid }
         target_type: { type: string, enum: [template, resource] }
-        parent_id:   { type: string, format: uuid, nullable: true }
-        body:        { type: string }
+        parent_id: { type: string, format: uuid, nullable: true }
+        body: { type: string }
         replies:
           type: array
-          items: { $ref: '#/components/schemas/Comment' }
-        created_at:  { type: string, format: date-time }
-        updated_at:  { type: string, format: date-time }
+          items: { $ref: "#/components/schemas/Comment" }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
 
     CreateCommentRequest:
       type: object
       required: [body]
       properties:
-        body:      { type: string, minLength: 1 }
-        parent_id: { type: string, format: uuid, nullable: true, description: "Set to reply to an existing comment" }
+        body: { type: string, minLength: 1 }
+        parent_id:
+          {
+            type: string,
+            format: uuid,
+            nullable: true,
+            description: "Set to reply to an existing comment",
+          }
 
     UpvoteResponse:
       type: object
       properties:
-        upvoted:      { type: boolean }
+        upvoted: { type: boolean }
         upvote_count: { type: integer }
 
     BookmarkResponse:
@@ -530,8 +651,8 @@ components:
       type: object
       description: "Lightweight user object embedded in other resources"
       properties:
-        id:         { type: string, format: uuid }
-        name:       { type: string }
+        id: { type: string, format: uuid }
+        name: { type: string }
         avatar_url: { type: string, nullable: true }
 
     ErrorResponse:
@@ -551,29 +672,28 @@ components:
       description: Unauthenticated
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
     Forbidden:
       description: Insufficient permissions
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
     NotFound:
       description: Resource not found
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
     UnprocessableEntity:
       description: Validation error
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PATHS
 # ─────────────────────────────────────────────────────────────────────────────
 
 paths:
-
   # ════════════════════════════════════════════════════════════════════════════
   # AUTH
   # ════════════════════════════════════════════════════════════════════════════
@@ -587,14 +707,14 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/RegisterRequest' }
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
       responses:
-        '201':
+        "201":
           description: User registered
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AuthResponse' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
 
   /auth/login:
     post:
@@ -605,34 +725,34 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/LoginRequest' }
+            schema: { $ref: "#/components/schemas/LoginRequest" }
       responses:
-        '200':
+        "200":
           description: Login successful
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AuthResponse' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
 
   /auth/logout:
     post:
       tags: [Auth]
       summary: Revoke current token
       responses:
-        '204': { description: Logged out }
-        '401': { $ref: '#/components/responses/Unauthorized' }
+        "204": { description: Logged out }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
   /auth/me:
     get:
       tags: [Auth]
       summary: Get authenticated user
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
   # ════════════════════════════════════════════════════════════════════════════
   # ME — Profile & AI Providers
@@ -646,30 +766,34 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/UpdateProfileRequest' }
+            schema: { $ref: "#/components/schemas/UpdateProfileRequest" }
       responses:
-        '200':
+        "200":
           description: Profile updated
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/User' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
 
   /me/ai-providers:
     get:
       tags: [Me]
       summary: List own AI provider connections
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/AiProvider' } }
-        '401': { $ref: '#/components/responses/Unauthorized' }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/AiProvider" },
+                    }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
     post:
       tags: [Me]
@@ -678,18 +802,18 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateAiProviderRequest' }
+            schema: { $ref: "#/components/schemas/CreateAiProviderRequest" }
       responses:
-        '201':
+        "201":
           description: Provider added
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AiProvider' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+              schema: { $ref: "#/components/schemas/AiProvider" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
 
   /me/ai-providers/{provider_id}:
     parameters:
-      - $ref: '#/components/parameters/ProviderId'
+      - $ref: "#/components/parameters/ProviderId"
 
     put:
       tags: [Me]
@@ -698,41 +822,41 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/UpdateAiProviderRequest' }
+            schema: { $ref: "#/components/schemas/UpdateAiProviderRequest" }
       responses:
-        '200':
+        "200":
           description: Provider updated
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AiProvider' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/AiProvider" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     delete:
       tags: [Me]
       summary: Remove an AI provider connection
       responses:
-        '204': { description: Deleted }
-        '404': { $ref: '#/components/responses/NotFound' }
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /me/ai-providers/{provider_id}/test:
     parameters:
-      - $ref: '#/components/parameters/ProviderId'
+      - $ref: "#/components/parameters/ProviderId"
     post:
       tags: [Me]
       summary: Test connectivity of an AI provider
       description: Sends a minimal ping to the provider's API to verify the key and base_url are valid.
       responses:
-        '200':
+        "200":
           description: Test result
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  ok:      { type: boolean }
+                  ok: { type: boolean }
                   message: { type: string }
                   latency_ms: { type: integer }
-        '404': { $ref: '#/components/responses/NotFound' }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   # ════════════════════════════════════════════════════════════════════════════
   # TYPES
@@ -744,14 +868,18 @@ paths:
       summary: List all output types
       security: []
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/Type' } }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Type" },
+                    }
 
   # ════════════════════════════════════════════════════════════════════════════
   # TEMPLATES
@@ -763,8 +891,8 @@ paths:
       summary: Browse public template gallery
       security: []
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PerPageParam"
         - name: type_id
           in: query
           schema: { type: string, format: uuid }
@@ -778,17 +906,26 @@ paths:
           schema: { type: string }
         - name: sort
           in: query
-          schema: { type: string, enum: [popular, newest, most_forked], default: popular }
+          schema:
+            {
+              type: string,
+              enum: [popular, newest, most_forked],
+              default: popular,
+            }
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/Template' } }
-                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Template" },
+                    }
+                  meta: { $ref: "#/components/schemas/PaginationMeta" }
 
     post:
       tags: [Templates]
@@ -797,30 +934,30 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateTemplateRequest' }
+            schema: { $ref: "#/components/schemas/CreateTemplateRequest" }
       responses:
-        '201':
+        "201":
           description: Template created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Template' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+              schema: { $ref: "#/components/schemas/Template" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
 
   /templates/{template_id}:
     parameters:
-      - $ref: '#/components/parameters/TemplateId'
+      - $ref: "#/components/parameters/TemplateId"
 
     get:
       tags: [Templates]
       summary: Get template by ID
       security: []
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Template' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/Template" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     put:
       tags: [Templates]
@@ -829,26 +966,26 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/UpdateTemplateRequest' }
+            schema: { $ref: "#/components/schemas/UpdateTemplateRequest" }
       responses:
-        '200':
+        "200":
           description: Updated
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Template' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/Template" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     delete:
       tags: [Templates]
       summary: Soft-delete template (owner only)
       responses:
-        '204': { description: Deleted }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        "204": { description: Deleted }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /templates/{template_id}/fork:
     parameters:
-      - $ref: '#/components/parameters/TemplateId'
+      - $ref: "#/components/parameters/TemplateId"
     post:
       tags: [Templates]
       summary: Fork a public template into a new project
@@ -856,34 +993,38 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/ForkTemplateRequest' }
+            schema: { $ref: "#/components/schemas/ForkTemplateRequest" }
       responses:
-        '201':
+        "201":
           description: Project created from fork
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Project' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/Project" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /templates/{template_id}/files:
     parameters:
-      - $ref: '#/components/parameters/TemplateId'
+      - $ref: "#/components/parameters/TemplateId"
 
     get:
       tags: [Templates]
       summary: List all files in a template
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/File' } }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/File" },
+                    }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     post:
       tags: [Templates]
@@ -892,28 +1033,28 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateFileRequest' }
+            schema: { $ref: "#/components/schemas/CreateFileRequest" }
       responses:
-        '201':
+        "201":
           description: File created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/File' }
+              schema: { $ref: "#/components/schemas/File" }
 
   /templates/{template_id}/files/{file_id}:
     parameters:
-      - $ref: '#/components/parameters/TemplateId'
-      - $ref: '#/components/parameters/FileId'
+      - $ref: "#/components/parameters/TemplateId"
+      - $ref: "#/components/parameters/FileId"
 
     get:
       tags: [Templates]
       summary: Get a single template file
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/File' }
+              schema: { $ref: "#/components/schemas/File" }
 
     put:
       tags: [Templates]
@@ -922,19 +1063,19 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/UpdateFileRequest' }
+            schema: { $ref: "#/components/schemas/UpdateFileRequest" }
       responses:
-        '200':
+        "200":
           description: Updated
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/File' }
+              schema: { $ref: "#/components/schemas/File" }
 
     delete:
       tags: [Templates]
       summary: Delete a template file (owner only)
       responses:
-        '204': { description: Deleted }
+        "204": { description: Deleted }
 
   # ════════════════════════════════════════════════════════════════════════════
   # PROJECTS
@@ -945,8 +1086,8 @@ paths:
       tags: [Projects]
       summary: List authenticated user's projects
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PerPageParam"
         - name: status
           in: query
           schema: { type: string, enum: [draft, published, archived] }
@@ -957,15 +1098,19 @@ paths:
           in: query
           schema: { type: string }
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/Project' } }
-                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Project" },
+                    }
+                  meta: { $ref: "#/components/schemas/PaginationMeta" }
 
     post:
       tags: [Projects]
@@ -974,30 +1119,30 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateProjectRequest' }
+            schema: { $ref: "#/components/schemas/CreateProjectRequest" }
       responses:
-        '201':
+        "201":
           description: Project created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Project' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+              schema: { $ref: "#/components/schemas/Project" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
 
   /projects/{project_id}:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
+      - $ref: "#/components/parameters/ProjectId"
 
     get:
       tags: [Projects]
       summary: Get project by ID
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Project' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/Project" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     put:
       tags: [Projects]
@@ -1006,39 +1151,43 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/UpdateProjectRequest' }
+            schema: { $ref: "#/components/schemas/UpdateProjectRequest" }
       responses:
-        '200':
+        "200":
           description: Updated
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Project' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Project" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     delete:
       tags: [Projects]
       summary: Soft-delete project (owner only)
       responses:
-        '204': { description: Deleted }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        "204": { description: Deleted }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /projects/{project_id}/files:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
+      - $ref: "#/components/parameters/ProjectId"
 
     get:
       tags: [Projects]
       summary: List all files in a project
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/File' } }
-        '403': { $ref: '#/components/responses/Forbidden' }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/File" },
+                    }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     post:
       tags: [Projects]
@@ -1047,17 +1196,17 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateFileRequest' }
+            schema: { $ref: "#/components/schemas/CreateFileRequest" }
       responses:
-        '201':
+        "201":
           description: File created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/File' }
+              schema: { $ref: "#/components/schemas/File" }
 
   /projects/{project_id}/files/reorder:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
+      - $ref: "#/components/parameters/ProjectId"
     patch:
       tags: [Projects]
       summary: Reorder slides/pages within a project
@@ -1065,31 +1214,35 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/ReorderFilesRequest' }
+            schema: { $ref: "#/components/schemas/ReorderFilesRequest" }
       responses:
-        '200':
+        "200":
           description: Files reordered
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/File' } }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/File" },
+                    }
 
   /projects/{project_id}/files/{file_id}:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
-      - $ref: '#/components/parameters/FileId'
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/FileId"
 
     get:
       tags: [Projects]
       summary: Get a single project file
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/File' }
+              schema: { $ref: "#/components/schemas/File" }
 
     put:
       tags: [Projects]
@@ -1098,19 +1251,19 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/UpdateFileRequest' }
+            schema: { $ref: "#/components/schemas/UpdateFileRequest" }
       responses:
-        '200':
+        "200":
           description: Updated
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/File' }
+              schema: { $ref: "#/components/schemas/File" }
 
     delete:
       tags: [Projects]
       summary: Delete a project file
       responses:
-        '204': { description: Deleted }
+        "204": { description: Deleted }
 
   # ════════════════════════════════════════════════════════════════════════════
   # AI GENERATION
@@ -1118,7 +1271,7 @@ paths:
 
   /projects/{project_id}/generate:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
+      - $ref: "#/components/parameters/ProjectId"
     post:
       tags: [Generation]
       summary: Generate all layers of a project with AI
@@ -1130,20 +1283,20 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenerateFullRequest' }
+            schema: { $ref: "#/components/schemas/GenerateFullRequest" }
       responses:
-        '202':
+        "202":
           description: Generation job accepted
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AiJob' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+              schema: { $ref: "#/components/schemas/AiJob" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
 
   /projects/{project_id}/files/{file_id}/generate:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
-      - $ref: '#/components/parameters/FileId'
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/FileId"
     post:
       tags: [Generation]
       summary: Regenerate a single file/layer with AI
@@ -1154,34 +1307,38 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/GenerateLayerRequest' }
+            schema: { $ref: "#/components/schemas/GenerateLayerRequest" }
       responses:
-        '202':
+        "202":
           description: Generation job accepted
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AiJob' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/AiJob" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /projects/{project_id}/jobs:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
+      - $ref: "#/components/parameters/ProjectId"
     get:
       tags: [Generation]
       summary: List AI generation job history for a project
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PerPageParam"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/AiJob' } }
-                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/AiJob" },
+                    }
+                  meta: { $ref: "#/components/schemas/PaginationMeta" }
 
   /jobs/{job_id}:
     parameters:
@@ -1193,12 +1350,12 @@ paths:
       tags: [Generation]
       summary: Poll a specific AI job by ID
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AiJob' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/AiJob" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   # ════════════════════════════════════════════════════════════════════════════
   # EXPORT
@@ -1206,7 +1363,7 @@ paths:
 
   /projects/{project_id}/export:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
+      - $ref: "#/components/parameters/ProjectId"
     post:
       tags: [Export]
       summary: Request an export of a project
@@ -1217,15 +1374,15 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/ExportRequest' }
+            schema: { $ref: "#/components/schemas/ExportRequest" }
       responses:
-        '202':
+        "202":
           description: Export job queued
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ExportJob' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+              schema: { $ref: "#/components/schemas/ExportJob" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
 
   /export-jobs/{job_id}:
     parameters:
@@ -1237,12 +1394,12 @@ paths:
       tags: [Export]
       summary: Poll export job status
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ExportJob' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/ExportJob" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   # ════════════════════════════════════════════════════════════════════════════
   # RESOURCES (Community Library)
@@ -1254,11 +1411,15 @@ paths:
       summary: Browse public community resources
       security: []
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PerPageParam"
         - name: kind
           in: query
-          schema: { type: string, enum: [prompt, skill, agent, rule, mcp, design_doc, hook] }
+          schema:
+            {
+              type: string,
+              enum: [prompt, skill, agent, rule, mcp, design_doc, hook],
+            }
         - name: q
           in: query
           schema: { type: string }
@@ -1267,17 +1428,26 @@ paths:
           schema: { type: string }
         - name: sort
           in: query
-          schema: { type: string, enum: [popular, newest, most_forked], default: popular }
+          schema:
+            {
+              type: string,
+              enum: [popular, newest, most_forked],
+              default: popular,
+            }
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/Resource' } }
-                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Resource" },
+                    }
+                  meta: { $ref: "#/components/schemas/PaginationMeta" }
 
     post:
       tags: [Resources]
@@ -1286,30 +1456,30 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateResourceRequest' }
+            schema: { $ref: "#/components/schemas/CreateResourceRequest" }
       responses:
-        '201':
+        "201":
           description: Resource created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Resource' }
-        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+              schema: { $ref: "#/components/schemas/Resource" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
 
   /resources/{resource_id}:
     parameters:
-      - $ref: '#/components/parameters/ResourceId'
+      - $ref: "#/components/parameters/ResourceId"
 
     get:
       tags: [Resources]
       summary: Get a resource by ID
       security: []
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Resource' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/Resource" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
     put:
       tags: [Resources]
@@ -1318,59 +1488,63 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/UpdateResourceRequest' }
+            schema: { $ref: "#/components/schemas/UpdateResourceRequest" }
       responses:
-        '200':
+        "200":
           description: Updated
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Resource' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Resource" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     delete:
       tags: [Resources]
       summary: Soft-delete a resource (owner only)
       responses:
-        '204': { description: Deleted }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        "204": { description: Deleted }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /resources/{resource_id}/fork:
     parameters:
-      - $ref: '#/components/parameters/ResourceId'
+      - $ref: "#/components/parameters/ResourceId"
     post:
       tags: [Resources]
       summary: Fork a public resource into own library
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/ForkResourceRequest' }
+            schema: { $ref: "#/components/schemas/ForkResourceRequest" }
       responses:
-        '201':
+        "201":
           description: Forked resource created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Resource' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Resource" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /resources/{resource_id}/forks:
     parameters:
-      - $ref: '#/components/parameters/ResourceId'
+      - $ref: "#/components/parameters/ResourceId"
     get:
       tags: [Resources]
       summary: List public forks of a resource
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PerPageParam"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/Resource' } }
-                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Resource" },
+                    }
+                  meta: { $ref: "#/components/schemas/PaginationMeta" }
 
   # ════════════════════════════════════════════════════════════════════════════
   # SOCIAL — Upvotes, Comments, Bookmarks
@@ -1378,76 +1552,80 @@ paths:
 
   /templates/{template_id}/upvote:
     parameters:
-      - $ref: '#/components/parameters/TemplateId'
+      - $ref: "#/components/parameters/TemplateId"
     post:
       tags: [Social]
       summary: Toggle upvote on a template
       responses:
-        '200':
+        "200":
           description: Upvote toggled
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/UpvoteResponse' }
+              schema: { $ref: "#/components/schemas/UpvoteResponse" }
 
   /resources/{resource_id}/upvote:
     parameters:
-      - $ref: '#/components/parameters/ResourceId'
+      - $ref: "#/components/parameters/ResourceId"
     post:
       tags: [Social]
       summary: Toggle upvote on a resource
       responses:
-        '200':
+        "200":
           description: Upvote toggled
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/UpvoteResponse' }
+              schema: { $ref: "#/components/schemas/UpvoteResponse" }
 
   /templates/{template_id}/bookmark:
     parameters:
-      - $ref: '#/components/parameters/TemplateId'
+      - $ref: "#/components/parameters/TemplateId"
     post:
       tags: [Social]
       summary: Toggle bookmark on a template
       responses:
-        '200':
+        "200":
           description: Bookmark toggled
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/BookmarkResponse' }
+              schema: { $ref: "#/components/schemas/BookmarkResponse" }
 
   /resources/{resource_id}/bookmark:
     parameters:
-      - $ref: '#/components/parameters/ResourceId'
+      - $ref: "#/components/parameters/ResourceId"
     post:
       tags: [Social]
       summary: Toggle bookmark on a resource
       responses:
-        '200':
+        "200":
           description: Bookmark toggled
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/BookmarkResponse' }
+              schema: { $ref: "#/components/schemas/BookmarkResponse" }
 
   /templates/{template_id}/comments:
     parameters:
-      - $ref: '#/components/parameters/TemplateId'
+      - $ref: "#/components/parameters/TemplateId"
     get:
       tags: [Social]
       summary: List comments on a template
       security: []
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PerPageParam"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/Comment' } }
-                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Comment" },
+                    }
+                  meta: { $ref: "#/components/schemas/PaginationMeta" }
 
     post:
       tags: [Social]
@@ -1456,34 +1634,38 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateCommentRequest' }
+            schema: { $ref: "#/components/schemas/CreateCommentRequest" }
       responses:
-        '201':
+        "201":
           description: Comment created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Comment' }
+              schema: { $ref: "#/components/schemas/Comment" }
 
   /resources/{resource_id}/comments:
     parameters:
-      - $ref: '#/components/parameters/ResourceId'
+      - $ref: "#/components/parameters/ResourceId"
     get:
       tags: [Social]
       summary: List comments on a resource
       security: []
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PerPageParam"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/Comment' } }
-                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Comment" },
+                    }
+                  meta: { $ref: "#/components/schemas/PaginationMeta" }
 
     post:
       tags: [Social]
@@ -1492,17 +1674,17 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CreateCommentRequest' }
+            schema: { $ref: "#/components/schemas/CreateCommentRequest" }
       responses:
-        '201':
+        "201":
           description: Comment created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Comment' }
+              schema: { $ref: "#/components/schemas/Comment" }
 
   /comments/{comment_id}:
     parameters:
-      - $ref: '#/components/parameters/CommentId'
+      - $ref: "#/components/parameters/CommentId"
 
     put:
       tags: [Social]
@@ -1517,19 +1699,19 @@ paths:
               properties:
                 body: { type: string }
       responses:
-        '200':
+        "200":
           description: Updated
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Comment' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+              schema: { $ref: "#/components/schemas/Comment" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
     delete:
       tags: [Social]
       summary: Delete own comment (soft delete)
       responses:
-        '204': { description: Deleted }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        "204": { description: Deleted }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   # ════════════════════════════════════════════════════════════════════════════
   # PUBLIC USER PROFILES
@@ -1546,12 +1728,12 @@ paths:
       summary: Get public profile of any user
       security: []
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/User' }
-        '404': { $ref: '#/components/responses/NotFound' }
+              schema: { $ref: "#/components/schemas/User" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /users/{user_id}/templates:
     parameters:
@@ -1564,18 +1746,22 @@ paths:
       summary: Get public templates by a user
       security: []
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PerPageParam"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/Template' } }
-                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Template" },
+                    }
+                  meta: { $ref: "#/components/schemas/PaginationMeta" }
 
   /users/{user_id}/resources:
     parameters:
@@ -1588,15 +1774,19 @@ paths:
       summary: Get public resources by a user
       security: []
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PerPageParam"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data: { type: array, items: { $ref: '#/components/schemas/Resource' } }
-                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+                  data:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Resource" },
+                    }
+                  meta: { $ref: "#/components/schemas/PaginationMeta" }
