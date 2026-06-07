@@ -1,4 +1,4 @@
-import { cn } from "../../lib/utils";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signSchema } from "@/features/auth/Schema/loginSchema";
-import type { ISignup } from "@/features/auth/Schema/loginSchema";
+import { signSchema } from "@/features/auth/types/loginSchema";
+import type { SignupSchema } from "@/features/auth/types/loginSchema";
 export function LoginForm({
   className,
   ...props
@@ -20,12 +20,12 @@ export function LoginForm({
     handleSubmit,
     register,
     formState: { errors },
-  } = useForm<ISignup>({
+  } = useForm<SignupSchema>({
     mode: "onChange",
     resolver: zodResolver(signSchema),
   });
 
-  const onSubmit = (data: ISignup) => {
+  const onSubmit = (data: SignupSchema) => {
     console.log(data);
   };
 
@@ -43,7 +43,6 @@ export function LoginForm({
           </p>
         </div>
 
-        {/* Email */}
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input
@@ -57,13 +56,9 @@ export function LoginForm({
           )}
         </Field>
 
-        {/* Password */}
         <Field>
           <div className="flex items-center">
             <FieldLabel htmlFor="password">Password</FieldLabel>
-            {/* <a className="ml-auto text-sm underline-offset-4 hover:underline">
-              Forgot your password?
-            </a> */}
           </div>
 
           <Input id="password" type="password" {...register("password")} />

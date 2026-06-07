@@ -1,5 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
-import LoginPage from "../pages/auth/login";
+import LoginPage from "@/pages/auth/Login";
 export const router = createBrowserRouter([
   { path: "/", element: <></> },
   { path: "/login", element: <LoginPage /> },

@@ -10,4 +10,4 @@ export const signSchema = z
       .min(1, { message:"Password is required"})
 
   })
-export type ISignup = z.infer<typeof signSchema>;
+export type SignupSchema = z.infer<typeof signSchema>;
