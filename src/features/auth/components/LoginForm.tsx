@@ -12,6 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signSchema } from "@/features/auth/types/loginSchema";
 import type { SignupSchema } from "@/features/auth/types/loginSchema";
+
 export function LoginForm({
   className,
   ...props
@@ -32,65 +33,78 @@ export function LoginForm({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className={cn("flex flex-col gap-6 text-foreground", className)}
+      className={cn("flex flex-col gap-6 text-[var(--t1)]", className)}
       {...props}
     >
-      <FieldGroup>
+      <FieldGroup className="space-y-4">
         <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">Login to your account</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-[var(--t1)]">
+            Login to your account
+          </h1>
+          <p className="text-[13px] text-[var(--t2)]">
             Enter your email below to login to your account
           </p>
         </div>
-
-        <Field>
-          <FieldLabel htmlFor="email">Email:</FieldLabel>
+        <Field className="space-y-1.5">
+          <FieldLabel
+            htmlFor="email"
+            className="text-[13px] font-medium text-[var(--t1)]"
+          >
+            Email:
+          </FieldLabel>
           <Input
             id="email"
             type="email"
             placeholder="m@example.com"
-            className="bg-input border border-border text-foreground ;
-"
             {...register("email")}
           />
           {errors.email && (
-            <p className="text-destructive text-sm">{errors.email.message}</p>
+            <p className="text-destructive text-xs mt-1">
+              {errors.email.message}
+            </p>
           )}
         </Field>
 
-        <Field>
-          <div
-            className="flex items-center justify-between ;
-"
-          >
-            <FieldLabel htmlFor="password">Password:</FieldLabel>
+        <Field className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <FieldLabel
+              htmlFor="password"
+              className="text-[13px] font-medium text-[var(--t1)]"
+            >
+              Password:
+            </FieldLabel>
+
+            <a
+              href="#forgot"
+              className="text-xs text-[var(--t2)] hover:text-[var(--cy)] transition-colors"
+            >
+              Forgot password?
+            </a>
           </div>
 
-          <Input
-            id="password"
-            type="password"
-            className="bg-input border border-border text-foreground"
-            {...register("password")}
-          />
+          <Input id="password" type="password" {...register("password")} />
 
           {errors.password && (
-            <p className="text-destructive text-sm">
+            <p className="text-destructive text-xs mt-1">
               {errors.password.message}
             </p>
           )}
         </Field>
 
-        <Field>
-          <Button type="submit" className="bg-primary text-primary-foreground ">
-            Login
+        <Field className="pt-2">
+          <Button
+            type="submit"
+            className="w-full h-9 rounded-[var(--r8,8px)] bg-[var(--acc)] text-[var(--bg)] border border-[var(--bor2)] text-[13px] font-medium hover:opacity-85 transition-opacity"
+          >
+            Sign in
           </Button>
         </Field>
 
         <Field>
-          <FieldDescription className="text-center text-muted-foreground">
-            Don't have an account?{" "}
-            <a className="underline underline-offset-4 hover:text-accent-foreground">
-              Sign up
+          <FieldDescription className="text-center text-[13px] text-[var(--t2)]">
+            No account?{" "}
+            <a className="underline underline-offset-4 text-[var(--t1)] hover:text-[var(--cy)] cursor-pointer transition-colors">
+              Create account
             </a>
           </FieldDescription>
         </Field>
