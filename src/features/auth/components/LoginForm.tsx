@@ -32,7 +32,7 @@ export function LoginForm({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className={cn("flex flex-col gap-6", className)}
+      className={cn("flex flex-col gap-6 text-foreground", className)}
       {...props}
     >
       <FieldGroup>
@@ -44,38 +44,54 @@ export function LoginForm({
         </div>
 
         <Field>
-          <FieldLabel htmlFor="email">Email</FieldLabel>
+          <FieldLabel htmlFor="email">Email:</FieldLabel>
           <Input
             id="email"
             type="email"
             placeholder="m@example.com"
+            className="bg-input border border-border text-foreground ;
+"
             {...register("email")}
           />
           {errors.email && (
-            <p className="text-red-500 text-sm">{errors.email.message}</p>
+            <p className="text-destructive text-sm">{errors.email.message}</p>
           )}
         </Field>
 
         <Field>
-          <div className="flex items-center">
-            <FieldLabel htmlFor="password">Password</FieldLabel>
+          <div
+            className="flex items-center justify-between ;
+"
+          >
+            <FieldLabel htmlFor="password">Password:</FieldLabel>
           </div>
 
-          <Input id="password" type="password" {...register("password")} />
+          <Input
+            id="password"
+            type="password"
+            className="bg-input border border-border text-foreground"
+            {...register("password")}
+          />
 
           {errors.password && (
-            <p className="text-red-500 text-sm">{errors.password.message}</p>
+            <p className="text-destructive text-sm">
+              {errors.password.message}
+            </p>
           )}
         </Field>
 
         <Field>
-          <Button type="submit">Login</Button>
+          <Button type="submit" className="bg-primary text-primary-foreground ">
+            Login
+          </Button>
         </Field>
 
         <Field>
-          <FieldDescription className="text-center">
+          <FieldDescription className="text-center text-muted-foreground">
             Don't have an account?{" "}
-            <a className="underline underline-offset-4">Sign up</a>
+            <a className="underline underline-offset-4 hover:text-accent-foreground">
+              Sign up
+            </a>
           </FieldDescription>
         </Field>
       </FieldGroup>
