@@ -1,19 +1,36 @@
 import { createBrowserRouter } from "react-router-dom";
+import { AuthLayout, EditorLayout, RootLayout } from "@/components/layout";
 import LoginPage from "@/pages/auth/login";
 import RegisterPage from "@/pages/auth/Register";
+
 export const router = createBrowserRouter([
-  { path: "/", element: <></> },
-  { path: "/login", element: <LoginPage /> },
-  { path: "/register", element: <RegisterPage /> },
-  { path: "/templates", element: <></> },
-  { path: "/templates/:templateId", element: <></> },
-  { path: "/dashboard", element: <></> },
-  { path: "/editor/projects/:projectId", element: <></> },
-  { path: "/settings", element: <></> },
-  { path: "/resources", element: <></> },
-  { path: "/resources/new", element: <></> },
-  { path: "/resources/:resourceId", element: <></> },
-  { path: "/users/:userId", element: <></> },
-  { path: "/admin/*", element: <></> },
-  { path: "*", element: <></> },
+  {
+    element: <AuthLayout />,
+    children: [
+      { path: "/login", element: <LoginPage /> },
+      { path: "/register", element: <RegisterPage /> },
+    ],
+  },
+  {
+    element: <EditorLayout />,
+    children: [
+      { path: "/editor/projects/:projectId", element: <></> },
+    ],
+  },
+  {
+    element: <RootLayout />,
+    children: [
+      { path: "/", element: <></> },
+      { path: "/templates", element: <></> },
+      { path: "/templates/:templateId", element: <></> },
+      { path: "/dashboard", element: <></> },
+      { path: "/settings", element: <></> },
+      { path: "/resources", element: <></> },
+      { path: "/resources/new", element: <></> },
+      { path: "/resources/:resourceId", element: <></> },
+      { path: "/users/:userId", element: <></> },
+      { path: "/admin/*", element: <></> },
+      { path: "*", element: <></> },
+    ],
+  },
 ]);
