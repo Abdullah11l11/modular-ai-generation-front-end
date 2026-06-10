@@ -7,3 +7,4 @@ export const useUserTemplates = (userId: Id) =>
     queryKey: ['users', userId, 'templates'],
     queryFn: () => getUserTemplates(userId),
   })
+// بجيب القوالب الخاصة بمستخدم

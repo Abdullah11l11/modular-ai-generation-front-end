@@ -13,9 +13,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <EditorLayout />,
-    children: [
-      { path: "/editor/projects/:projectId", element: <></> },
-    ],
+    children: [{ path: "/editor/projects/:projectId", element: <></> }],
   },
   {
     element: <RootLayout />,
@@ -28,7 +26,7 @@ export const router = createBrowserRouter([
       { path: "/resources", element: <></> },
       { path: "/resources/new", element: <></> },
       { path: "/resources/:resourceId", element: <></> },
-      { path: "/users/:userId", element: <></> },
+      { path: "/users/:userId", element: <PublicProfilePage /> },
       { path: "/admin/*", element: <></> },
       { path: "*", element: <></> },
     ],
