@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { AuthLayout, EditorLayout, RootLayout } from "@/components/layout";
 import LoginPage from "@/pages/auth/login";
 import RegisterPage from "@/pages/auth/Register";
+import { PublicProfilePage } from "@/pages/PublicProfilePage";
 
 export const router = createBrowserRouter([
   {
