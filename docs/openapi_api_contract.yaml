@@ -1628,4 +1628,3 @@ paths:
                 properties:
                   data: { type: array, items: { $ref: '#/components/schemas/Resource' } }
                   meta: { $ref: '#/components/schemas/PaginationMeta' }
-# test
