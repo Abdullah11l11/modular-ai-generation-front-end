@@ -2,7 +2,7 @@ import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Id, Project } from '@/types/api';
-import { useUserProjects } from '../hooks/useUserProjects';
+import { useUserProjects } from '@/features/users/hooks/useUserProjects';
 const MOCK_PROJECTS: Project[] = [
   {
     id: '1',

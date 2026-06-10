@@ -127,14 +127,23 @@ export type ExportJob = {
 
 export type ResourceKind = 'prompt' | 'skill' | 'agent' | 'rule' | 'mcp' | 'design_doc' | 'hook';
 
+export type ResourcePlaceholder = {
+  key: string;
+  label: string;
+  default: string;
+  type: 'text' | 'textarea' | 'select';
+};
+
 export type Resource = {
   id: Id;
   user_id: Id;
   author?: UserSummary;
+  forked_from_id?: Id | null;
   kind: ResourceKind;
   name: string;
   description: string | null;
   body: string;
+  placeholders?: ResourcePlaceholder[] | null;
   visibility: Visibility;
   tags: string[];
   fork_count: number;
