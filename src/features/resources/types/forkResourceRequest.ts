@@ -1,3 +1,3 @@
 export type ForkResourceRequest = {
-  name?: string
-}
+  name?: string;
+};

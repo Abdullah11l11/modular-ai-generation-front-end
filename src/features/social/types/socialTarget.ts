@@ -1,1 +1,1 @@
-export type SocialTarget = 'templates' | 'resources'
+export type SocialTarget = 'templates' | 'resources';

@@ -1,32 +1,20 @@
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  registerSchema,
-  type Signup,
-} from "@/features/auth/types/registerSchema";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { registerSchema, type Signup } from '@/features/auth/types/registerSchema';
 
-export function RegisterForm({
-  className,
-  ...props
-}: React.ComponentProps<typeof Card>) {
+export function RegisterForm({ className, ...props }: React.ComponentProps<typeof Card>) {
   const {
     handleSubmit,
     register,
     formState: { errors },
   } = useForm<Signup>({
-    mode: "onChange",
+    mode: 'onChange',
     resolver: zodResolver(registerSchema),
   });
 
@@ -37,7 +25,7 @@ export function RegisterForm({
   return (
     <Card
       className={cn(
-        "rounded-[var(--r12,12px)] bg-[var(--sur)] text-[var(--t1)] shadow-sm max-w-[420px] w-full",
+        'rounded-[var(--r12,12px)] bg-[var(--sur)] text-[var(--t1)] shadow-sm max-w-[420px] w-full',
         className,
       )}
       {...props}
@@ -66,13 +54,11 @@ export function RegisterForm({
                 type="text"
                 placeholder="Alex Johnson"
                 className="h-[32px] text-[13px]  rounded-[var(--r8,8px)] border-[2px] border-[var(--cy)] bg-[var(--sur2)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
-                {...register("Name")}
+                {...register('Name')}
               />
 
               {errors.Name && (
-                <p className="text-xs text-destructive mt-1">
-                  {errors.Name.message}
-                </p>
+                <p className="text-xs text-destructive mt-1">{errors.Name.message}</p>
               )}
             </Field>
             <Field className="space-y-1.5 border-none p-0">
@@ -88,13 +74,11 @@ export function RegisterForm({
                 type="email"
                 placeholder="m@example.com"
                 className="h-[32px] text-[13px] border-[2px] border-[var(--cy)] rounded-[var(--r8,8px)]  bg-[var(--sur2)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
-                {...register("email")}
+                {...register('email')}
               />
 
               {errors.email && (
-                <p className="text-xs text-destructive mt-1">
-                  {errors.email.message}
-                </p>
+                <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
               )}
             </Field>
             <Field className="space-y-1.5 border-none p-0">
@@ -109,13 +93,11 @@ export function RegisterForm({
                 id="password"
                 type="password"
                 className="h-[32px] text-[13px] border-[2px] border-[var(--cy)] rounded-[var(--r8,8px)]  bg-[var(--sur2)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
-                {...register("password")}
+                {...register('password')}
               />
 
               {errors.password && (
-                <p className="text-xs text-destructive mt-1">
-                  {errors.password.message}
-                </p>
+                <p className="text-xs text-destructive mt-1">{errors.password.message}</p>
               )}
             </Field>
             <Field className="space-y-1.5 border-none p-0">
@@ -130,13 +112,11 @@ export function RegisterForm({
                 id="confirmPassword"
                 type="password"
                 className="h-[32px] text-[13px] border-[2px] border-[var(--cy)] rounded-[var(--r8,8px)]  bg-[var(--sur2)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
-                {...register("confirmPassword")}
+                {...register('confirmPassword')}
               />
 
               {errors.confirmPassword && (
-                <p className="text-xs text-destructive mt-1">
-                  {errors.confirmPassword.message}
-                </p>
+                <p className="text-xs text-destructive mt-1">{errors.confirmPassword.message}</p>
               )}
             </Field>
 
@@ -145,7 +125,7 @@ export function RegisterForm({
                 type="submit"
                 className="w-full h-9 rounded-[var(--r8,8px)] bg-[var(--acc)] text-[var(--bg)] border border-[var(--bor2)] text-[13px] font-semibold hover:opacity-85 transition-opacity duration-150"
               >
-                Create Account{" "}
+                Create Account{' '}
               </Button>
             </Field>
           </FieldGroup>

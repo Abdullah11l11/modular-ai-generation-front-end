@@ -1,6 +1,6 @@
-import type { ExportJob } from '@/types/api'
+import type { ExportJob } from '@/types/api';
 
 export type ExportRequest = {
-  format: ExportJob['format']
-  options?: Record<string, unknown>
-}
+  format: ExportJob['format'];
+  options?: Record<string, unknown>;
+};

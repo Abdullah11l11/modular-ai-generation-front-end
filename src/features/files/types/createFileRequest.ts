@@ -1,7 +1,7 @@
-import type { ProjectFileKind } from '@/types/api'
+import type { ProjectFileKind } from '@/types/api';
 
 export type CreateFileRequest = {
-  kind: ProjectFileKind
-  path: string
-  content: string
-}
+  kind: ProjectFileKind;
+  path: string;
+  content: string;
+};

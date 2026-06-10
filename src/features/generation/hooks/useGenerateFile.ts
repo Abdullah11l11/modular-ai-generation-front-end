@@ -1,7 +1,7 @@
-import { useMutation } from '@tanstack/react-query'
-import { generateFile } from '@/features/generation/api/generateFile'
-import type { GenerateLayerRequest } from '@/features/generation/types/generateLayerRequest'
-import type { Id } from '@/types/api'
+import { useMutation } from '@tanstack/react-query';
+import { generateFile } from '@/features/generation/api/generateFile';
+import type { GenerateLayerRequest } from '@/features/generation/types/generateLayerRequest';
+import type { Id } from '@/types/api';
 
 export const useGenerateFile = () =>
   useMutation({
@@ -10,8 +10,8 @@ export const useGenerateFile = () =>
       fileId,
       payload,
     }: {
-      projectId: Id
-      fileId: Id
-      payload: GenerateLayerRequest
+      projectId: Id;
+      fileId: Id;
+      payload: GenerateLayerRequest;
     }) => generateFile(projectId, fileId, payload),
-  })
+  });

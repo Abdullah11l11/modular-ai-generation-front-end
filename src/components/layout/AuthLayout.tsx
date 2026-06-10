@@ -1,10 +1,10 @@
-import { Outlet } from "react-router-dom";
+import { Outlet } from 'react-router-dom';
 
 const features = [
-  "Modular file model — structure, style, and content separated",
-  "One-click fork and remix any community template",
-  "AI generation at every layer — cloud or local models",
-  "Export to HTML, PDF, PNG, and Markdown",
+  'Modular file model — structure, style, and content separated',
+  'One-click fork and remix any community template',
+  'AI generation at every layer — cloud or local models',
+  'Export to HTML, PDF, PNG, and Markdown',
 ];
 
 export function AuthLayout() {
@@ -28,8 +28,8 @@ export function AuthLayout() {
             <span className="text-[var(--cy)]">and content.</span>
           </h2>
           <p className="mt-2 text-sm leading-relaxed opacity-80">
-            Build reliable, composable AI-generated content with the modular
-            approach. Fork templates, generate at any layer, export everywhere.
+            Build reliable, composable AI-generated content with the modular approach. Fork
+            templates, generate at any layer, export everywhere.
           </p>
         </div>
 
@@ -43,11 +43,9 @@ export function AuthLayout() {
         </ul>
 
         <blockquote className="border-l-2 border-[var(--cy)] pl-4 text-sm leading-relaxed italic opacity-80">
-          "MGF changed how I create presentations. I fork a template, generate
-          content with AI, and export in minutes."
-          <footer className="mt-2 text-xs not-italic opacity-60">
-            — Alex, Student
-          </footer>
+          "MGF changed how I create presentations. I fork a template, generate content with AI, and
+          export in minutes."
+          <footer className="mt-2 text-xs not-italic opacity-60">— Alex, Student</footer>
         </blockquote>
       </aside>
     </div>

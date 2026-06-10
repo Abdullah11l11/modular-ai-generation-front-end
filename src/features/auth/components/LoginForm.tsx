@@ -1,28 +1,20 @@
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { signSchema } from "@/features/auth/types/loginSchema";
-import type { SignupSchema } from "@/features/auth/types/loginSchema";
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { signSchema } from '@/features/auth/types/loginSchema';
+import type { SignupSchema } from '@/features/auth/types/loginSchema';
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"form">) {
+export function LoginForm({ className, ...props }: React.ComponentProps<'form'>) {
   const {
     handleSubmit,
     register,
     formState: { errors },
   } = useForm<SignupSchema>({
-    mode: "onChange",
+    mode: 'onChange',
     resolver: zodResolver(signSchema),
   });
 
@@ -33,10 +25,7 @@ export function LoginForm({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className={cn(
-        "flex flex-col gap-[24px] text-[var(--t1)] p-6 md:p-8",
-        className,
-      )}
+      className={cn('flex flex-col gap-[24px] text-[var(--t1)] p-6 md:p-8', className)}
       {...props}
     >
       <FieldGroup className="space-y-[15px]">
@@ -61,13 +50,9 @@ export function LoginForm({
             type="email"
             placeholder="m@example.com"
             className="h-[32px] text-[13-13.5px] rounded-[var(--r8,8px)] border-[2px] border-[var(--cy)] bg-[var(--sur)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
-            {...register("email")}
+            {...register('email')}
           />
-          {errors.email && (
-            <p className="text-destructive text-xs mt-1">
-              {errors.email.message}
-            </p>
-          )}
+          {errors.email && <p className="text-destructive text-xs mt-1">{errors.email.message}</p>}
         </Field>
         <Field className="space-y-1.5">
           <div className="flex items-center justify-between">
@@ -83,13 +68,11 @@ export function LoginForm({
             id="password"
             type="password"
             className="h-[32px] text-[13-13.5px] rounded-[var(--r8,8px)] border-[2px] border-[var(--cy)] bg-[var(--sur)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
-            {...register("password")}
+            {...register('password')}
           />
 
           {errors.password && (
-            <p className="text-destructive text-xs mt-1">
-              {errors.password.message}
-            </p>
+            <p className="text-destructive text-xs mt-1">{errors.password.message}</p>
           )}
         </Field>
 
@@ -103,7 +86,7 @@ export function LoginForm({
         </Field>
 
         <FieldDescription className="text-center text-[13px] text-[var(--t2)] font-sans">
-          No account?{" "}
+          No account?{' '}
           <Link
             to="/register"
             target="_blank"

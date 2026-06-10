@@ -1,5 +1,5 @@
-import { Outlet } from "react-router-dom";
-import { Navbar } from "@/components/layout/Navbar";
+import { Outlet } from 'react-router-dom';
+import { Navbar } from '@/components/layout/Navbar';
 
 export function RootLayout() {
   return (
@@ -7,7 +7,7 @@ export function RootLayout() {
       <Navbar />
       <main
         className="mx-auto px-(--space-page-x) py-6"
-        style={{ maxWidth: "var(--container-main)" }}
+        style={{ maxWidth: 'var(--container-main)' }}
       >
         <Outlet />
       </main>

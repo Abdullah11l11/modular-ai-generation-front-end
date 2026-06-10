@@ -1,24 +1,24 @@
-import { useUserResources } from "@/features/users/hooks/useUserResources";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import type { Id, Resource } from "@/types/api";
+import { useUserResources } from '@/features/users/hooks/useUserResources';
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { Id, Resource } from '@/types/api';
 const mockResources: Resource[] = [
   {
-    id: "1",
-    user_id: "1",
-    name: "React Prompt Template",
-    kind: "prompt",
+    id: '1',
+    user_id: '1',
+    name: 'React Prompt Template',
+    kind: 'prompt',
     description: null,
-    body: "",
-    visibility: "public",
-    tags: ["react"],
+    body: '',
+    visibility: 'public',
+    tags: ['react'],
     fork_count: 3,
     upvote_count: 8,
     is_upvoted: false,
     is_bookmarked: false,
-    created_at: "2026-01-15T10:30:00Z",
-    updated_at: "2026-01-15T10:30:00Z",
+    created_at: '2026-01-15T10:30:00Z',
+    updated_at: '2026-01-15T10:30:00Z',
   },
 ];
 type UserResourcesGridProps = { userId: Id };

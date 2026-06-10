@@ -1,3 +1,3 @@
 export type CreateCommentRequest = {
-  body: string
-}
+  body: string;
+};

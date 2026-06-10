@@ -1,26 +1,26 @@
-import { useUserTemplates } from "@/features/users/hooks/useUserTemplates";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import type { Id, Template } from "@/types/api";
+import { useUserTemplates } from '@/features/users/hooks/useUserTemplates';
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { Id, Template } from '@/types/api';
 const mockTemplates: Template[] = [
   {
-    id: "1",
-    user_id: "1",
-    name: "Business Pitch Deck",
+    id: '1',
+    user_id: '1',
+    name: 'Business Pitch Deck',
     description: null,
     thumbnail_url: null,
-    visibility: "public",
-    tags: ["business"],
-    locale: "en",
-    direction: "ltr",
+    visibility: 'public',
+    tags: ['business'],
+    locale: 'en',
+    direction: 'ltr',
     fork_count: 5,
     upvote_count: 12,
     is_upvoted: false,
     is_bookmarked: false,
-    type: { id: "1", name: "Presentation", description: "", icon: "" },
-    created_at: "2026-01-15T10:30:00Z",
-    updated_at: "2026-01-15T10:30:00Z",
+    type: { id: '1', name: 'Presentation', description: '', icon: '' },
+    created_at: '2026-01-15T10:30:00Z',
+    updated_at: '2026-01-15T10:30:00Z',
   },
 ];
 type UserTemplatesGridProps = {
@@ -45,9 +45,7 @@ export function UserTemplatesGrid({ userId }: UserTemplatesGridProps) {
           <CardHeader>
             <CardTitle className="text-sm">{template.name}</CardTitle>
           </CardHeader>
-          <CardContent>
-            {template.type && <Badge>{template.type.name}</Badge>}
-          </CardContent>
+          <CardContent>{template.type && <Badge>{template.type.name}</Badge>}</CardContent>
         </Card>
       ))}
     </div>

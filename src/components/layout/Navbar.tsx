@@ -1,9 +1,9 @@
-import { Link, useLocation } from "react-router-dom";
-import { useTheme } from "@/hooks/useTheme";
+import { Link, useLocation } from 'react-router-dom';
+import { useTheme } from '@/hooks/useTheme';
 
 const navLinks = [
-  { to: "/templates", label: "Browse" },
-  { to: "/resources", label: "Resources" },
+  { to: '/templates', label: 'Browse' },
+  { to: '/resources', label: 'Resources' },
 ];
 
 export function Navbar() {
@@ -13,9 +13,12 @@ export function Navbar() {
   return (
     <nav
       className="sticky top-0 z-100 flex h-(--space-nav) items-center gap-3 border-b border-[var(--bor)] bg-[var(--sur)] px-(--space-page-x)"
-      style={{ backdropFilter: "blur(6px)" }}
+      style={{ backdropFilter: 'blur(6px)' }}
     >
-      <Link to="/" className="flex items-center gap-2 font-bold text-sm tracking-tight text-[var(--t1)] no-underline">
+      <Link
+        to="/"
+        className="flex items-center gap-2 font-bold text-sm tracking-tight text-[var(--t1)] no-underline"
+      >
         <span className="grid size-5 grid-cols-2 gap-px">
           <span className="rounded-[2px] bg-[var(--cy)]" />
           <span className="rounded-[2px] bg-[var(--cy)] opacity-70" />
@@ -36,8 +39,8 @@ export function Navbar() {
               to={to}
               className={`rounded-[var(--r8)] px-3 py-1.5 text-xs font-medium no-underline transition-colors duration-150 ${
                 isActive
-                  ? "bg-[var(--sur2)] text-[var(--t1)]"
-                  : "text-[var(--t2)] hover:bg-[var(--sur2)] hover:text-[var(--t1)]"
+                  ? 'bg-[var(--sur2)] text-[var(--t1)]'
+                  : 'text-[var(--t2)] hover:bg-[var(--sur2)] hover:text-[var(--t1)]'
               }`}
             >
               {label}
@@ -53,7 +56,16 @@ export function Navbar() {
           aria-label="Toggle theme"
         >
           {isDark ? (
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <circle cx="12" cy="12" r="5" />
               <line x1="12" y1="1" x2="12" y2="3" />
               <line x1="12" y1="21" x2="12" y2="23" />
@@ -65,7 +77,16 @@ export function Navbar() {
               <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
             </svg>
           ) : (
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
             </svg>
           )}
