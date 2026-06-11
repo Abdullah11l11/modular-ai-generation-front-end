@@ -33,7 +33,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
       className={cn('flex flex-col gap-6 text-(--t1) p-6 md:p-8', className)}
       {...props}
     >
-      <FieldGroup className="space-y-3.75">
+      <FieldGroup className="space-y-2.75">
         <div className="flex flex-col items-center gap-1 text-center mb-2">
           <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-(--t1) font-sans">
             Login to your account
@@ -43,7 +43,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
           </p>
         </div>
 
-        <Field className="space-y-1.5">
+        <Field className="space-y-0.9">
           <FieldLabel htmlFor="email" className="text-[13px] font-medium text-(--t1) font-sans">
             Email:
           </FieldLabel>
@@ -56,7 +56,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
           />
           {errors.email && <p className="text-destructive text-xs mt-1">{errors.email.message}</p>}
         </Field>
-        <Field className="space-y-1.5">
+        <Field className="space-y-0.9">
           <div className="flex items-center justify-between">
             <FieldLabel
               htmlFor="password"

@@ -1,13 +1,14 @@
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type RegisterData } from '@/features/auth/types/registerSchema';
 import { useRegister } from '@/features/auth/hooks/useRegister';
+import { Link } from 'react-router-dom';
 
 export function RegisterForm({ className, ...props }: React.ComponentProps<typeof Card>) {
   const registerMutation = useRegister();
@@ -50,8 +51,8 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<typeo
 
       <CardContent className="p-6 pt-0">
         <form onSubmit={handleSubmit(onSubmit)}>
-          <FieldGroup className="flex flex-col gap-[15px] border-none p-0 m-0">
-            <Field className="space-y-1.5 border-none p-0">
+          <FieldGroup className="flex flex-col gap-[10px] border-none p-0 m-0">
+            <Field className="space-y-1 border-none p-0">
               <FieldLabel
                 htmlFor="Name"
                 className="text-[13px] font-medium text-[var(--t1)] font-sans"
@@ -70,7 +71,7 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<typeo
                 <p className="text-xs text-destructive mt-1">{errors.name.message}</p>
               )}
             </Field>
-            <Field className="space-y-1.5 border-none p-0">
+            <Field className="space-y-1 border-none p-0">
               <FieldLabel
                 htmlFor="email"
                 className="text-[13px] font-medium text-[var(--t1)] font-sans"
@@ -90,7 +91,7 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<typeo
                 <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
               )}
             </Field>
-            <Field className="space-y-1.5 border-none p-0">
+            <Field className="space-y-1 border-none p-0">
               <FieldLabel
                 htmlFor="password"
                 className="text-[13px] font-medium text-[var(--t1)] font-sans"
@@ -109,7 +110,7 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<typeo
                 <p className="text-xs text-destructive mt-1">{errors.password.message}</p>
               )}
             </Field>
-            <Field className="space-y-1.5 border-none p-0">
+            <Field className="space-y-1 border-none p-0">
               <FieldLabel
                 htmlFor="confirmPassword"
                 className="text-[13px] font-medium text-[var(--t1)] font-sans"
@@ -129,7 +130,7 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<typeo
               )}
             </Field>
 
-            <Field className="pt-2 border-none p-0">
+            <Field className="pt-2 border-none p-0 mt-3">
               <Button
                 type="submit"
                 className="w-full h-9 rounded-[var(--r8,8px)] bg-[var(--acc)] text-[var(--bg)] border border-[var(--bor2)] text-[13px] font-semibold hover:opacity-85 transition-opacity duration-150"
@@ -137,6 +138,15 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<typeo
                 Create Account{' '}
               </Button>
             </Field>
+            <FieldDescription className=" mt-4 text-center text-[13px] text-[var(--t2)] font-sans ">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="underline underline-offset-4  text-[var(--t1)]   cursor-pointer transition-colors duration-150"
+              >
+                Sign in
+              </Link>
+            </FieldDescription>
           </FieldGroup>
         </form>
       </CardContent>
