@@ -7,14 +7,13 @@ import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type RegisterData } from '@/features/auth/types/registerSchema';
-import { useRegister } from '@/features/auth/hooks/useRegister';
+import { useRegister } from '../hooks/useRegister';
 import { Link } from 'react-router-dom';
 
 export function RegisterForm({ className, ...props }: React.ComponentProps<typeof Card>) {
   const registerMutation = useRegister();
 
   const onSubmit = (data: RegisterData) => {
-    console.log('SUBMIT WORKED!', data);
     registerMutation.mutate({
       name: data.name,
       email: data.email,
@@ -54,13 +53,13 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<typeo
           <FieldGroup className="flex flex-col gap-[10px] border-none p-0 m-0">
             <Field className="space-y-1 border-none p-0">
               <FieldLabel
-                htmlFor="Name"
+                htmlFor="name"
                 className="text-[13px] font-medium text-[var(--t1)] font-sans"
               >
-                Full Name:
+                Name:
               </FieldLabel>
               <Input
-                id="Name"
+                id="name"
                 type="text"
                 placeholder="Alex Johnson"
                 className="h-[32px] text-[13px]  rounded-[var(--r8,8px)] border-[2px] border-[var(--cy)] bg-[var(--sur2)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
@@ -129,23 +128,23 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<typeo
                 <p className="text-xs text-destructive mt-1">{errors.confirmPassword.message}</p>
               )}
             </Field>
-
-            <Field className="pt-2 border-none p-0 mt-3">
+            <FieldDescription className="pt-2 border-none p-0 flex flex-col items-center gap-4">
               <Button
                 type="submit"
                 className="w-full h-9 rounded-[var(--r8,8px)] bg-[var(--acc)] text-[var(--bg)] border border-[var(--bor2)] text-[13px] font-semibold hover:opacity-85 transition-opacity duration-150"
               >
-                Create Account{' '}
+                Create Account
               </Button>
-            </Field>
-            <FieldDescription className=" mt-4 text-center text-[13px] text-[var(--t2)] font-sans ">
-              Already have an account?{' '}
-              <Link
-                to="/login"
-                className="underline underline-offset-4  text-[var(--t1)]   cursor-pointer transition-colors duration-150"
-              >
-                Sign in
-              </Link>
+
+              <p className="text-center text-[13px] text-[var(--t2)] font-sans">
+                Already have an account?{' '}
+                <Link
+                  to="/login"
+                  className="underline underline-offset-4 text-[var(--t1)] cursor-pointer transition-colors duration-150"
+                >
+                  Sign in
+                </Link>
+              </p>
             </FieldDescription>
           </FieldGroup>
         </form>
