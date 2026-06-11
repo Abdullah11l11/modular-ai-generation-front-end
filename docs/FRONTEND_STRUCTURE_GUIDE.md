@@ -91,11 +91,11 @@ src/
 
 Notes:
 
-- `pages/` is currently empty. Add route pages here when real screens are implemented.
-- `components/` is currently empty. Add shared layout/UI components here when needed, preferably through shadcn.
+- `pages/` currently contains `NotFoundPage`, auth pages (`login`, `Register`), and `PublicProfilePage`. Add new route pages here when implementing real screens.
+- `components/` contains shared UI components (page header, empty state, loaders, error boundary/fallback) and shadcn UI primitives.
 - `features/*/components/` placeholder files were removed. Add real feature components when implementing each domain.
-- `routes/router.tsx` keeps the required route paths, but every route currently renders an empty fragment.
-- The shadcn MCP reports the `@shadcn` registry is available, but no UI components are currently generated.
+- `routes/router.tsx` keeps all required route paths. The `*` catch-all now renders `NotFoundPage`.
+- The shadcn MCP reports the `@shadcn` registry is available and shadcn primitives (button, card, skeleton, badge, input, label, tabs, avatar, separator, field) have been generated.
 
 ## Current Implemented Files
 
@@ -286,9 +286,41 @@ src/
         useUserResources.ts
         useUserTemplates.ts
 
+  components/
+    layout/
+      AuthLayout.tsx
+      EditorLayout.tsx
+      Navbar.tsx
+      RootLayout.tsx
+      index.ts
+    ui/
+      avatar.tsx
+      badge.tsx
+      button.tsx
+      card.tsx
+      field.tsx
+      input.tsx
+      label.tsx
+      separator.tsx
+      skeleton.tsx
+      tabs.tsx
+    empty-state.tsx
+    error-boundary.tsx
+    error-fallback.tsx
+    full-page-loader.tsx
+    page-header.tsx
+
   lib/
     api/
       client.ts
+    utils.ts
+
+  pages/
+    auth/
+      login.tsx
+      Register.tsx
+    NotFoundPage.tsx
+    PublicProfilePage.tsx
 
   routes/
     router.tsx
@@ -306,8 +338,8 @@ Routes are configured in `src/routes/router.tsx`.
 
 ```txt
 /                         empty fragment
-/login                    empty fragment
-/register                 empty fragment
+/login                    login page
+/register                 register page
 /templates                empty fragment
 /templates/:templateId    empty fragment
 /dashboard                empty fragment
@@ -316,15 +348,9 @@ Routes are configured in `src/routes/router.tsx`.
 /resources                empty fragment
 /resources/new            empty fragment
 /resources/:resourceId    empty fragment
-/users/:userId            empty fragment
+/users/:userId            public profile page
 /admin/*                  empty fragment
-/*                        empty fragment
-```
-
-Current route elements use:
-
-```tsx
-<></>
+/*                        NotFoundPage
 ```
 
 This keeps navigation paths available without rendering placeholder UI.
@@ -433,6 +459,23 @@ Rules:
 - Keep domain-specific composition in `src/features/<feature>/components`.
 - Do not recreate common primitives such as buttons, inputs, dialogs, tabs, dropdowns, tables, tooltips, badges, cards, skeletons, and forms by hand when shadcn provides a suitable component.
 - Do not add placeholder UI just to fill routes. Routes currently render empty fragments by design.
+
+## App Infrastructure
+
+The following shared components are available for all routes and features:
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `ErrorBoundary` | `src/components/error-boundary.tsx` | React class component that catches render errors and shows `ErrorFallback` with a retry button |
+| `ErrorFallback` | `src/components/error-fallback.tsx` | Error state UI — icon, message, optional retry action |
+| `FullPageLoader` | `src/components/full-page-loader.tsx` | Centered spinner for Suspense fallbacks |
+| `EmptyState` | `src/components/empty-state.tsx` | Empty list/table placeholder — icon, title, description, optional action |
+| `PageHeader` | `src/components/page-header.tsx` | Page title (26px, 800 weight) + optional subtitle + action slot |
+| `NotFoundPage` | `src/pages/NotFoundPage.tsx` | 404 page wired to the `*` catch-all route |
+
+These components use the project CSS custom properties (e.g. `var(--cy)`, `var(--t1)`, `var(--t2)`, `var(--cy-d)`) and are consistent with `docs/design.md`.
+
+All three layout wrappers (`RootLayout`, `AuthLayout`, `EditorLayout`) wrap their `<Outlet />` in `<ErrorBoundary>` + `<Suspense fallback={<FullPageLoader />}>`.
 
 Recommended first primitives when real screens begin:
 
@@ -543,10 +586,9 @@ export default defineConfig({
 
 ## Remaining TODOs
 
-- Add real page files under `src/pages`.
-- Add needed shadcn UI primitives under `src/components/ui`.
-- Add shared layout components under `src/components/layout`.
+- Add real page files for `/`, `/templates`, `/templates/:templateId`, `/dashboard`, `/settings`, `/resources`, `/resources/new`, `/resources/:resourceId`, `/admin/*`, and `/editor/projects/:projectId`.
 - Add feature UI components under each feature as implementation begins.
 - Add auth, protected, and admin route guards when auth behavior is finalized.
+- Add more shadcn primitives (dialog, dropdown-menu, textarea, select, tooltip, form) as feature work requires them.
 - Align provisional admin endpoints with the final backend contract if needed.
 - Expand `features/editor` with editor state, autosave, preview rendering, and file selection when editor development starts.

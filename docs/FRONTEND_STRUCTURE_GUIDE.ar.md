@@ -16,7 +16,7 @@
 - shadcn MCP مع registry باسم `@shadcn` لمكونات UI الأساسية
 - Laravel API اعتمادا على `docs/openapi_api_contract.yaml`
 
-المشروع مجهز كبنية بداية فارغة: المسارات، والـ providers، والإعدادات، وعميل API، وملفات API الخاصة بالميزات، والـ hooks، والأنواع موجودة. أما الصفحات ومكونات UI المؤقتة فقد تم حذفها.
+المشروع مجهز مع بنية تحتية: المسارات، والـ providers، والإعدادات، وعميل API، وملفات API الخاصة بالميزات، والـ hooks، والأنواع موجودة. المكونات المشتركة للتطبيق (error boundary، حالات التحميل/الفراغ/الخطأ، صفحة 404) مبنية. أما صفحات الميزات ومكونات UI المؤقتة فقد تم حذفها.
 
 ## المكتبات المثبتة
 
@@ -74,11 +74,11 @@ src/
 
 ملاحظات:
 
-- `pages/` فارغ حاليا. أضف صفحات المسارات هنا عند تنفيذ الشاشات الحقيقية.
-- `components/` فارغ حاليا. أضف مكونات UI والتخطيط المشتركة هنا عند الحاجة، ويفضل عبر shadcn.
-- تم حذف مكونات placeholder من `features/*/components`.
-- `routes/router.tsx` يحتوي المسارات المطلوبة، لكن كل مسار يعرض fragment فارغ.
-- shadcn MCP يوضح أن registry باسم `@shadcn` متاح، لكن لا توجد مكونات UI مولدة حاليا.
+- `pages/` يحتوي حاليا على `NotFoundPage`، صفحات المصادقة (`login`، `Register`)، و `PublicProfilePage`. أضف صفحات مسارات جديدة هنا عند تنفيذ الشاشات الحقيقية.
+- `components/` يحتوي على مكونات UI مشتركة (page header، empty state، loaders، error boundary/fallback) ومكونات shadcn الأساسية.
+- تم حذف مكونات placeholder من `features/*/components`. أضف مكونات الميزات الحقيقية عند تنفيذ كل مجال.
+- `routes/router.tsx` يحتوي كل المسارات المطلوبة. المسار `*` يعرض الآن `NotFoundPage`.
+- shadcn MCP متوفر والمكونات الأساسية (button، card، skeleton، badge، input، label، tabs، avatar، separator، field) تم توليدها.
 
 ## الملفات الحالية المنفذة
 
@@ -149,9 +149,41 @@ src/
       api/
       hooks/
 
+  components/
+    layout/
+      AuthLayout.tsx
+      EditorLayout.tsx
+      Navbar.tsx
+      RootLayout.tsx
+      index.ts
+    ui/
+      avatar.tsx
+      badge.tsx
+      button.tsx
+      card.tsx
+      field.tsx
+      input.tsx
+      label.tsx
+      separator.tsx
+      skeleton.tsx
+      tabs.tsx
+    empty-state.tsx
+    error-boundary.tsx
+    error-fallback.tsx
+    full-page-loader.tsx
+    page-header.tsx
+
   lib/
     api/
       client.ts
+    utils.ts
+
+  pages/
+    auth/
+      login.tsx
+      Register.tsx
+    NotFoundPage.tsx
+    PublicProfilePage.tsx
 
   routes/
     router.tsx
@@ -169,8 +201,8 @@ src/
 
 ```txt
 /                         fragment فارغ
-/login                    fragment فارغ
-/register                 fragment فارغ
+/login                    صفحة تسجيل الدخول
+/register                 صفحة التسجيل
 /templates                fragment فارغ
 /templates/:templateId    fragment فارغ
 /dashboard                fragment فارغ
@@ -179,18 +211,10 @@ src/
 /resources                fragment فارغ
 /resources/new            fragment فارغ
 /resources/:resourceId    fragment فارغ
-/users/:userId            fragment فارغ
+/users/:userId            صفحة الملف الشخصي العام
 /admin/*                  fragment فارغ
-/*                        fragment فارغ
+/*                        NotFoundPage
 ```
-
-العنصر الحالي لكل مسار هو:
-
-```tsx
-<></>
-```
-
-هذا يحافظ على جاهزية المسارات بدون عرض أي واجهة مؤقتة.
 
 ## ربط النطاقات
 
@@ -295,6 +319,23 @@ features/resources/types/createResourceRequest.ts
 - لا تعيد بناء مكونات شائعة يدويا مثل buttons و inputs و dialogs و tabs و dropdowns و tables و tooltips و badges و cards و skeletons و forms إذا كان shadcn يوفر مكونا مناسبا.
 - لا تضف UI مؤقت فقط لملء المسارات. المسارات تعرض fragment فارغ حاليا بشكل مقصود.
 
+## بنية التطبيق الأساسية
+
+المكونات المشتركة التالية متاحة لجميع المسارات والميزات:
+
+| المكون | الملف | الغرض |
+|--------|-------|-------|
+| `ErrorBoundary` | `src/components/error-boundary.tsx` | مكون كلاس React يلتقط أخطاء التصيير ويعرض `ErrorFallback` مع زر إعادة المحاولة |
+| `ErrorFallback` | `src/components/error-fallback.tsx` | واجهة عرض الخطأ — أيقونة، رسالة، وإجراء إعادة محاولة اختياري |
+| `FullPageLoader` | `src/components/full-page-loader.tsx` | مؤشر تحميل مركزي لـ Suspense fallback |
+| `EmptyState` | `src/components/empty-state.tsx` | عنصر نائب للقوائم/الجداول الفارغة — أيقونة، عنوان، وصف، وإجراء اختياري |
+| `PageHeader` | `src/components/page-header.tsx` | عنوان الصفحة (26px, وزن 800) + نص فرعي اختياري + حاوية إجراءات |
+| `NotFoundPage` | `src/pages/NotFoundPage.tsx` | صفحة 404 موصولة بالمسار `*` |
+
+هذه المكونات تستخدم خصائص CSS المخصصة للمشروع (مثل `var(--cy)`، `var(--t1)`، `var(--t2)`، `var(--cy-d)`) وهي متوافقة مع `docs/design.md`.
+
+جميع مكونات التخطيط (`RootLayout`، `AuthLayout`، `EditorLayout`) تغلف `<Outlet />` الخاص بها داخل `<ErrorBoundary>` + `<Suspense fallback={<FullPageLoader />}>`.
+
 مكونات مقترحة كبداية عند تنفيذ الشاشات:
 
 ```txt
@@ -392,11 +433,10 @@ chore: update vite config
 
 ## TODO
 
-- إضافة صفحات حقيقية داخل `src/pages`.
-- إضافة مكونات shadcn المطلوبة داخل `src/components/ui`.
-- إضافة مكونات التخطيط المشتركة داخل `src/components/layout`.
+- إضافة صفحات للمسارات: `/`، `/templates`، `/templates/:templateId`، `/dashboard`، `/settings`، `/resources`، `/resources/new`، `/resources/:resourceId`، `/admin/*`، و `/editor/projects/:projectId`.
 - إضافة مكونات خاصة بكل ميزة عند بدء تنفيذها.
 - إضافة route guards للمستخدمين، والضيوف، والإدارة عند تثبيت سلوك auth.
+- إضافة مزيد من مكونات shadcn (dialog، dropdown-menu، textarea، select، tooltip، form) عند الحاجة أثناء تطوير الميزات.
 - مطابقة endpoints الخاصة بالإدارة مع العقد النهائي للـ backend إذا تغيرت.
 - توسيع `features/editor` بإدارة الحالة، autosave، preview rendering، واختيار الملفات عند بدء تطوير المحرر.
 

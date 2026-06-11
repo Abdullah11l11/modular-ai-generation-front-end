@@ -3,6 +3,7 @@ import { AuthLayout, EditorLayout, RootLayout } from '@/components/layout';
 import LoginPage from '@/pages/auth/login';
 import RegisterPage from '@/pages/auth/Register';
 import { PublicProfilePage } from '@/pages/PublicProfilePage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
 
 export const router = createBrowserRouter([
   {
@@ -29,7 +30,7 @@ export const router = createBrowserRouter([
       { path: '/resources/:resourceId', element: <></> },
       { path: '/users/:userId', element: <PublicProfilePage /> },
       { path: '/admin/*', element: <></> },
-      { path: '*', element: <></> },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ]);
