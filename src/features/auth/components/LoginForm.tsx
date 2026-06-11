@@ -7,8 +7,18 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signSchema } from '@/features/auth/types/loginSchema';
 import type { SignupSchema } from '@/features/auth/types/loginSchema';
+import { useLogin } from '@/features/auth/hooks/useLogin';
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'form'>) {
+  const loginMutation = useLogin();
+
+  const onSubmit = (data: SignupSchema) => {
+    loginMutation.mutate({
+      email: data.email,
+      password: data.password,
+    });
+  };
+
   const {
     handleSubmit,
     register,
@@ -17,11 +27,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
     mode: 'onChange',
     resolver: zodResolver(signSchema),
   });
-
-  const onSubmit = (data: SignupSchema) => {
-    console.log(data);
-  };
-
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}

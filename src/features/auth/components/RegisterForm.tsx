@@ -7,8 +7,21 @@ import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type Signup } from '@/features/auth/types/registerSchema';
+import { useRegister } from '@/features/auth/hooks/useRegister';
 
 export function RegisterForm({ className, ...props }: React.ComponentProps<typeof Card>) {
+  const registerMutation = useRegister();
+
+  const onSubmit = (data: Signup) => {
+    console.log('SUBMIT WORKED!', data);
+    registerMutation.mutate({
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      password_confirmation: data.confirmPassword,
+    });
+  };
+
   const {
     handleSubmit,
     register,
@@ -17,10 +30,6 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<typeo
     mode: 'onChange',
     resolver: zodResolver(registerSchema),
   });
-
-  const onSubmit = (data: Signup) => {
-    console.log(data);
-  };
 
   return (
     <Card
@@ -54,11 +63,11 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<typeo
                 type="text"
                 placeholder="Alex Johnson"
                 className="h-[32px] text-[13px]  rounded-[var(--r8,8px)] border-[2px] border-[var(--cy)] bg-[var(--sur2)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
-                {...register('Name')}
+                {...register('name')}
               />
 
-              {errors.Name && (
-                <p className="text-xs text-destructive mt-1">{errors.Name.message}</p>
+              {errors.name && (
+                <p className="text-xs text-destructive mt-1">{errors.name.message}</p>
               )}
             </Field>
             <Field className="space-y-1.5 border-none p-0">
