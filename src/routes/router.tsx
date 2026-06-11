@@ -4,7 +4,6 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { AdminRoute } from '@/routes/AdminRoute';
 import LoginPage from '@/pages/auth/login';
 import RegisterPage from '@/pages/auth/Register';
-import SettingsPage from '@/pages/SettingsPage';
 import { PublicProfilePage } from '@/pages/PublicProfilePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -41,7 +40,7 @@ export const router = createBrowserRouter([
         element: <RootLayout />,
         children: [
           { path: '/dashboard', element: <></> },
-          { path: '/settings', element: <SettingsPage /> },
+          { path: '/settings', element: <></> },
           { path: '/resources', element: <></> },
           { path: '/resources/new', element: <></> },
           { path: '/resources/:resourceId', element: <></> },
