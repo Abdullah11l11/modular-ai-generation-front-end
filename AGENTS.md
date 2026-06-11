@@ -19,9 +19,9 @@ Arabic docs are maintained at:
 
 ## Current Project State
 
-This is an empty-start React + Vite + TypeScript + Tailwind CSS frontend.
+This is a React + Vite + TypeScript + Tailwind CSS frontend with app infrastructure in place.
 
-The route paths, providers, config, Axios client, feature API files, feature hooks, and feature types are scaffolded. Visual pages, placeholder UI components, and placeholder feature components have intentionally been removed.
+The route paths, providers, config, Axios client, feature API files, feature hooks, and feature types are scaffolded. App-wide shared components (error boundary, loading/empty/error states, 404 page) are built. Visual feature pages and placeholder UI components have intentionally been removed.
 
 Do not re-add placeholder screens just to fill routes. Add UI only when implementing a real feature.
 
@@ -81,11 +81,7 @@ The required route paths are:
 - `/users/:userId`
 - `/admin/*`
 
-The current route elements render empty fragments:
-
-```tsx
-<></>
-```
+Most route elements still render empty fragments (`<></>`). The `*` catch-all route renders `NotFoundPage`. Auth and `/users/:userId` routes have real pages.
 
 When implementing real UI, create thin route pages in `src/pages` and wire those pages into `src/routes/router.tsx`.
 
