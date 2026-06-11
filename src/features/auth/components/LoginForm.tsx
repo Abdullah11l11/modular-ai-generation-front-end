@@ -5,14 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { signSchema } from '@/features/auth/types/loginSchema';
-import type { SignupSchema } from '@/features/auth/types/loginSchema';
+import { loginSchema } from '@/features/auth/types/loginSchema';
+import type { LoginSchema } from '@/features/auth/types/loginSchema';
 import { useLogin } from '@/features/auth/hooks/useLogin';
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'form'>) {
   const loginMutation = useLogin();
 
-  const onSubmit = (data: SignupSchema) => {
+  const onSubmit = (data: LoginSchema) => {
     loginMutation.mutate({
       email: data.email,
       password: data.password,
@@ -23,38 +23,35 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
     handleSubmit,
     register,
     formState: { errors },
-  } = useForm<SignupSchema>({
+  } = useForm<LoginSchema>({
     mode: 'onChange',
-    resolver: zodResolver(signSchema),
+    resolver: zodResolver(loginSchema),
   });
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className={cn('flex flex-col gap-[24px] text-[var(--t1)] p-6 md:p-8', className)}
+      className={cn('flex flex-col gap-6 text-(--t1) p-6 md:p-8', className)}
       {...props}
     >
-      <FieldGroup className="space-y-[15px]">
+      <FieldGroup className="space-y-3.75">
         <div className="flex flex-col items-center gap-1 text-center mb-2">
-          <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-[var(--t1)] font-sans">
+          <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-(--t1) font-sans">
             Login to your account
           </h1>
-          <p className="text-[13px] text-[var(--t2)] font-sans">
+          <p className="text-[13px] text-(--t2) font-sans">
             Enter your email below to login to your account
           </p>
         </div>
 
         <Field className="space-y-1.5">
-          <FieldLabel
-            htmlFor="email"
-            className="text-[13px] font-medium text-[var(--t1)] font-sans"
-          >
+          <FieldLabel htmlFor="email" className="text-[13px] font-medium text-(--t1) font-sans">
             Email:
           </FieldLabel>
           <Input
             id="email"
             type="email"
             placeholder="m@example.com"
-            className="h-[32px] text-[13-13.5px] rounded-[var(--r8,8px)] border-[2px] border-[var(--cy)] bg-[var(--sur)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
+            className="h-8 text-[13-13.5px] rounded-[var(--r8,8px)] border-[2px] border-[var(--cy)] bg-[var(--sur)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
             {...register('email')}
           />
           {errors.email && <p className="text-destructive text-xs mt-1">{errors.email.message}</p>}
@@ -94,7 +91,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
           No account?{' '}
           <Link
             to="/register"
-            target="_blank"
             className="underline underline-offset-4 hover:text-[var(--cy)] text-[var(--t1)]  cursor-pointer transition-colors duration-150"
           >
             Create account

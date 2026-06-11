@@ -6,13 +6,13 @@ import { Input } from '@/components/ui/input';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registerSchema, type Signup } from '@/features/auth/types/registerSchema';
+import { registerSchema, type RegisterData } from '@/features/auth/types/registerSchema';
 import { useRegister } from '@/features/auth/hooks/useRegister';
 
 export function RegisterForm({ className, ...props }: React.ComponentProps<typeof Card>) {
   const registerMutation = useRegister();
 
-  const onSubmit = (data: Signup) => {
+  const onSubmit = (data: RegisterData) => {
     console.log('SUBMIT WORKED!', data);
     registerMutation.mutate({
       name: data.name,
@@ -26,7 +26,7 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<typeo
     handleSubmit,
     register,
     formState: { errors },
-  } = useForm<Signup>({
+  } = useForm<RegisterData>({
     mode: 'onChange',
     resolver: zodResolver(registerSchema),
   });
