@@ -1,8 +1,10 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { AuthLayout, EditorLayout, RootLayout } from '@/components/layout';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
+import { AdminRoute } from '@/routes/AdminRoute';
 import LoginPage from '@/pages/auth/login';
 import RegisterPage from '@/pages/auth/Register';
+import SettingsPage from '@/pages/SettingsPage';
 import { PublicProfilePage } from '@/pages/PublicProfilePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -30,8 +32,6 @@ export const router = createBrowserRouter([
       { path: '/templates', element: <></> },
       { path: '/templates/:templateId', element: <></> },
       { path: '/users/:userId', element: <PublicProfilePage /> },
-      { path: '/admin/*', element: <></> },
-      { path: '*', element: <NotFoundPage /> },
     ],
   },
   {
@@ -41,17 +41,25 @@ export const router = createBrowserRouter([
         element: <RootLayout />,
         children: [
           { path: '/dashboard', element: <></> },
-          { path: '/settings', element: <></> },
+          { path: '/settings', element: <SettingsPage /> },
           { path: '/resources', element: <></> },
           { path: '/resources/new', element: <></> },
           { path: '/resources/:resourceId', element: <></> },
-          { path: '/admin/*', element: <></> },
         ],
       },
     ],
   },
   {
+    element: <AdminRoute />,
+    children: [
+      {
+        element: <RootLayout />,
+        children: [{ path: '/admin/*', element: <></> }],
+      },
+    ],
+  },
+  {
     element: <RootLayout />,
-    children: [{ path: '*', element: <></> }],
+    children: [{ path: '*', element: <NotFoundPage /> }],
   },
 ]);
