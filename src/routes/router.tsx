@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import LoginPage from '@/pages/auth/login';
 import RegisterPage from '@/pages/auth/Register';
 import { PublicProfilePage } from '@/pages/PublicProfilePage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
 
 export const router = createBrowserRouter([
   {
@@ -29,6 +30,8 @@ export const router = createBrowserRouter([
       { path: '/templates', element: <></> },
       { path: '/templates/:templateId', element: <></> },
       { path: '/users/:userId', element: <PublicProfilePage /> },
+      { path: '/admin/*', element: <></> },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
   {
