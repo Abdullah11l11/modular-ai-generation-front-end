@@ -29,15 +29,15 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
   });
 
   return (
-    <div className="bg-[var(--sur)] rounded-[var(--r12,12px)]  text-[var(--t1)] shadow-sm p-6 md:p-8">
+    <div className="bg-(--sur) rounded-(--r12,12px) text-(--t1) shadow-sm p-6 md:p-8">
       <form
         onSubmit={handleSubmit(onSubmit)}
         className={cn('flex flex-col gap-6 text-(--t1)', className)}
         {...props}
       >
-        <FieldGroup className="space-y-1">
-          <div className="flex flex-col items-center gap-1 text-center mb-2">
-            <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-(--t1) font-sans">
+        <FieldGroup>
+          <div className="flex flex-col items-center gap-0.75 text-center mb-4">
+            <h1 className="text-[22px] font-extrabold tracking-[-0.02em] text-(--t1) font-sans">
               Login to your account
             </h1>
             <p className="text-[13px] text-(--t2) font-sans">
@@ -45,63 +45,44 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
             </p>
           </div>
 
-          <Field className="space-y-0.5">
-            <FieldLabel htmlFor="email" className="text-[13px] font-medium text-(--t1) font-sans">
-              Email:
-            </FieldLabel>
-            <Input
-              id="email"
-              type="email"
-              placeholder="m@example.com"
-              className="h-8 text-[13-13.5px] rounded-[var(--r8,8px)] border-[2px] border-[var(--cy)] bg-[var(--sur)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
-              {...register('email')}
-            />
+          <Field>
+            <FieldLabel htmlFor="email">Email:</FieldLabel>
+            <Input id="email" type="email" placeholder="m@example.com" {...register('email')} />
             {errors.email && (
-              <p className="text-destructive text-xs mt-1">{errors.email.message}</p>
+              <p className="text-destructive text-xs mt-1.5">{errors.email.message}</p>
             )}
           </Field>
 
-          <Field className="space-y-0.5">
+          <Field>
             <div className="flex items-center justify-between">
-              <FieldLabel
-                htmlFor="password"
-                className="text-[13px] font-medium text-[var(--t1)] font-sans"
-              >
-                Password:
-              </FieldLabel>
+              <FieldLabel htmlFor="password">Password:</FieldLabel>
             </div>
 
-            <Input
-              id="password"
-              type="password"
-              className="h-[32px] text-[13-13.5px] rounded-[var(--r8,8px)] border-[2px] border-[var(--cy)] bg-[var(--sur)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
-              {...register('password')}
-            />
+            <Input id="password" type="password" {...register('password')} />
 
             {errors.password && (
-              <p className="text-destructive text-xs mt-1">{errors.password.message}</p>
+              <p className="text-destructive text-xs mt-1.5">{errors.password.message}</p>
             )}
           </Field>
 
-          {isError && (
-            <p className="text-red-500 text-xs mt-1">{error?.message || 'Login failed'}</p>
-          )}
+          {isError && <p className="text-red-500 text-xs">{error?.message || 'Login failed'}</p>}
 
-          <Field className="pt-2">
+          <Field>
             <Button
               disabled={isPending}
               type="submit"
-              className="w-full h-9 mb-2 rounded-[var(--r8,8px)] bg-[var(--acc)] text-[var(--bg)] border border-[var(--bor2)] text-[13px] font-semibold hover:opacity-85 transition-opacity duration-150"
+              variant="accent"
+              className="w-full h-9 text-[13px] font-semibold"
             >
               {isPending ? 'Loading...' : 'Sign in'}
             </Button>
           </Field>
 
-          <FieldDescription className="text-center text-[13px] text-[var(--t2)] font-sans">
+          <FieldDescription className="text-center">
             No account?{' '}
             <Link
               to="/register"
-              className="underline underline-offset-4 hover:text-[var(--cy)] text-[var(--t1)] cursor-pointer transition-colors duration-150"
+              className="underline underline-offset-4 hover:text-(--cy) text-(--t1)"
             >
               Create account
             </Link>

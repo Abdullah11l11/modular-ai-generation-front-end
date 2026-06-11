@@ -32,116 +32,88 @@ export function RegisterForm({ className, ...props }: React.ComponentProps<typeo
   });
 
   return (
-    <Card
-      className={cn(
-        'rounded-[var(--r12,12px)] bg-[var(--sur)] text-[var(--t1)] shadow-sm max-w-[420px] w-full',
-        className,
-      )}
-      {...props}
-    >
+    <Card className={cn('max-w-105 w-full', className)} {...props}>
       <CardHeader className="p-6 pb-4 flex flex-col gap-1 items-center text-center">
-        <CardTitle className="text-[22px] font-extrabold tracking-[-0.02em] text-[var(--t1)] font-sans ">
+        <CardTitle className="text-[22px] font-extrabold tracking-[-0.02em] text-(--t1) font-sans">
           Create an account
         </CardTitle>
-        <CardDescription className="text-[13px] text-[var(--t2)] font-sans">
+        <CardDescription className="text-[13px]">
           Enter your information below to create your account
         </CardDescription>
       </CardHeader>
 
       <CardContent className="p-6 pt-0">
         <form onSubmit={handleSubmit(onSubmit)}>
-          <FieldGroup className="flex flex-col gap-[10px] border-none p-0 m-0">
-            <Field className="space-y-1 border-none p-0">
-              <FieldLabel
-                htmlFor="name"
-                className="text-[13px] font-medium text-[var(--t1)] font-sans"
-              >
-                Name:
-              </FieldLabel>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="name">Name:</FieldLabel>
               <Input
                 id="name"
                 type="text"
                 placeholder="Alex Johnson"
-                className="h-[32px] text-[13px]  rounded-[var(--r8,8px)] border-[2px] border-[var(--cy)] bg-[var(--sur2)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
+                className="bg-(--sur2)"
                 {...register('name')}
               />
 
               {errors.name && (
-                <p className="text-xs text-destructive mt-1">{errors.name.message}</p>
+                <p className="text-xs text-destructive mt-1.5">{errors.name.message}</p>
               )}
             </Field>
-            <Field className="space-y-1 border-none p-0">
-              <FieldLabel
-                htmlFor="email"
-                className="text-[13px] font-medium text-[var(--t1)] font-sans"
-              >
-                Email:
-              </FieldLabel>
+            <Field>
+              <FieldLabel htmlFor="email">Email:</FieldLabel>
 
               <Input
                 id="email"
                 type="email"
                 placeholder="m@example.com"
-                className="h-[32px] text-[13px] border-[2px] border-[var(--cy)] rounded-[var(--r8,8px)]  bg-[var(--sur2)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
+                className="bg-(--sur2)"
                 {...register('email')}
               />
 
               {errors.email && (
-                <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
+                <p className="text-xs text-destructive mt-1.5">{errors.email.message}</p>
               )}
             </Field>
-            <Field className="space-y-1 border-none p-0">
-              <FieldLabel
-                htmlFor="password"
-                className="text-[13px] font-medium text-[var(--t1)] font-sans"
-              >
-                Password:
-              </FieldLabel>
+            <Field>
+              <FieldLabel htmlFor="password">Password:</FieldLabel>
 
               <Input
                 id="password"
                 type="password"
-                className="h-[32px] text-[13px] border-[2px] border-[var(--cy)] rounded-[var(--r8,8px)]  bg-[var(--sur2)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
+                className="bg-(--sur2)"
                 {...register('password')}
               />
 
               {errors.password && (
-                <p className="text-xs text-destructive mt-1">{errors.password.message}</p>
+                <p className="text-xs text-destructive mt-1.5">{errors.password.message}</p>
               )}
             </Field>
-            <Field className="space-y-1 border-none p-0">
-              <FieldLabel
-                htmlFor="confirmPassword"
-                className="text-[13px] font-medium text-[var(--t1)] font-sans"
-              >
-                Confirm Password:
-              </FieldLabel>
+            <Field>
+              <FieldLabel htmlFor="confirmPassword">Confirm Password:</FieldLabel>
 
               <Input
                 id="confirmPassword"
                 type="password"
-                className="h-[32px] text-[13px] border-[2px] border-[var(--cy)] rounded-[var(--r8,8px)]  bg-[var(--sur2)] text-[var(--t1)] focus:border-[var(--cy)] transition-colors duration-150"
+                className="bg-(--sur2)"
                 {...register('confirmPassword')}
               />
 
               {errors.confirmPassword && (
-                <p className="text-xs text-destructive mt-1">{errors.confirmPassword.message}</p>
+                <p className="text-xs text-destructive mt-1.5">{errors.confirmPassword.message}</p>
               )}
             </Field>
-            <FieldDescription className="pt-2 border-none p-0 flex flex-col items-center gap-4">
+            <FieldDescription className="flex flex-col items-center gap-3">
               <Button
                 type="submit"
-                className="w-full h-9 rounded-[var(--r8,8px)] bg-[var(--acc)] text-[var(--bg)] border border-[var(--bor2)] text-[13px] font-semibold hover:opacity-85 transition-opacity duration-150"
+                variant="accent"
+                className="w-full h-9 text-[13px] font-semibold"
               >
                 Create Account
               </Button>
 
-              <p className="text-center text-[13px] text-[var(--t2)] font-sans">
+              <p className="text-center">
                 Already have an account?{' '}
-                <Link
-                  to="/login"
-                  className="underline underline-offset-4 text-[var(--t1)] cursor-pointer transition-colors duration-150"
-                >
+                <Link to="/login" className="underline underline-offset-4 text-(--t1)">
                   Sign in
                 </Link>
               </p>
