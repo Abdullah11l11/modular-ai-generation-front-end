@@ -3,6 +3,7 @@ import { register } from '@/features/auth/api/register';
 import type { RegisterRequest } from '@/features/auth/types/registerRequest';
 import { apiClient } from '@/lib/api/client';
 import { useNavigate } from 'react-router-dom';
+import { toastSuccess, toastError } from '@/lib/toast';
 
 export const useRegister = () => {
   const queryClient = useQueryClient();
@@ -13,7 +14,11 @@ export const useRegister = () => {
     onSuccess: (response) => {
       apiClient.auth.setToken(response.token);
       queryClient.setQueryData(['me'], response.user);
+      toastSuccess(`Account created, welcome ${response.user.name}`);
       navigate('/', { replace: true });
+    },
+    onError: () => {
+      toastError('Registration failed. Please try again.');
     },
   });
 };

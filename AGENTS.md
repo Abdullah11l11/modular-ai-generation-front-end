@@ -23,6 +23,12 @@ This is a React + Vite + TypeScript + Tailwind CSS frontend with app infrastruct
 
 The route paths, providers, config, Axios client, feature API files, feature hooks, and feature types are scaffolded. App-wide shared components (error boundary, loading/empty/error states, 404 page) are built. Visual feature pages and placeholder UI components have intentionally been removed.
 
+Built real features:
+
+- **Auth forms** — LoginForm and RegisterForm with design tokens moved to base components (Input, Button, Card, Field, FieldLabel, FieldDescription, FieldGroup) per `docs/design.md`.
+- **Route guards** — `ProtectedRoute` (redirects to `/login` if no token), `AdminRoute` (redirects non-admin users to `/`), and a `useAuth` hook.
+- **Toast/notification system** — `sonner` library wired at app root via `AppProviders`. Thin wrapper at `src/lib/toast.ts` (`toastSuccess`, `toastError`, `toastInfo`). Toasts fire on login, register, logout, and settings save.
+
 Do not re-add placeholder screens just to fill routes. Add UI only when implementing a real feature.
 
 ## Architecture Rules
@@ -81,7 +87,15 @@ The required route paths are:
 - `/users/:userId`
 - `/admin/*`
 
-Most route elements still render empty fragments (`<></>`). The `*` catch-all route renders `NotFoundPage`. Auth and `/users/:userId` routes have real pages.
+Auth routes use `AuthLayout` (public), editor uses `EditorLayout` (protected), most others use `RootLayout`. Routes are guarded:
+
+- `/login`, `/register` — public, no guard.
+- `/`, `/templates`, `/templates/:templateId`, `/users/:userId` — `RootLayout`, public.
+- `/dashboard`, `/settings`, `/resources/*` — `ProtectedRoute` + `RootLayout`.
+- `/editor/projects/:projectId` — `ProtectedRoute` + `EditorLayout`.
+- `/admin/*` — `AdminRoute` + `RootLayout` (requires `role === 'admin'`).
+
+Most route elements still render empty fragments (`<></>`). The `*` catch-all route renders `NotFoundPage`. Auth, and `/users/:userId` routes have real pages.
 
 When implementing real UI, create thin route pages in `src/pages` and wire those pages into `src/routes/router.tsx`.
 

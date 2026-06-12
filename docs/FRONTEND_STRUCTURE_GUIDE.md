@@ -45,9 +45,13 @@ Runtime dependencies:
 | ----------------------- | ---------- | ------------------------------------------- |
 | `react`                 | `^19.2.5`  | React UI runtime                            |
 | `react-dom`             | `^19.2.5`  | React DOM renderer                          |
-| `react-router-dom`      | `^7.14.2`  | Client-side routing                         |
-| `@tanstack/react-query` | `^5.100.9` | Server state and API query/mutation caching |
+| `react-router-dom`      | `^7.17.0`  | Client-side routing                         |
+| `@tanstack/react-query` | `^5.101.0` | Server state and API query/mutation caching |
 | `axios`                 | `^1.16.0`  | HTTP client used by `src/lib/api/client.ts` |
+| `sonner`                | latest     | Toast notifications (wired at app root)     |
+| `zod`                   | `^4.4.3`   | Schema validation for form inputs           |
+| `react-hook-form`       | `^7.77.0`  | Form state management                       |
+| `@hookform/resolvers`   | `^5.4.0`   | Zod resolver for react-hook-form            |
 | `tailwindcss`           | `^4.2.4`   | Utility CSS framework                       |
 | `@tailwindcss/vite`     | `^4.2.4`   | Tailwind integration for Vite               |
 
@@ -126,14 +130,20 @@ src/
         login.ts
         logout.ts
         register.ts
+      components/
+        LoginForm.tsx
+        RegisterForm.tsx
       hooks/
+        useAuth.ts
         useLogin.ts
         useLogout.ts
         useRegister.ts
       types/
         authResponse.ts
         loginRequest.ts
+        loginSchema.ts
         registerRequest.ts
+        registerSchema.ts
 
     export/
       api/
@@ -313,6 +323,7 @@ src/
   lib/
     api/
       client.ts
+    toast.ts
     utils.ts
 
   pages/
@@ -323,6 +334,8 @@ src/
     PublicProfilePage.tsx
 
   routes/
+    AdminRoute.tsx
+    ProtectedRoute.tsx
     router.tsx
 
   styles/
@@ -338,20 +351,24 @@ Routes are configured in `src/routes/router.tsx`.
 
 ```txt
 /                         empty fragment
-/login                    login page
-/register                 register page
-/templates                empty fragment
-/templates/:templateId    empty fragment
-/dashboard                empty fragment
-/editor/projects/:projectId
-/settings                 empty fragment
-/resources                empty fragment
-/resources/new            empty fragment
-/resources/:resourceId    empty fragment
-/users/:userId            public profile page
-/admin/*                  empty fragment
+/login                    login page     (AuthLayout, public)
+/register                 register page  (AuthLayout, public)
+/templates                empty fragment (RootLayout, public)
+/templates/:templateId    empty fragment (RootLayout, public)
+/dashboard                empty fragment (ProtectedRoute + RootLayout)
+/editor/projects/:projectId               (ProtectedRoute + EditorLayout)
+/resources                empty fragment (ProtectedRoute + RootLayout)
+/resources/new            empty fragment (ProtectedRoute + RootLayout)
+/resources/:resourceId    empty fragment (ProtectedRoute + RootLayout)
+/users/:userId            public profile page (RootLayout, public)
+/admin/*                  empty fragment (AdminRoute + RootLayout)
 /*                        NotFoundPage
 ```
+
+Route guards:
+
+- `ProtectedRoute` — checks for auth token in localStorage via `useAuth`, redirects to `/login` if missing.
+- `AdminRoute` — extends `ProtectedRoute`, additionally checks `user.role === 'admin'`, redirects non-admin users to `/`.
 
 This keeps navigation paths available without rendering placeholder UI.
 
@@ -464,18 +481,39 @@ Rules:
 
 The following shared components are available for all routes and features:
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| `ErrorBoundary` | `src/components/error-boundary.tsx` | React class component that catches render errors and shows `ErrorFallback` with a retry button |
-| `ErrorFallback` | `src/components/error-fallback.tsx` | Error state UI — icon, message, optional retry action |
-| `FullPageLoader` | `src/components/full-page-loader.tsx` | Centered spinner for Suspense fallbacks |
-| `EmptyState` | `src/components/empty-state.tsx` | Empty list/table placeholder — icon, title, description, optional action |
-| `PageHeader` | `src/components/page-header.tsx` | Page title (26px, 800 weight) + optional subtitle + action slot |
-| `NotFoundPage` | `src/pages/NotFoundPage.tsx` | 404 page wired to the `*` catch-all route |
+| Component        | File                                  | Purpose                                                                                        |
+| ---------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `ErrorBoundary`  | `src/components/error-boundary.tsx`   | React class component that catches render errors and shows `ErrorFallback` with a retry button |
+| `ErrorFallback`  | `src/components/error-fallback.tsx`   | Error state UI — icon, message, optional retry action                                          |
+| `FullPageLoader` | `src/components/full-page-loader.tsx` | Centered spinner for Suspense fallbacks                                                        |
+| `EmptyState`     | `src/components/empty-state.tsx`      | Empty list/table placeholder — icon, title, description, optional action                       |
+| `PageHeader`     | `src/components/page-header.tsx`      | Page title (26px, 800 weight) + optional subtitle + action slot                                |
+| `NotFoundPage`   | `src/pages/NotFoundPage.tsx`          | 404 page wired to the `*` catch-all route                                                      |
+| `ProtectedRoute` | `src/routes/ProtectedRoute.tsx`       | Route guard — redirects to `/login` if no token                                                |
+| `AdminRoute`     | `src/routes/AdminRoute.tsx`           | Route guard — redirects non-admin users to `/`                                                 |
+| `useAuth`        | `src/features/auth/hooks/useAuth.ts`  | Auth hook — returns `{ user, isAuthenticated, isLoading, token }`                              |
 
 These components use the project CSS custom properties (e.g. `var(--cy)`, `var(--t1)`, `var(--t2)`, `var(--cy-d)`) and are consistent with `docs/design.md`.
 
 All three layout wrappers (`RootLayout`, `AuthLayout`, `EditorLayout`) wrap their `<Outlet />` in `<ErrorBoundary>` + `<Suspense fallback={<FullPageLoader />}>`.
+
+## Toast/Notifications
+
+The `sonner` library is wired at the app root via `<Toaster richColors closeButton position="top-right" />` inside `AppProviders`. A thin wrapper at `src/lib/toast.ts` provides three helpers:
+
+```ts
+toastSuccess('message'); // green toast
+toastError('message'); // red toast
+toastInfo('message'); // blue toast
+```
+
+Toasts fire automatically in these flows:
+
+- **Login** — `"Welcome back, {name}"` on success, `"Invalid email or password"` on error
+- **Register** — `"Account created, welcome {name}"` on success, error toast on failure
+- **Logout** — `"Logged out successfully"` on success
+
+Use these helpers in any feature to surface non-blocking feedback.
 
 Recommended first primitives when real screens begin:
 
@@ -586,9 +624,8 @@ export default defineConfig({
 
 ## Remaining TODOs
 
-- Add real page files for `/`, `/templates`, `/templates/:templateId`, `/dashboard`, `/settings`, `/resources`, `/resources/new`, `/resources/:resourceId`, `/admin/*`, and `/editor/projects/:projectId`.
+- Add real page files for `/`, `/templates`, `/templates/:templateId`, `/dashboard`, `/resources`, `/resources/new`, `/resources/:resourceId`, `/admin/*`, and `/editor/projects/:projectId`.
 - Add feature UI components under each feature as implementation begins.
-- Add auth, protected, and admin route guards when auth behavior is finalized.
 - Add more shadcn primitives (dialog, dropdown-menu, textarea, select, tooltip, form) as feature work requires them.
 - Align provisional admin endpoints with the final backend contract if needed.
 - Expand `features/editor` with editor state, autosave, preview rendering, and file selection when editor development starts.
