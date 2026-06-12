@@ -30,24 +30,37 @@ Before editor-specific work begins, these cross-cutting concerns must be in plac
 
 ## Phase 1 — Editor Shell, Context & State Management
 
+**Status:** ✅ Completed
+
 The 3-column layout already exists in `EditorLayout.tsx` (left: Slides, center: main, right: Properties). This phase wires it to real data and shared editor state.
 
 **Checklist:**
 
-- [ ] Create `features/editor/hooks/useEditorStore.ts` — a lightweight editor context (React context + useReducer or Zustand-style) that holds:
+- [x] Create editor context + reducer in `useEditorStore.ts` — holds:
   - `projectId` (from route params)
   - `selectedSlideId` (currently active slide file ID)
   - `selectedElement` (CSS selector or element ID within the preview)
-  - `layerVisibility` (`{ structure: true, style: true, content: true }`)
+  - `layerVisibility` (all `ProjectFileKind` values: slide, style, layout, content, context, rules, meta, sequence)
   - `activeTab` in right panel (`'theme' | 'content' | 'style' | 'ai'`)
   - `isGenerating` (boolean for AI generation in progress)
-- [ ] Create the Editor page at `src/pages/editor/EditorPage.tsx` (thin page that reads route params and renders the editor composition)
-- [ ] Wire `EditorPage` into `router.tsx` at `/editor/projects/:projectId`
-- [ ] On mount, fetch project metadata via `useProject(projectId)` and validate ownership (redirect if 403)
-- [ ] On mount, fetch all project files via `useProjectFiles(projectId)`
-- [ ] Create `features/editor/components/EditorToolbar.tsx` with: Back button, project name (editable inline), Preview/Export/Save action buttons per `docs/design.md` Section 4.5
-- [ ] Create `features/editor/components/EditorStatusBar.tsx` with: slide number, selected element, active layers per `docs/design.md`
-- [ ] Verify: navigating to `/editor/projects/:projectId` renders the shell with real project data loaded
+- [x] Create `EditorProvider` component that wraps children with `EditorContext.Provider`
+- [x] Create the Editor page at `src/pages/editor/EditorPage.tsx` (thin page that reads route params, fetches project + files, renders toolbar + placeholder center + status bar)
+- [x] Wire `EditorPage` into `router.tsx` at `/editor/projects/:projectId`
+- [x] On mount, fetch project metadata via `useProject(projectId)` — shows error fallback on failure
+- [x] On mount, fetch all project files via `useProjectFiles(projectId)`
+- [x] Create `EditorToolbar.tsx` with: Back button, project name (reads from API), Preview/Export/Save action buttons using shadcn `Button`
+- [x] Create `EditorStatusBar.tsx` with: slide index (from file list), selected element name, active layer labels
+- [x] Build verified: `npm run build` passes
+
+**Files created:**
+
+| File | Purpose |
+|------|---------|
+| `src/features/editor/hooks/useEditorStore.ts` | Context, reducer, types (`EditorState`, `EditorAction`, `ActiveTab`, `LayerVisibility`) |
+| `src/features/editor/components/EditorProvider.tsx` | `EditorProvider` wrapper component |
+| `src/features/editor/components/EditorToolbar.tsx` | Top toolbar with back nav, project name, action buttons |
+| `src/features/editor/components/EditorStatusBar.tsx` | Bottom bar with slide count, element, layers |
+| `src/pages/editor/EditorPage.tsx` | Route page — loads data, renders shell |
 
 **Deliverable:** A working 3-column editor shell with project data loaded, slide/properties panels rendered as placeholders, and shared state wired.
 
@@ -55,15 +68,15 @@ The 3-column layout already exists in `EditorLayout.tsx` (left: Slides, center: 
 
 ## Phase 2 — Slide Library Panel (Left Sidebar)
 
-A vertical panel listing slide files (`layer: slide`) as labelled thumbnails. Supports add, delete, and reorder.
+A vertical panel listing slide files (`kind: 'slide'`) as labelled thumbnails. Supports add, delete, and reorder.
 
 **Checklist:**
 
 - [ ] Add `@dnd-kit/core` and `@dnd-kit/sortable` to the project (drag-and-drop library)
 - [ ] Create `features/editor/components/SlideLibrary/SlideThumbnail.tsx` — thumbnail card per slide (file name, mini preview placeholder, active state highlight)
-- [ ] Create `features/editor/components/SlideLibrary/SlideList.tsx` — sortable list using dnd-kit, filtered from `useProjectFiles` where `layer === 'slide'`
-- [ ] Create "Add Slide" button at the top of the panel → calls `useCreateProjectFile` with `{ layer: 'slide', name: 'slide-N.html', extension: 'html' }`
-- [ ] Delete slide action (with confirmation dialog) → calls `useDeleteProjectFile`
+- [ ] Create `features/editor/components/SlideLibrary/SlideList.tsx` — sortable list using dnd-kit, filtered from `useProjectFiles` where `kind === 'slide'`
+- [ ] Create "Add Slide" button at the top of the panel → calls `useCreateProjectFile` with `{ kind: 'slide', path: 'slide-N.html', content: '' }`
+- [ ] Delete slide action (with confirmation dialog) → calls `deleteProjectFile` (use `useMutation` wrapping `src/features/files/api/deleteProjectFile.ts`)
 - [ ] On click/select a slide → update `selectedSlideId` in editor store
 - [ ] Drag-to-reorder → on drop, batch-update `sort_order` via sequential `useUpdateProjectFile` calls
 - [ ] Add layer visibility toggles at top of panel (STR / STY / CON buttons per `design.md` `.lv-btn`)
@@ -309,13 +322,12 @@ Phases 2, 3, and 4 can be built in parallel after Phase 1 is complete. Phase 5 d
 |--------|----------|-------|---------|
 | GET | `/projects/{id}` | 1 | Load project metadata |
 | PUT | `/projects/{id}` | 5 | Save project settings |
-| GET | `/projects/{id}/files` | 2,3,4 | List all project files |
+| GET | `/projects/{id}/files` | 1,2,3,4 | List all project files |
 | POST | `/projects/{id}/files` | 2 | Add new slide/file |
 | PUT | `/projects/{id}/files/{id}` | 2,4,8 | Update file content/metadata |
 | DELETE | `/projects/{id}/files/{id}` | 2 | Delete slide/file |
-| PATCH | `/projects/{id}/files/reorder` | 2 | Reorder slides |
 | POST | `/projects/{id}/generate` | 6 | Full project AI generation |
-| POST | `/projects/{id}/files/{id}/generate` | 6 | Per-layer AI generation |
+| POST | `/projects/{id}/files/{id}/generate` | 6 | Per-file AI generation |
 | GET | `/projects/{id}/jobs` | 6 | List generation history |
 | GET | `/jobs/{id}` | 6 | Poll generation job |
 | POST | `/projects/{id}/export` | 7 | Request export |

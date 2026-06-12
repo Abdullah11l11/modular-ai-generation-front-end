@@ -6,6 +6,7 @@ import LoginPage from '@/pages/auth/login';
 import RegisterPage from '@/pages/auth/Register';
 import { PublicProfilePage } from '@/pages/PublicProfilePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import EditorPage from '@/pages/editor/EditorPage';
 
 export const router = createBrowserRouter([
   {
@@ -20,7 +21,7 @@ export const router = createBrowserRouter([
     children: [
       {
         element: <EditorLayout />,
-        children: [{ path: '/editor/projects/:projectId', element: <></> }],
+        children: [{ path: '/editor/projects/:projectId', element: <EditorPage /> }],
       },
     ],
   },
