@@ -6,6 +6,7 @@ import LoginPage from '@/pages/auth/login';
 import RegisterPage from '@/pages/auth/Register';
 import { PublicProfilePage } from '@/pages/PublicProfilePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import DashboardPage from '@/pages/dashboard/DashboardPage';
 
 export const router = createBrowserRouter([
   {
@@ -39,7 +40,7 @@ export const router = createBrowserRouter([
       {
         element: <RootLayout />,
         children: [
-          { path: '/dashboard', element: <></> },
+          { path: '/dashboard', element: <DashboardPage /> },
           { path: '/settings', element: <></> },
           { path: '/resources', element: <></> },
           { path: '/resources/new', element: <></> },

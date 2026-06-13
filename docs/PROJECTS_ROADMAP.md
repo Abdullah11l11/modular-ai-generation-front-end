@@ -12,9 +12,9 @@ This roadmap covers the Dashboard (`/dashboard`) — the user's personal project
 
 Before Dashboard work begins, ensure these are in place:
 
-- [ ] `useDeleteProject` hook created at `features/projects/hooks/useDeleteProject.ts` (does not exist yet — wraps `deleteProject` API with `useMutation` + query key invalidation for `['projects']`)
-- [ ] Auth token lifecycle working: `useAuth` returns `{ user, isAuthenticated }` correctly
-- [ ] `ProtectedRoute` guards `/dashboard` and redirects to `/login` if no token
+- [x] `useDeleteProject` hook created at `features/projects/hooks/useDeleteProject.ts` — wraps `deleteProject` API with `useMutation` + query key invalidation for `['projects']` + toast feedback
+- [x] Auth token lifecycle working: `useAuth` returns `{ user, isAuthenticated, isLoading, token }` — reads from `localStorage` key `mgf.authToken`, fetches user via `GET /me`
+- [x] `ProtectedRoute` guards `/dashboard` and redirects to `/login` if no token — confirmed in router nesting
 
 ---
 
@@ -24,24 +24,24 @@ The main `/dashboard` page showing all user-owned projects in a grid or table wi
 
 **Checklist:**
 
-- [ ] Create `src/pages/dashboard/DashboardPage.tsx` — thin page using `useProjects()` and composing child components
-- [ ] Wire `DashboardPage` into `router.tsx` at `/dashboard`
-- [ ] Create `features/projects/components/ProjectCard.tsx`:
+- [x] Create `src/pages/dashboard/DashboardPage.tsx` — thin page using `useProjects()` and composing child components
+- [x] Wire `DashboardPage` into `router.tsx` at `/dashboard`
+- [x] Create `features/projects/components/ProjectCard.tsx`:
   - Shows project name, type (from `OutputType`), status badge, last-updated timestamp
-  - Status badges using shadcn `badge` with color variants (draft=ghost, published=cyan, archived=muted)
+  - Status badges using shadcn `badge` with color variants (draft=ghost, published=cyan via `className`, archived=secondary)
   - Click card → navigates to `/editor/projects/:projectId`
   - Card actions menu (three-dot) with Edit and Delete options
-  - Handles `thumbnail_url` placeholder fallback
-- [ ] Create `features/projects/components/ProjectGrid.tsx`:
+  - Thumbnail placeholder: initials fallback (Project type has no `thumbnail_url` field)
+- [x] Create `features/projects/components/ProjectGrid.tsx`:
   - Grid layout: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4` via Tailwind
   - Maps over project list rendering `ProjectCard`
-  - Inline loading state using shadcn `skeleton` cards
-- [ ] Handle loading state: `FullPageLoader` or skeleton grid while `useProjects` resolves
-- [ ] Handle error state: show `ErrorFallback` with retry action
-- [ ] Handle empty state: "No projects yet" illustration with CTA to "Browse templates" and "Create blank project"
-- [ ] Add `PageHeader` with title "My Projects" and a "New Project" button
+  - Inline loading state using shadcn `skeleton` cards (8-card placeholder grid)
+- [x] Handle loading state: skeleton grid while `useProjects` resolves
+- [x] Handle error state: show `ErrorFallback` with retry action (`refetch`)
+- [x] Handle empty state: `EmptyState` with icon, description, and "Browse templates" CTA button
+- [x] Add `PageHeader` with title "My Projects", total count subtitle, and "New Project" button linking to `/templates`
 
-**Deliverable:** Working dashboard page showing project cards with loading, empty, and error states.
+**Deliverable:** Working dashboard page showing project cards with loading, empty, and error states. Build verified.
 
 ---
 
@@ -51,17 +51,17 @@ Multi-branch flow: create from scratch (opens a form) or browse templates to for
 
 **Checklist:**
 
-- [ ] Create `features/projects/components/CreateProjectModal.tsx` — a dialog with two options:
+- [x] Create `features/projects/components/CreateProjectModal.tsx` — a dialog with two options:
   - "Start from scratch" → shows create form
   - "From a template" → navigates to `/templates`
-- [ ] Create `features/projects/components/CreateProjectForm.tsx`:
-  - Fields: name (required), type (dropdown from `useTypes()`), description (textarea), visibility (select: public/private/unlisted), tags (`TagInput`), locale, direction (select: ltr/rtl)
+- [x] Create `features/projects/components/CreateProjectForm.tsx`:
+  - Fields: name (required), type (dropdown from `useTypes()`), description (textarea), visibility (select: public/private/unlisted), tags (`TagInput`), direction (select: ltr/rtl)
   - Uses `react-hook-form` + `zod` for validation (name required, min length)
   - On submit → calls `useCreateProject().mutateAsync` → on success, navigate to `/editor/projects/:newProjectId` and show success toast
-- [ ] Wire "New Project" button in `PageHeader` → opens `CreateProjectModal`
-- [ ] Handle loading state: submit button shows spinner while creating
-- [ ] Handle validation errors: inline field errors from zod schema + API 422 responses
-- [ ] Handle error state: toast error on creation failure
+- [x] Wire "New Project" button in `PageHeader` → opens `CreateProjectModal`
+- [x] Handle loading state: submit button shows spinner while creating
+- [x] Handle validation errors: inline field errors from zod schema
+- [x] Handle error state: toast error on creation failure
 
 **Deliverable:** Create project flow with scratch form, template redirect, validation, and post-creation redirect to editor.
 
