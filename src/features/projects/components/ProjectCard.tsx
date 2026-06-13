@@ -1,27 +1,26 @@
 import { useNavigate } from 'react-router-dom';
 import type { Project } from '@/types/api';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { EllipsisVerticalIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import { ProjectCardActions } from '@/features/projects/components/ProjectCardActions';
 
-const statusConfig: Record<Project['status'], { label: string; variant: 'ghost' | 'default' | 'secondary'; className?: string }> = {
+const statusConfig: Record<
+  Project['status'],
+  { label: string; variant: 'ghost' | 'default' | 'secondary'; className?: string }
+> = {
   draft: { label: 'Draft', variant: 'ghost' },
-  published: { label: 'Published', variant: 'default', className: 'bg-(--cy) text-[#071112] border-(--cy)' },
+  published: {
+    label: 'Published',
+    variant: 'default',
+    className: 'bg-(--cy) text-[#071112] border-(--cy)',
+  },
   archived: { label: 'Archived', variant: 'secondary' },
 };
 
 type ProjectCardProps = {
   project: Project;
-  onDelete?: (projectId: string) => void;
 };
 
-export function ProjectCard({ project, onDelete }: ProjectCardProps) {
+export function ProjectCard({ project }: ProjectCardProps) {
   const navigate = useNavigate();
   const status = statusConfig[project.status];
   const initial = project.name.charAt(0).toUpperCase();
@@ -42,10 +41,12 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
       role="button"
       tabIndex={0}
       onClick={handleClick}
-      onKeyDown={(e) => { if (e.key === 'Enter') handleClick(); }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') handleClick();
+      }}
       className="group/card flex cursor-pointer flex-col overflow-hidden rounded-(--r12,12px) bg-(--sur) shadow-sm ring-1 ring-(--bor2)/50 transition-all duration-150 hover:-translate-y-px hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--cy)"
     >
-      <div className="flex aspect-[16/10] items-center justify-center bg-(--sur2) text-(--cy)">
+      <div className="flex aspect-16/10 items-center justify-center bg-(--sur2) text-(--cy)">
         <span className="text-3xl font-extrabold tracking-tight opacity-30">{initial}</span>
       </div>
 
@@ -55,31 +56,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
             <h3 className="truncate text-[13px] font-bold text-(--t1)">{project.name}</h3>
             <p className="text-[11px] font-medium text-(--t3)">{typeName}</p>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                className="shrink-0 opacity-0 group-hover/card:opacity-100 focus:opacity-100"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <EllipsisVerticalIcon className="size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onClick={() => navigate(`/editor/projects/${project.id}`)}>
-                <PencilIcon className="size-3.5" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => onDelete?.(project.id)}
-              >
-                <Trash2Icon className="size-3.5" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ProjectCardActions project={project} />
         </div>
 
         <div className="flex items-center justify-between gap-2">

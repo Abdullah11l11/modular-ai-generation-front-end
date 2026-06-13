@@ -73,20 +73,21 @@ Card-level interactions and list filtering.
 
 **Checklist:**
 
-- [ ] Create `features/projects/components/ProjectCardActions.tsx`:
+- [x] Create `features/projects/components/ProjectCardActions.tsx`:
   - Dropdown menu (shadcn `dropdown-menu`) with: Edit, Duplicate (future), Delete
-  - Edit → opens project settings modal (or navigates to editor)
-  - Delete → opens confirmation dialog
-- [ ] Create `features/projects/components/DeleteProjectDialog.tsx`:
+  - Edit → navigates to `/editor/projects/:projectId`
+  - Delete → opens `DeleteProjectDialog`
+- [x] Create `features/projects/components/DeleteProjectDialog.tsx`:
   - Confirmation dialog with project name in the prompt
   - "Delete" button (destructive style) → calls `useDeleteProject`
-  - On success → invalidate `['projects']` query, show "Project deleted" toast
-  - Optimistic removal from local cache
-- [ ] Add status filter tabs at top of dashboard (All / Draft / Published / Archived):
-  - Updates `useProjects` query params → resets to page 1 on change
-  - Active tab shows count from `PaginationMeta.total`
-- [ ] Add search input (optional in header) that sets `q` param in `useProjects`
-- [ ] Handle delete error: toast error with "Try again" action
+  - On success → close dialog, toast "Project deleted"
+  - Optimistic removal from TanStack Query cache via `onMutate` / rollback on error
+- [x] Add status filter tabs at top of dashboard (All / Draft / Published / Archived):
+  - Uses shadcn `Tabs` with `variant="line"` — controlled `onValueChange` sets `status` param
+  - Resets search term independently, filter state resets on "Clear filters"
+- [x] Add search input (in header area) that debounces 300ms and sets `q` param in `useProjects`
+- [x] Handle empty states: "No matching projects" (with filter/search active) vs "No projects yet" (no filters)
+- [x] Extract dropdown actions from `ProjectCard.tsx` into `ProjectCardActions.tsx` — card no longer owns delete logic
 
 **Deliverable:** Card actions (edit/delete with confirmations), status filtering, and search.
 
