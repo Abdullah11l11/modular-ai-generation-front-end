@@ -101,16 +101,16 @@ A modal/panel inside the Editor for editing project metadata. Tightly coupled to
 
 **Checklist:**
 
-- [ ] Create `features/projects/components/ProjectSettingsPanel.tsx`:
+- [x] Create `features/projects/components/ProjectSettingsPanel.tsx`:
   - Fields: name, description, status (draft/published/archived), visibility, tags
   - Type is read-only (set at creation)
   - Direction toggle (ltr/rtl)
   - Uses `TagInput` component
-- [ ] Trigger: gear icon in `EditorToolbar` opens this panel as a modal or right-side drawer
-- [ ] On save → calls `useUpdateProject` → invalidates project + files queries → editor reflects changes
-- [ ] Handle validation errors from API (422)
-- [ ] Handle loading state on save button
-- [ ] Status transitions: changing from draft → published should show a descriptive note ("Published projects are visible to others")
+- [x] Trigger: gear icon in `EditorToolbar` opens this panel as a modal
+- [x] On save → calls `useUpdateProject` → invalidates project + files queries → editor reflects changes
+- [x] Handle validation errors from API (422)
+- [x] Handle loading state on save button
+- [x] Status transitions: changing from draft → published shows a descriptive note ("Published projects are visible to others")
 
 **Deliverable:** Project settings accessible from the editor toolbar with full metadata editing.
 

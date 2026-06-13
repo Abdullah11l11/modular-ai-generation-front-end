@@ -7,6 +7,7 @@ import RegisterPage from '@/pages/auth/Register';
 import { PublicProfilePage } from '@/pages/PublicProfilePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
+import { EditorPage } from '@/features/editor/components/EditorPage';
 
 export const router = createBrowserRouter([
   {
@@ -21,7 +22,7 @@ export const router = createBrowserRouter([
     children: [
       {
         element: <EditorLayout />,
-        children: [{ path: '/editor/projects/:projectId', element: <></> }],
+        children: [{ path: '/editor/projects/:projectId', element: <EditorPage /> }],
       },
     ],
   },
