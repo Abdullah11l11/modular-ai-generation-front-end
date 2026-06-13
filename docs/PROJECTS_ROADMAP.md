@@ -122,13 +122,13 @@ Cross-cutting improvements.
 
 **Checklist:**
 
-- [ ] **Keyboard navigation:** Tab through project cards, Enter to open, Delete key triggers delete dialog (when card focused)
-- [ ] **Pagination:** If user has many projects, add "Load more" button or page controls at bottom of grid
-- [ ] **Duplicate project:** Future phase — "Duplicate" action creates a copy via `POST /projects` with prefilled data
-- [ ] **Toast integration:** Create/delete/update lifecycle events use `toastSuccess` / `toastError`
-- [ ] **Responsive grid:** Test card layout on mobile (single column), tablet (2 cols), desktop (3-4 cols)
-- [ ] **Skeleton loading:** While projects load, show `skeleton` card placeholders matching card dimensions
-- [ ] **Empty states refined:** Separate empty messages for "no projects yet" vs "no results matching filter"
+- [x] **Keyboard navigation:** Tab through project cards, Enter to open, Delete key triggers delete dialog (when card focused)
+- [x] **Pagination:** "Load more" button at bottom of grid, fetches next page and appends results
+- [x] **Duplicate project:** "Duplicate" action in card dropdown creates copy via `POST /projects` with prefilled data
+- [x] **Toast integration:** Create/delete/update lifecycle events use `toastSuccess` / `toastError`
+- [x] **Responsive grid:** Card grid uses `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`
+- [x] **Skeleton loading:** 8-card skeleton grid while projects load
+- [x] **Empty states refined:** Separate empty messages for "no projects yet" vs "no results matching filter"
 
 ---
 

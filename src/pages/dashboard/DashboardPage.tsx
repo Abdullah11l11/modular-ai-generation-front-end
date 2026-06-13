@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useProjects } from '@/features/projects/hooks/useProjects';
 import { ProjectGrid } from '@/features/projects/components/ProjectGrid';
 import { CreateProjectModal } from '@/features/projects/components/CreateProjectModal';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDebounce } from '@/hooks/useDebounce';
-import { PlusIcon, FolderOpenIcon, SearchIcon } from 'lucide-react';
+import { PlusIcon, FolderOpenIcon, SearchIcon, Loader2Icon } from 'lucide-react';
 import type { Project } from '@/types/api';
 
 const statusTabs: { value: string; label: string }[] = [
@@ -26,15 +26,38 @@ export default function DashboardPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchInput, setSearchInput] = useState('');
+  const [page, setPage] = useState(1);
+  const [loadedProjects, setLoadedProjects] = useState<Project[]>([]);
 
   const debouncedSearch = useDebounce(searchInput, 300);
-  const params = {
+
+  const params = useMemo(() => ({
+    page,
+    per_page: 12,
     status: statusValue(statusFilter),
     q: debouncedSearch || undefined,
-  };
-  const { data, isLoading, isError, error, refetch } = useProjects(params);
-  const projects = data?.data ?? [];
-  const hasActiveFilter = statusFilter !== 'all' || debouncedSearch.length > 0;
+  }), [page, statusFilter, debouncedSearch]);
+
+  const { data, isLoading, isFetching, isError, error, refetch } = useProjects(params);
+  const hasMore = data ? data.meta.current_page < data.meta.last_page : false;
+
+  useEffect(() => {
+    setPage(1);
+    setLoadedProjects([]);
+  }, [statusFilter, debouncedSearch]);
+
+  useEffect(() => {
+    if (!data) return;
+    if (data.meta.current_page === 1) {
+      setLoadedProjects(data.data);
+    } else {
+      setLoadedProjects((prev) => {
+        const existingIds = new Set(prev.map((p) => p.id));
+        const newProjects = data.data.filter((p) => !existingIds.has(p.id));
+        return [...prev, ...newProjects];
+      });
+    }
+  }, [data]);
 
   if (isError) {
     return <ErrorFallback error={error as Error} reset={refetch} />;
@@ -75,8 +98,8 @@ export default function DashboardPage() {
         </Tabs>
       </div>
 
-      {!isLoading && projects.length === 0 ? (
-        hasActiveFilter ? (
+      {!isLoading && loadedProjects.length === 0 ? (
+        (statusFilter !== 'all' || debouncedSearch.length > 0) ? (
           <EmptyState
             title="No matching projects"
             description={
@@ -104,7 +127,22 @@ export default function DashboardPage() {
           />
         )
       ) : (
-        <ProjectGrid projects={projects} isLoading={isLoading} />
+        <>
+          <ProjectGrid projects={loadedProjects} isLoading={isLoading} />
+          {hasMore && (
+            <div className="mt-6 flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={isFetching}
+              >
+                {isFetching && <Loader2Icon className="size-3.5 animate-spin" />}
+                Load more
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       <CreateProjectModal open={modalOpen} onOpenChange={setModalOpen} />

@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import type { Project } from '@/types/api';
 import { ProjectCard } from '@/features/projects/components/ProjectCard';
+import { DeleteProjectDialog } from '@/features/projects/components/DeleteProjectDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type ProjectGridProps = {
@@ -24,6 +26,12 @@ function SkeletonCard() {
 }
 
 export function ProjectGrid({ projects, isLoading }: ProjectGridProps) {
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+
+  const handleDeleteRequest = (project: Project) => {
+    setProjectToDelete(project);
+  };
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 gap-(--space-card-gap,12px) sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -35,10 +43,24 @@ export function ProjectGrid({ projects, isLoading }: ProjectGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-(--space-card-gap,12px) sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {projects.map((project) => (
-        <ProjectCard key={project.id} project={project} />
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-1 gap-(--space-card-gap,12px) sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {projects.map((project) => (
+          <ProjectCard
+            key={project.id}
+            project={project}
+            onDeleteRequest={handleDeleteRequest}
+          />
+        ))}
+      </div>
+
+      {projectToDelete && (
+        <DeleteProjectDialog
+          project={projectToDelete}
+          open={true}
+          onOpenChange={(open) => { if (!open) setProjectToDelete(null); }}
+        />
+      )}
+    </>
   );
 }

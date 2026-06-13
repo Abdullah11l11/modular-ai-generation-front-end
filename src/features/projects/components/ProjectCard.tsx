@@ -18,9 +18,10 @@ const statusConfig: Record<
 
 type ProjectCardProps = {
   project: Project;
+  onDeleteRequest: (project: Project) => void;
 };
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, onDeleteRequest }: ProjectCardProps) {
   const navigate = useNavigate();
   const status = statusConfig[project.status];
   const initial = project.name.charAt(0).toUpperCase();
@@ -43,6 +44,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
       onClick={handleClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter') handleClick();
+        if (e.key === 'Delete') {
+          e.preventDefault();
+          onDeleteRequest(project);
+        }
       }}
       className="group/card flex cursor-pointer flex-col overflow-hidden rounded-(--r12,12px) bg-(--sur) shadow-sm ring-1 ring-(--bor2)/50 transition-all duration-150 hover:-translate-y-px hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--cy)"
     >
@@ -56,7 +61,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
             <h3 className="truncate text-[13px] font-bold text-(--t1)">{project.name}</h3>
             <p className="text-[11px] font-medium text-(--t3)">{typeName}</p>
           </div>
-          <ProjectCardActions project={project} />
+          <ProjectCardActions project={project} onDeleteRequest={onDeleteRequest} />
         </div>
 
         <div className="flex items-center justify-between gap-2">
