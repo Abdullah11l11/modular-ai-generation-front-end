@@ -168,52 +168,61 @@ Renders the current slide's HTML combined with project style/layout CSS in a san
 
 ## Phase 4 — CSS Attribute Customization Panel (Right Sidebar)
 
-A form-based panel for editing visual CSS properties without writing raw CSS. This is the most novel UI in the app.
+**Status:** ✅ Completed
 
-**Pre-requisite decision:** Define the convention for `style.css` and `layout.css` structure. Recommended approach for MVP: use predefined CSS custom properties (`--primary-color`, `--body-font`, `--heading-size`, `--spacing-padding`, etc.) in template files, and map these to form fields. This avoids building a CSS parser.
+A form-based panel for editing visual CSS properties without writing raw CSS.
+
+**Prerequisite convention:** Style and layout files use predefined CSS custom properties (`--primary-color`, `--body-font`, `--heading-size`, `--spacing-padding`, etc.) in `:root {}` blocks, mapped to form fields. No CSS parser was needed.
 
 **Checklist:**
 
-- [ ] Create `features/editor/types/cssProperties.ts` — define the schema of editable CSS properties:
-  ```ts
-  type CssPropertyGroup = {
-    id: string;
-    label: string;
-    properties: CssProperty[];
-  };
-  type CssProperty = {
-    varName: string;        // e.g. '--primary-color'
-    label: string;          // e.g. 'Primary Color'
-    type: 'color' | 'font' | 'size' | 'spacing' | 'select' | 'slider';
-    options?: string[];     // for 'select' type
-    defaultValue: string;
-  };
-  ```
-- [ ] Create `features/editor/hooks/useCssProperties.ts` — parses `style.css` and `layout.css` content strings into structured `CssPropertyGroup[]` by reading `var()` declarations
-- [ ] Create `features/editor/hooks/useCssPropertyUpdates.ts` — debounced mutation that writes changes back to the file via `useUpdateProjectFile`
-- [ ] Create `features/editor/components/PropertiesPanel/PropertiesPanel.tsx` — tabbed container with tabs: Theme | Content | Style | AI (per `design.md`)
-- [ ] Create `features/editor/components/PropertiesPanel/ThemeTab.tsx`:
-  - Color swatches with native color picker input
-  - Editable text fields for CSS variable values
-  - "View full theme.css" link that opens a read-only view
-  - Global theme section
-- [ ] Create `features/editor/components/PropertiesPanel/ContentTab.tsx`:
-  - Editable fields based on selected element (title text, subtitle, bullet list)
-  - Size/weight/color controls
-- [ ] Create `features/editor/components/PropertiesPanel/StyleTab.tsx`:
-  - Typography controls: size, line-height, letter-spacing, weight, alignment buttons
-  - Spacing controls: opacity slider, padding grid (top/right/bottom/left), radius, z-index
-- [ ] Create `features/editor/components/PropertiesPanel/AiTab.tsx`:
-  - Prompt textarea
-  - Model selector dropdown
-  - Generate button
-  - JSON editor (read-only for now)
-  - Generation history list (placeholder for Phase 6)
-- [ ] Wire tab changes to `activeTab` in editor store
-- [ ] Handle empty state: no element selected → show "Select an element to edit" message
-- [ ] Handle loading state: skeleton placeholders while CSS files load
+- [x] Create `features/editor/types/cssProperties.ts` — defines `CssPropertyDef`, `CssPropertyGroup`, and 3 registries: `THEME_PROPERTIES` (6 color + 2 font), `CONTENT_PROPERTIES` (3 string + 3 size + 2 select + 2 color), `STYLE_PROPERTIES` (1 size + 3 spacing + 2 select + 1 slider + 4 padding + 1 radius + 1 z-index)
+- [x] Create `features/editor/hooks/useCssProperties.ts` — `parseCssValues` extracts known vars from file content via regex; `toGroups` merges current values with registry defaults; `useCssProperties` returns `{ groups, hasVariables }`
+- [x] Create `features/editor/hooks/useCssPropertyUpdates.ts` — `replaceCssVariable` updates or appends a CSS var in the content string; `useCssPropertyUpdates` wraps mutation with 500ms debounce via `setTimeout`/`clearTimeout`
+- [x] Create `features/editor/components/PropertiesPanel/PropertiesPanel.tsx` — tabbed container with shadcn `Tabs` bound to `state.activeTab`; renders Theme, Content, Style, or AI tab; shows skeleton loading state; shows "Select an element to edit" on Content/Style tabs when no element selected
+- [x] Create `features/editor/components/PropertiesPanel/ThemeTab.tsx`:
+  - Color inputs (native `<input type="color">` + hex text field) for each color property
+  - Font selectors via shadcn `Select` with common font options
+  - "Element theme" banner when element is selected
+  - "View full theme.css" button opens raw CSS in new tab
+- [x] Create `features/editor/components/PropertiesPanel/ContentTab.tsx`:
+  - Text input (string type) fields for title/subtitle/body content
+  - Size/weight selectors and color pickers for each content element
+  - Reads/writes CSS vars from the selected slide HTML content
+- [x] Create `features/editor/components/PropertiesPanel/StyleTab.tsx`:
+  - Typography: size, line-height, letter-spacing inputs; Font Weight select; Alignment button group (L/C/R/J)
+  - Spacing: opacity slider (`<input type="range">`), padding grid (4 inputs: top/right/bottom/left), border radius, z-index
+  - Reads/writes CSS vars from `layout.css`
+- [x] Create `features/editor/components/PropertiesPanel/AiTab.tsx`:
+  - Prompt textarea with placeholder
+  - Model selector dropdown (3 model options)
+  - Generate button (disabled, placeholder for Phase 6)
+  - JSON output readonly display
+  - Generation history empty state placeholder
+- [x] Wire tab changes to `activeTab` in editor store
+- [x] Handle empty state: no element selected → "Select an element to edit" message
+- [x] Handle loading state: `Skeleton` placeholder while CSS files load
 
-**Deliverable:** Functional CSS customization panel with four tabs, debounced writes to backend, triggering preview refresh.
+**Files created:**
+
+| File | Purpose |
+|------|---------|
+| `src/features/editor/types/cssProperties.ts` | Property type definitions and 3 static registries (Theme, Content, Style) |
+| `src/features/editor/hooks/useCssProperties.ts` | CSS variable parser and group builder hook |
+| `src/features/editor/hooks/useCssPropertyUpdates.ts` | Debounced CSS variable updater with `replaceCssVariable` helper |
+| `src/features/editor/components/PropertiesPanel/PropertiesPanel.tsx` | Tabbed right sidebar container |
+| `src/features/editor/components/PropertiesPanel/ThemeTab.tsx` | Theme tab with color inputs, font selects, "View full theme.css" |
+| `src/features/editor/components/PropertiesPanel/ContentTab.tsx` | Content tab with string/size/color fields for selected element |
+| `src/features/editor/components/PropertiesPanel/StyleTab.tsx` | Style tab with typography controls, opacity slider, padding grid |
+| `src/features/editor/components/PropertiesPanel/AiTab.tsx` | AI tab with prompt, model selector, generate, JSON output, history |
+
+**Files modified:**
+
+| File | Changes |
+|------|---------|
+| `src/pages/editor/EditorPage.tsx` | Replaced placeholder `<aside>` with `<PropertiesPanel>` passing `projectId`, `selectedSlide`, `styleFile`, `layoutFile`, `filesLoading` |
+
+**Deliverable:** Functional CSS customization panel with four tabs, debounced writes to backend, and loading/empty states.
 
 ---
 

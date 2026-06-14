@@ -5,6 +5,7 @@ import { EditorToolbar } from '@/features/editor/components/EditorToolbar';
 import { EditorStatusBar } from '@/features/editor/components/EditorStatusBar';
 import { SlideLibraryPanel } from '@/features/editor/components/SlideLibrary/SlideLibraryPanel';
 import { PreviewCanvas } from '@/features/editor/components/Preview/PreviewCanvas';
+import { PropertiesPanel } from '@/features/editor/components/PropertiesPanel/PropertiesPanel';
 import { useEditorStore } from '@/features/editor/hooks/useEditorStore';
 import { ProjectSettingsPanel } from '@/features/projects/components/ProjectSettingsPanel';
 import { useProject } from '@/features/projects/hooks/useProject';
@@ -60,11 +61,13 @@ function EditorContent() {
           layoutFile={layoutFile}
         />
 
-        <aside className="w-67.5 shrink-0 border-l border-(--bor2) bg-(--sur) p-3 overflow-y-auto">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-(--t3)">
-            Properties
-          </div>
-        </aside>
+        <PropertiesPanel
+          projectId={projectId as Id}
+          selectedSlide={selectedSlide}
+          styleFile={styleFile}
+          layoutFile={layoutFile}
+          filesLoading={filesLoading}
+        />
       </div>
 
       <EditorStatusBar />
