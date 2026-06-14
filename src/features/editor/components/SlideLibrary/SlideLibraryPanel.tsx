@@ -22,9 +22,10 @@ type SlideLibraryPanelProps = {
   projectId: Id;
   slides: ProjectFile[];
   filesLoading: boolean;
+  onGenerateLayer?: (fileId: string) => void;
 };
 
-export function SlideLibraryPanel({ projectId, slides, filesLoading }: SlideLibraryPanelProps) {
+export function SlideLibraryPanel({ projectId, slides, filesLoading, onGenerateLayer }: SlideLibraryPanelProps) {
   const { state, dispatch } = useEditorStore();
   const queryClient = useQueryClient();
   const createFile = useCreateProjectFile();
@@ -120,6 +121,7 @@ export function SlideLibraryPanel({ projectId, slides, filesLoading }: SlideLibr
             selectedSlideId={state.selectedSlideId}
             onSelect={handleSelect}
             onReorder={handleReorder}
+            onGenerate={onGenerateLayer}
           />
 
           {state.selectedSlideId && (

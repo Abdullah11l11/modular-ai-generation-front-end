@@ -14,6 +14,7 @@ type PropertiesPanelProps = {
   styleFile: ProjectFile | null;
   layoutFile: ProjectFile | null;
   filesLoading: boolean;
+  onOpenGenerationModal?: () => void;
 };
 
 export function PropertiesPanel({
@@ -22,6 +23,7 @@ export function PropertiesPanel({
   styleFile,
   layoutFile,
   filesLoading,
+  onOpenGenerationModal,
 }: PropertiesPanelProps) {
   const { state, dispatch } = useEditorStore();
   const hasElement = !!state.selectedElement;
@@ -88,7 +90,7 @@ export function PropertiesPanel({
           </TabsContent>
 
           <TabsContent value="ai" className="mt-0">
-            <AiTab projectId={projectId} />
+            <AiTab projectId={projectId} onOpenGenerationModal={onOpenGenerationModal} />
           </TabsContent>
         </div>
       </Tabs>

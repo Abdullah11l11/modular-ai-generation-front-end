@@ -18,9 +18,10 @@ type SlideListProps = {
   selectedSlideId: string | null;
   onSelect: (id: string) => void;
   onReorder: (activeId: string, overId: string) => void;
+  onGenerate?: (fileId: string) => void;
 };
 
-export function SlideList({ slides, selectedSlideId, onSelect, onReorder }: SlideListProps) {
+export function SlideList({ slides, selectedSlideId, onSelect, onReorder, onGenerate }: SlideListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
@@ -43,6 +44,7 @@ export function SlideList({ slides, selectedSlideId, onSelect, onReorder }: Slid
               name={slide.path}
               isActive={slide.id === selectedSlideId}
               onSelect={() => onSelect(slide.id)}
+              onGenerate={onGenerate}
             />
           ))}
         </div>

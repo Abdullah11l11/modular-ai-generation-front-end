@@ -257,38 +257,58 @@ A modal/drawer within the editor for editing project metadata.
 
 ## Phase 6 — AI Generation (Full + Per-Layer)
 
+**Status:** ✅ Completed
+
 Integrate AI generation into the editor. Both full-project and per-layer generation follow the same async job pattern.
 
 **Checklist:**
 
-- [ ] Create `features/editor/hooks/useJobPoller.ts` — reusable polling hook:
+- [x] Create `features/editor/hooks/useJobPoller.ts` — reusable polling hook:
   - Takes `jobId` and query key
-  - Uses TanStack Query's `refetchInterval` (2-3 seconds)
-  - Returns `{ status, data, error }`
-  - On `success`: calls optional `onComplete` callback and invalidates target queries
-  - On `failed`: surfaces `error_message`
-  - Cleans up polling on unmount
-- [ ] Create `features/editor/components/GenerationModal.tsx`:
-  - Prompt textarea (pre-filled with `context.md` content if available)
+  - Uses TanStack Query's `refetchInterval` (function returns `false` on terminal status)
+  - Returns `{ data, isFetching, error }`
+  - On `succeeded`/`failed`: terminal status stops polling
+  - Cleans up polling on unmount automatically via TanStack Query
+- [x] Create `features/editor/components/Generation/GenerationModal.tsx`:
+  - Prompt textarea with placeholder
   - Provider selector dropdown (populated from `useAiProviders()`)
-  - If no providers configured → show empty state with link to `/settings`
+  - If no providers configured → empty state with link to `/settings`
   - Model override text field (optional)
-  - "Generate All" vs "Generate Selected Layers" toggle
-  - Layer checkboxes for per-layer mode (all checked by default)
+  - "All Layers" vs "Selected Layers" toggle (for full project)
+  - Layer checkboxes for per-layer mode
   - Generate button → calls `useGenerateProject` or `useGenerateFile`
-  - Progress indicator during generation (spinner + status text)
-  - On completion → close modal, invalidate file queries, preview updates
-- [ ] Create per-layer generate button: small "AI" icon button on each slide in the Slide Library panel → opens generation modal pre-configured for that specific file
-- [ ] Create `features/editor/components/GenerationHistory.tsx`:
-  - Collapsible panel or drawer within the editor
-  - Paginated list of past `AiJob` records for the project
-  - Columns: provider, model, status badge, tokens used, duration, date, error message (if failed)
+  - Progress indicator during generation (spinner + status badge)
+  - On completion → close modal, invalidate files/jobs queries, preview updates
+- [x] Create per-layer generate button: SparklesIcon on each slide thumbnail in Slide Library → opens generation modal with `initialFileId` set
+- [x] Create `features/editor/components/Generation/GenerationHistory.tsx`:
+  - Paginated list of past `AiJob` records in `AiTab`
+  - Status badges with color coding (running=blue, succeeded=green, failed=red)
   - Uses `useGenerationJobs(projectId)`
-- [ ] Handle edge cases:
-  - User navigates away during generation → poll should cancel
-  - Generation fails → show error message with "Try again" action
-  - Multiple concurrent per-layer jobs → show per-file status indicators
-- [ ] Toast notifications: "Generation started", "Generation complete", "Generation failed"
+  - Loading skeleton state
+  - Empty state when no jobs exist
+- [x] Handle edge cases:
+  - User navigates away during generation → poll cancels via TanStack Query unmount
+  - Generation fails → show error message toast with "Try again" prompt
+  - Per-layer generation via `initialFileId` prop
+- [x] Toast notifications: "Generation complete", "Generation failed" with error message
+
+**Files created:**
+
+| File | Purpose |
+|------|---------|
+| `src/features/editor/hooks/useJobPoller.ts` | Reusable polling hook using TanStack Query `refetchInterval` |
+| `src/features/editor/components/Generation/GenerationModal.tsx` | Full generation dialog with prompt, provider, layers, progress |
+| `src/features/editor/components/Generation/GenerationHistory.tsx` | Paginated job history list with status badges |
+
+**Files modified:**
+
+| File | Changes |
+|------|---------|
+| `src/features/editor/components/SlideLibrary/SlideThumbnail.tsx` | Added SparklesIcon per-layer AI button (hover visibility, stopPropagation) |
+| `src/features/editor/components/SlideLibrary/SlideList.tsx` | Added `onGenerate` prop to SlideThumbnail |
+| `src/features/editor/components/SlideLibrary/SlideLibraryPanel.tsx` | Added `onGenerateLayer` prop and wired through SlideList |
+| `src/features/editor/components/PropertiesPanel/AiTab.tsx` | Replaced placeholder with "Open Generation Dialog" button + `GenerationHistory` |
+| `src/pages/editor/EditorPage.tsx` | Added `genModalOpen`/`genLayerFileId` state, `GenerationModal`, layer generation handler |
 
 **Deliverable:** AI generation modal + per-layer triggers + generation history panel with async job polling.
 

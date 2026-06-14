@@ -6,6 +6,7 @@ import { EditorStatusBar } from '@/features/editor/components/EditorStatusBar';
 import { SlideLibraryPanel } from '@/features/editor/components/SlideLibrary/SlideLibraryPanel';
 import { PreviewCanvas } from '@/features/editor/components/Preview/PreviewCanvas';
 import { PropertiesPanel } from '@/features/editor/components/PropertiesPanel/PropertiesPanel';
+import { GenerationModal } from '@/features/editor/components/Generation/GenerationModal';
 import { useEditorStore } from '@/features/editor/hooks/useEditorStore';
 import { ProjectSettingsPanel } from '@/features/projects/components/ProjectSettingsPanel';
 import { useProject } from '@/features/projects/hooks/useProject';
@@ -21,6 +22,18 @@ function EditorContent() {
   const { data: filesData, isLoading: filesLoading } = useProjectFiles(projectId!);
   const { state } = useEditorStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [genModalOpen, setGenModalOpen] = useState(false);
+  const [genLayerFileId, setGenLayerFileId] = useState<Id | null>(null);
+
+  const handleOpenGenerationModal = () => {
+    setGenLayerFileId(null);
+    setGenModalOpen(true);
+  };
+
+  const handleGenerateLayer = (fileId: string) => {
+    setGenLayerFileId(fileId);
+    setGenModalOpen(true);
+  };
 
   if (projectLoading || filesLoading) {
     return <FullPageLoader />;
@@ -42,6 +55,7 @@ function EditorContent() {
   const selectedSlide = allFiles.find((f) => f.id === state.selectedSlideId) ?? null;
   const styleFile = allFiles.find((f) => f.kind === 'style') ?? null;
   const layoutFile = allFiles.find((f) => f.kind === 'layout') ?? null;
+  const contextFile = allFiles.find((f) => f.kind === 'context') ?? null;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -52,6 +66,7 @@ function EditorContent() {
           projectId={projectId as Id}
           slides={slides}
           filesLoading={false}
+          onGenerateLayer={handleGenerateLayer}
         />
 
         <PreviewCanvas
@@ -67,6 +82,7 @@ function EditorContent() {
           styleFile={styleFile}
           layoutFile={layoutFile}
           filesLoading={filesLoading}
+          onOpenGenerationModal={handleOpenGenerationModal}
         />
       </div>
 
@@ -76,6 +92,15 @@ function EditorContent() {
         projectId={projectId as Id}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
+      />
+
+      <GenerationModal
+        projectId={projectId as Id}
+        open={genModalOpen}
+        onOpenChange={setGenModalOpen}
+        fileId={genLayerFileId}
+        contextContent={contextFile?.content}
+        files={allFiles}
       />
     </div>
   );
