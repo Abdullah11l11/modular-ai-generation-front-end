@@ -1,17 +1,21 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { EditorProvider } from '@/features/editor/components/EditorProvider';
 import { EditorToolbar } from '@/features/editor/components/EditorToolbar';
 import { EditorStatusBar } from '@/features/editor/components/EditorStatusBar';
+import { ProjectSettingsPanel } from '@/features/projects/components/ProjectSettingsPanel';
 import { useProject } from '@/features/projects/hooks/useProject';
 import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
 import { FullPageLoader } from '@/components/full-page-loader';
 import { ErrorFallback } from '@/components/error-fallback';
 import { Button } from '@/components/ui/button';
+import type { Id } from '@/types/api';
 
 function EditorContent() {
   const { projectId } = useParams<{ projectId: string }>();
   const { data: project, isLoading: projectLoading, isError: projectError } = useProject(projectId!);
   const { isLoading: filesLoading } = useProjectFiles(projectId!);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   if (projectLoading || filesLoading) {
     return <FullPageLoader />;
@@ -30,13 +34,19 @@ function EditorContent() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <EditorToolbar />
+      <EditorToolbar onOpenSettings={() => setSettingsOpen(true)} />
 
       <div className="flex flex-1 items-center justify-center bg-(--bg)">
         <p className="text-sm text-(--t3)">Select a slide to preview</p>
       </div>
 
       <EditorStatusBar />
+
+      <ProjectSettingsPanel
+        projectId={projectId as Id}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+      />
     </div>
   );
 }

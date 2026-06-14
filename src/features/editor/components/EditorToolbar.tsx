@@ -1,9 +1,14 @@
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeftIcon, SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEditorStore } from '@/features/editor/hooks/useEditorStore';
 import { useProject } from '@/features/projects/hooks/useProject';
 
-export function EditorToolbar() {
+type EditorToolbarProps = {
+  onOpenSettings: () => void;
+};
+
+export function EditorToolbar({ onOpenSettings }: EditorToolbarProps) {
   const navigate = useNavigate();
   const { state } = useEditorStore();
   const { data: project } = useProject(state.projectId);
@@ -16,10 +21,7 @@ export function EditorToolbar() {
         onClick={() => navigate(-1)}
         aria-label="Go back"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 12H5" />
-          <path d="M12 19l-7-7 7-7" />
-        </svg>
+        <ArrowLeftIcon className="size-3.5" />
       </Button>
 
       <span className="max-w-48 truncate text-sm font-semibold text-(--t1)">
@@ -29,6 +31,14 @@ export function EditorToolbar() {
       <div className="ml-auto flex items-center gap-1.5">
         <Button variant="ghost" size="sm">Preview</Button>
         <Button variant="ghost" size="sm">Export</Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={onOpenSettings}
+          aria-label="Project settings"
+        >
+          <SettingsIcon className="size-4" />
+        </Button>
         <Button variant="accent" size="sm">Save</Button>
       </div>
     </div>
