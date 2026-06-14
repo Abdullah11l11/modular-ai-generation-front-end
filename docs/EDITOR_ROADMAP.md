@@ -10,21 +10,39 @@ This roadmap breaks the Editor (the most complex feature in MGF) into 8 phases +
 
 ## Phase 0 — Foundation & Prerequisites
 
+**Status:** ✅ Completed
+
 Before editor-specific work begins, these cross-cutting concerns must be in place:
 
 **Checklist:**
 
-- [ ] Auth token lifecycle works end-to-end:
-  - Token stored in `sessionStorage` (or React context)
-  - Axios interceptor in `client.ts` attaches `Authorization: Bearer <token>` 
-  - `GET /auth/me` called on app mount to rehydrate user
+- [x] Auth token lifecycle works end-to-end:
+  - Token stored in `localStorage` under `mgf.authToken`
+  - Axios interceptor in `client.ts` attaches `Authorization: Bearer <token>`
+  - `GET /auth/me` called on app mount to rehydrate user (via `useMe` query, with `enabled: !!getToken()` to skip when unauthenticated)
   - `useAuth` hook returns `{ user, isAuthenticated, isLoading, token }`
-- [ ] `ProtectedRoute` guards `/editor/projects/:projectId` and redirects to `/login` if no token
-- [ ] Project API hooks working: `useProject(projectId)`, `useUpdateProject()`
-- [ ] Files API hooks working: `useProjectFiles(projectId)`, `useUpdateProjectFile()`, `useCreateProjectFile()`, `useDeleteProjectFile()`
-- [ ] Types API hook working: `useTypes()` (needed for output type catalogue)
-- [ ] All shadcn primitives needed for forms (dialog, dropdown-menu, select, tooltip, form, tabs, textarea) are generated in `src/components/ui/`
-- [ ] `TagInput` shared component built at `src/components/ui/tag-input.tsx`
+- [x] `ProtectedRoute` guards `/editor/projects/:projectId` and redirects to `/login` if no token
+- [x] Project API hooks working: `useProject(projectId)`, `useUpdateProject()`
+- [x] Files API hooks working: `useProjectFiles(projectId)`, `useUpdateProjectFile()`, `useCreateProjectFile()`, `useDeleteProjectFile()`
+- [x] Types API hook working: `useTypes()` (needed for output type catalogue)
+- [x] All shadcn primitives needed for forms (dialog, dropdown-menu, select, tooltip, textarea, tabs, field) are generated in `src/components/ui/`
+- [x] `TagInput` shared component built at `src/components/ui/tag-input.tsx`
+
+**Files created:**
+
+| File | Purpose |
+|------|---------|
+| `src/features/files/hooks/useDeleteProjectFile.ts` | Missing hook wrapping `deleteProjectFile` API |
+
+**Fixes applied:**
+
+| Fix | Details |
+|-----|---------|
+| `src/features/me/hooks/useMe.ts` | Added `enabled: !!getToken()` to prevent firing `GET /auth/me` when no token is stored |
+| `src/features/editor/components/EditorToolbar.tsx` | Resolved merge conflict — merged back button + action buttons (HEAD) with settings gear + lucide icons (incoming) |
+| `src/pages/editor/EditorPage.tsx` | Added `settingsOpen` state, `onOpenSettings` prop, and `ProjectSettingsPanel` integration |
+| `src/routes/router.tsx` | Fixed import from stale `@/features/editor/components/EditorPage` to correct `@/pages/editor/EditorPage` |
+| `src/features/editor/components/EditorPage.tsx` | Deleted stale duplicate in feature components directory |
 
 ---
 
