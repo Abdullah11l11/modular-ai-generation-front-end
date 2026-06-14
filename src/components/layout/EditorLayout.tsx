@@ -16,25 +16,13 @@ export function EditorLayout() {
         <span className="text-sm font-bold tracking-tight">MGF Editor</span>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="w-50 shrink-0 border-r border-(--bor2) bg-(--sur) p-3 overflow-y-auto">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-(--t3)">Slides</div>
-        </aside>
-
-        <main className="flex flex-1 flex-col overflow-hidden">
-          <ErrorBoundary>
-            <Suspense fallback={<FullPageLoader />}>
-              <Outlet />
-            </Suspense>
-          </ErrorBoundary>
-        </main>
-
-        <aside className="w-67.5 shrink-0 border-l border-(--bor2) bg-(--sur) p-3 overflow-y-auto">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-(--t3)">
-            Properties
-          </div>
-        </aside>
-      </div>
+      <main className="flex flex-1 overflow-hidden">
+        <ErrorBoundary>
+          <Suspense fallback={<FullPageLoader />}>
+            <Outlet />
+          </Suspense>
+        </ErrorBoundary>
+      </main>
     </div>
   );
 }

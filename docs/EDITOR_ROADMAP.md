@@ -86,19 +86,36 @@ The 3-column layout already exists in `EditorLayout.tsx` (left: Slides, center: 
 
 ## Phase 2 — Slide Library Panel (Left Sidebar)
 
+**Status:** ✅ Completed
+
 A vertical panel listing slide files (`kind: 'slide'`) as labelled thumbnails. Supports add, delete, and reorder.
 
 **Checklist:**
 
-- [ ] Add `@dnd-kit/core` and `@dnd-kit/sortable` to the project (drag-and-drop library)
-- [ ] Create `features/editor/components/SlideLibrary/SlideThumbnail.tsx` — thumbnail card per slide (file name, mini preview placeholder, active state highlight)
-- [ ] Create `features/editor/components/SlideLibrary/SlideList.tsx` — sortable list using dnd-kit, filtered from `useProjectFiles` where `kind === 'slide'`
-- [ ] Create "Add Slide" button at the top of the panel → calls `useCreateProjectFile` with `{ kind: 'slide', path: 'slide-N.html', content: '' }`
-- [ ] Delete slide action (with confirmation dialog) → calls `deleteProjectFile` (use `useMutation` wrapping `src/features/files/api/deleteProjectFile.ts`)
-- [ ] On click/select a slide → update `selectedSlideId` in editor store
-- [ ] Drag-to-reorder → on drop, batch-update `sort_order` via sequential `useUpdateProjectFile` calls
-- [ ] Add layer visibility toggles at top of panel (STR / STY / CON buttons per `design.md` `.lv-btn`)
-- [ ] Handle empty state: no slides yet → show "Add your first slide" placeholder
+- [x] Add `@dnd-kit/core` and `@dnd-kit/sortable` to the project (drag-and-drop library)
+- [x] Create `features/editor/components/SlideLibrary/SlideThumbnail.tsx` — thumbnail card per slide (file name, mini preview placeholder, active state highlight)
+- [x] Create `features/editor/components/SlideLibrary/SlideList.tsx` — sortable list using dnd-kit, filtered from `useProjectFiles` where `kind === 'slide'`
+- [x] Create "Add Slide" button at the top of the panel → calls `useCreateProjectFile` with `{ kind: 'slide', path: 'slide-N.html', content: '' }`
+- [x] Delete slide action (with confirmation dialog) → calls `deleteProjectFile` (uses `useDeleteProjectFile` hook)
+- [x] On click/select a slide → update `selectedSlideId` in editor store
+- [x] Drag-to-reorder → on drop, batch-update `sort_order` via sequential `useUpdateProjectFile` calls
+- [x] Add layer visibility toggles at bottom of panel (STR / STY / CON buttons per `design.md` `.lv-btn`)
+- [x] Handle empty state: no slides yet → show "Add your first slide" placeholder
+
+**Files created:**
+
+| File | Purpose |
+|------|---------|
+| `src/features/editor/components/SlideLibrary/SlideThumbnail.tsx` | Sortable thumbnail card with drag handle, label, active state |
+| `src/features/editor/components/SlideLibrary/SlideList.tsx` | `DndContext` + `SortableContext` wrapper with drag-end handler |
+| `src/features/editor/components/SlideLibrary/SlideLibraryPanel.tsx` | Composes slide list, add/delete actions, empty state, layer toggles |
+
+**Files modified:**
+
+| File | Changes |
+|------|---------|
+| `src/components/layout/EditorLayout.tsx` | Removed hardcoded sidebar placeholders; editor page now manages the 3-column layout |
+| `src/pages/editor/EditorPage.tsx` | Replaced placeholder center with full 3-column layout: SlideLibraryPanel left, center canvas, Properties placeholder right |
 
 **Deliverable:** Functional slide library with add, delete, drag-reorder, and selection driving the editor context.
 
