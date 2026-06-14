@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useProject } from '@/features/projects/hooks/useProject';
 import { useUpdateProject } from '@/features/projects/hooks/useUpdateProject';
+import { useTypes } from '@/features/types/hooks/useTypes';
 import { Field, FieldLabel, FieldGroup, FieldContent, FieldError, FieldDescription } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,12 +24,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { TagInput } from '@/components/ui/tag-input';
+import { ApiError } from '@/lib/api/client';
+import { toastError } from '@/lib/toast';
 import { Loader2Icon } from 'lucide-react';
 import type { Id } from '@/types/api';
 
 const settingsSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   description: z.string().optional(),
+  type_id: z.string().min(1, 'Type is required'),
   status: z.enum(['draft', 'published', 'archived']),
   visibility: z.enum(['public', 'private', 'unlisted']),
   tags: z.array(z.string()).optional(),
@@ -45,6 +49,7 @@ type ProjectSettingsPanelProps = {
 
 export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectSettingsPanelProps) {
   const { data: project, isLoading: projectLoading } = useProject(projectId);
+  const { data: types, isLoading: typesLoading } = useTypes();
   const updateProject = useUpdateProject();
 
   const {
@@ -53,12 +58,14 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
     setValue,
     watch,
     reset,
+    setError,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       name: '',
       description: '',
+      type_id: '',
       status: 'draft',
       visibility: 'private',
       tags: [],
@@ -71,6 +78,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
       reset({
         name: project.name,
         description: project.description ?? '',
+        type_id: project.type?.id ?? '',
         status: project.status,
         visibility: project.visibility,
         tags: project.tags,
@@ -83,10 +91,25 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
   const currentStatus = watch('status');
 
   const onSubmit = async (data: FormValues) => {
-    await updateProject.mutateAsync(
-      { projectId, payload: { ...data, description: data.description || null } },
-      { onSuccess: () => onOpenChange(false) },
-    );
+    try {
+      await updateProject.mutateAsync(
+        { projectId, payload: { ...data, description: data.description || null } },
+        { onSuccess: () => onOpenChange(false) },
+      );
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 422) {
+        const details = error.details as { errors?: Record<string, string[]> } | null;
+        if (details?.errors) {
+          for (const [field, messages] of Object.entries(details.errors)) {
+            if (messages.length > 0) {
+              setError(field as keyof FormValues, { message: messages[0] });
+            }
+          }
+          return;
+        }
+      }
+      toastError('Failed to save project settings. Please try again.');
+    }
   };
 
   if (projectLoading) {
@@ -137,7 +160,21 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
             <Field>
               <FieldLabel>Type</FieldLabel>
               <FieldContent>
-                <Input value={project.type?.name ?? '—'} disabled className="text-(--t2)" />
+                <Select
+                  value={watch('type_id')}
+                  onValueChange={(v) => setValue('type_id', v)}
+                  disabled={typesLoading}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={typesLoading ? 'Loading types...' : 'Select type'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {types?.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldError errors={errors.type_id && [{ message: errors.type_id.message }]} />
               </FieldContent>
             </Field>
 

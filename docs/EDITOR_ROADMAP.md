@@ -228,21 +228,30 @@ A form-based panel for editing visual CSS properties without writing raw CSS.
 
 ## Phase 5 — Project Settings Panel
 
+**Status:** ✅ Completed
+
 A modal/drawer within the editor for editing project metadata.
 
 **Checklist:**
 
-- [ ] Create `features/editor/components/ProjectSettingsModal.tsx`:
+- [x] Existing `ProjectSettingsPanel` at `features/projects/components/ProjectSettingsPanel.tsx` enhanced:
   - Fields: name, description, status (draft/published/archived), visibility (public/private/unlisted), tags
-  - Type selector populated from `useTypes()`
+  - **Type selector** — replaced disabled `Input` with interactive `Select` populated from `useTypes()` hook
   - Direction toggle (ltr/rtl)
   - Uses `TagInput` shared component
-- [ ] Trigger: gear icon in the editor toolbar opens the modal
-- [ ] On save → calls `useUpdateProject` → invalidates project query → editor reflects new name/description
-- [ ] Handle validation errors from API (422 responses)
-- [ ] Handle loading state on save button
+- [x] **Trigger**: gear icon (`SettingsIcon`) in `EditorToolbar` calls `onOpenSettings` prop → opens the modal
+- [x] **On save** → calls `useUpdateProject.mutateAsync` → `onSuccess` invalidates `['projects']` and `['projects', projectId]` queries → editor reflects new name/description; modal auto-closes
+- [x] **Handle validation errors from API (422)**: `onSubmit` catches `ApiError` with `status === 422`, extracts `details.errors` map, and sets field-level errors via `setError`; non-422 errors show generic toast via `toastError`
+- [x] **Loading state**: spinner in dialog while project data loads; save button `disabled` when submitting or form not dirty; type selector shows "Loading types..." placeholder
 
-**Deliverable:** Project settings accessible from the editor toolbar with full metadata editing.
+**Files modified:**
+
+| File | Changes |
+|------|---------|
+| `src/features/projects/components/ProjectSettingsPanel.tsx` | Added `type_id` to schema; replaced disabled type input with `<Select>` from `useTypes()`; added `setError` for API 422 field errors; added `ApiError`/`toastError` imports; error-to-field mapping in `onSubmit` |
+| `src/features/projects/hooks/useUpdateProject.ts` | Removed `onError` handler (callers now handle errors directly); removed `toastError` import |
+
+**Deliverable:** Project settings modal with type selector, 422 error handling, auto-close on save, and proper loading states.
 
 ---
 
