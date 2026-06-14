@@ -6,9 +6,10 @@ import { useProject } from '@/features/projects/hooks/useProject';
 
 type EditorToolbarProps = {
   onOpenSettings: () => void;
+  onOpenExport: () => void;
 };
 
-export function EditorToolbar({ onOpenSettings }: EditorToolbarProps) {
+export function EditorToolbar({ onOpenSettings, onOpenExport }: EditorToolbarProps) {
   const navigate = useNavigate();
   const { state } = useEditorStore();
   const { data: project } = useProject(state.projectId);
@@ -30,7 +31,7 @@ export function EditorToolbar({ onOpenSettings }: EditorToolbarProps) {
 
       <div className="ml-auto flex items-center gap-1.5">
         <Button variant="ghost" size="sm">Preview</Button>
-        <Button variant="ghost" size="sm">Export</Button>
+        <Button variant="ghost" size="sm" onClick={onOpenExport}>Export</Button>
         <Button
           variant="ghost"
           size="icon-sm"

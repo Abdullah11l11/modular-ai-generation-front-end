@@ -122,11 +122,11 @@ export type AiJob = {
 export type ExportJob = {
   id: Id;
   project_id: Id;
-  status: 'queued' | 'running' | 'ready' | 'failed';
-  format: 'html' | 'pdf' | 'png' | 'jpg' | 'zip' | 'md' | 'pptx';
+  format: 'html' | 'pdf' | 'png' | 'jpg' | 'pptx' | 'zip' | 'md';
+  status: 'pending' | 'processing' | 'ready' | 'failed';
   download_url: string | null;
+  expires_at: string | null;
   created_at: string;
-  updated_at: string;
 };
 
 export type ResourceKind = 'prompt' | 'skill' | 'agent' | 'rule' | 'mcp' | 'design_doc' | 'hook';

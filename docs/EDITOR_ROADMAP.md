@@ -316,25 +316,46 @@ Integrate AI generation into the editor. Both full-project and per-layer generat
 
 ## Phase 7 — Export Dialog
 
+**Status:** ✅ Completed
+
 A modal for exporting the project to various formats.
 
 **Checklist:**
 
-- [ ] Create `features/editor/components/ExportDialog.tsx`:
-  - Format selector: HTML, PDF, PNG, JPG, ZIP, MD (PPTX is v1.1 per PRD)
+- [x] Align `ExportJob` type with OpenAPI spec: `status` enum (`pending`/`processing`/`ready`/`failed`), add `expires_at`, remove `updated_at`
+- [x] Align `ExportRequest` type with OpenAPI spec: typed `ExportOptions` with `page_size`, `width_px`, `height_px`, `quality`, `slides`
+- [x] Create `useExportJobPoller` hook (parallel to `useJobPoller` but for export — checks `ready`/`failed` as terminal)
+- [x] Create `features/editor/components/Export/ExportDialog.tsx`:
+  - Format selector: HTML, PDF, PNG, JPG, ZIP, Markdown
   - Conditional options:
     - Page size (A4, Letter, Custom) for PDF
     - Width/height inputs for custom size or image exports
-    - Quality slider for JPG (1-100)
-    - Slide multi-select for per-slide export
+    - Quality input for JPG (1-100)
   - Export button → calls `useRequestExport`
-  - Progress indicator during processing
-  - On `ready`: show download button with `download_url`
-  - If `download_url` expired (`expires_at`): show "Re-generate" button
-- [ ] Wire export button in editor toolbar → opens ExportDialog
-- [ ] Handle error state: export failed → show error message
-- [ ] Handle loading state: spinner while export is processing
-- [ ] Toast notifications: "Export started", "Export ready for download"
+  - Progress indicator via poller (spinner + status badge)
+  - On `ready`: show download button with `download_url` (opens in new tab)
+  - On `failed`: show error toast with "Try again" prompt
+  - Cancel button to dismiss without exporting
+- [x] Wire export button in editor toolbar → opens ExportDialog
+- [x] Handle error state: export failed → toast error message
+- [x] Handle loading state: spinner + status badge while processing
+- [x] Toast notifications: "Export ready for download", "Export failed"
+
+**Files created:**
+
+| File | Purpose |
+|------|---------|
+| `src/features/editor/hooks/useExportJobPoller.ts` | Export-specific polling hook (stops on ready/failed) |
+| `src/features/editor/components/Export/ExportDialog.tsx` | Full export dialog with format selector, options, progress, download |
+
+**Files modified:**
+
+| File | Changes |
+|------|---------|
+| `src/types/api.ts` | `ExportJob`: status enum fixed to spec, added `expires_at`, removed `updated_at` |
+| `src/features/export/types/exportRequest.ts` | Typed `ExportOptions` interface instead of `Record<string, unknown>` |
+| `src/features/editor/components/EditorToolbar.tsx` | Added `onOpenExport` prop, wired Export button |
+| `src/pages/editor/EditorPage.tsx` | Added `exportOpen` state, `ExportDialog` wiring |
 
 **Deliverable:** Export modal supporting all MVP formats with async job polling.
 
@@ -410,6 +431,7 @@ Phases 2, 3, and 4 can be built in parallel after Phase 1 is complete. Phase 5 d
 | PUT | `/projects/{id}` | 5 | Save project settings |
 | GET | `/projects/{id}/files` | 1,2,3,4 | List all project files |
 | POST | `/projects/{id}/files` | 2 | Add new slide/file |
+| PATCH | `/projects/{id}/files/reorder` | 2 | Reorder slides via ID array |
 | PUT | `/projects/{id}/files/{id}` | 2,4,8 | Update file content/metadata |
 | DELETE | `/projects/{id}/files/{id}` | 2 | Delete slide/file |
 | POST | `/projects/{id}/generate` | 6 | Full project AI generation |

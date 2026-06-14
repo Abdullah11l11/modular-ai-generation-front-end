@@ -7,6 +7,7 @@ import { SlideLibraryPanel } from '@/features/editor/components/SlideLibrary/Sli
 import { PreviewCanvas } from '@/features/editor/components/Preview/PreviewCanvas';
 import { PropertiesPanel } from '@/features/editor/components/PropertiesPanel/PropertiesPanel';
 import { GenerationModal } from '@/features/editor/components/Generation/GenerationModal';
+import { ExportDialog } from '@/features/editor/components/Export/ExportDialog';
 import { useEditorStore } from '@/features/editor/hooks/useEditorStore';
 import { ProjectSettingsPanel } from '@/features/projects/components/ProjectSettingsPanel';
 import { useProject } from '@/features/projects/hooks/useProject';
@@ -24,6 +25,7 @@ function EditorContent() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [genModalOpen, setGenModalOpen] = useState(false);
   const [genLayerFileId, setGenLayerFileId] = useState<Id | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const handleOpenGenerationModal = () => {
     setGenLayerFileId(null);
@@ -59,7 +61,7 @@ function EditorContent() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <EditorToolbar onOpenSettings={() => setSettingsOpen(true)} />
+      <EditorToolbar onOpenSettings={() => setSettingsOpen(true)} onOpenExport={() => setExportOpen(true)} />
 
       <div className="flex flex-1 overflow-hidden">
         <SlideLibraryPanel
@@ -92,6 +94,12 @@ function EditorContent() {
         projectId={projectId as Id}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
+      />
+
+      <ExportDialog
+        projectId={projectId as Id}
+        open={exportOpen}
+        onOpenChange={setExportOpen}
       />
 
       <GenerationModal
