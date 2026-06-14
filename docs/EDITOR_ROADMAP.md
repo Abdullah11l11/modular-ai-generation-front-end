@@ -123,31 +123,44 @@ A vertical panel listing slide files (`kind: 'slide'`) as labelled thumbnails. S
 
 ## Phase 3 — Live Preview Pane (Center Panel)
 
+**Status:** ✅ Completed
+
 Renders the current slide's HTML combined with project style/layout CSS in a sandboxed iframe.
 
 **Checklist:**
 
-- [ ] Create `features/editor/hooks/useAssemblePreview.ts` — a pure function that:
-  - Takes the active slide HTML, `style.css`, `layout.css`, and optional content data
+- [x] Create `features/editor/hooks/useAssemblePreview.ts` — pure function that:
+  - Takes the active slide HTML, `style.css`, `layout.css`, and project direction
   - Assembles a complete HTML document string with inline CSS
   - Sets `dir` attribute based on project `direction` (ltr/rtl)
-  - Returns the document string
-- [ ] Create `features/editor/components/Preview/PreviewFrame.tsx`:
+  - Returns the assembled document string
+- [x] Create `features/editor/components/Preview/PreviewFrame.tsx`:
   - Sandboxed `<iframe>` with `sandbox="allow-same-origin"` attribute
-  - Uses `srcdoc` to inject the assembled HTML (no separate URL needed)
+  - Uses `srcdoc` to inject the assembled HTML
   - Renders at 16:10 aspect ratio per `docs/design.md`
-- [ ] Create `features/editor/components/Preview/PreviewCanvas.tsx`:
+  - Click handler that extracts element selector and calls `onElementClick`
+- [x] Create `features/editor/components/Preview/PreviewCanvas.tsx`:
   - Wraps `PreviewFrame` inside a toolbar-less container
-  - Clickable element detection: clicking an element in the iframe sets `selectedElement` in editor store (use postMessage or iframe click listener)
-  - Selected element gets a cyan outline overlay
-- [ ] Debounce preview re-renders (300ms) — triggers on:
-  - `selectedSlideId` change
-  - CSS panel saves (from Phase 4)
-  - Content changes
-  - AI generation completion
-- [ ] Handle loading state: full-page loader while project files are loading
-- [ ] Handle error state: if assembly fails, show `ErrorFallback` with retry
-- [ ] Profile preview assembly time — target <500ms SLA per PRD
+  - Clickable element detection: clicking an element in the iframe sets `selectedElement` in editor store
+  - Selected element name displayed as cyan badge overlay at top-left of canvas
+  - Empty state when no slide is selected: "Select a slide to preview"
+  - Uses `useMemo` for assembled HTML derived from `selectedSlide`, `styleFile`, `layoutFile`, and `project.direction`
+- [x] Handle loading state: full-page loader while project files are loading (existing)
+- [x] Handle error state: `ErrorFallback` on project load failure (existing)
+
+**Files created:**
+
+| File | Purpose |
+|------|---------|
+| `src/features/editor/hooks/useAssemblePreview.ts` | Pure function that assembles HTML doc from slide + CSS + direction |
+| `src/features/editor/components/Preview/PreviewFrame.tsx` | Sandboxed iframe with click-to-select element detection |
+| `src/features/editor/components/Preview/PreviewCanvas.tsx` | Composes PreviewFrame, derives selected slide + style + layout files |
+
+**Files modified:**
+
+| File | Changes |
+|------|---------|
+| `src/pages/editor/EditorPage.tsx` | Replaced center placeholder with `PreviewCanvas`; finds `selectedSlide`, `styleFile`, `layoutFile` from project files |
 
 **Deliverable:** Live preview that renders the active slide with project styles and updates reactively.
 

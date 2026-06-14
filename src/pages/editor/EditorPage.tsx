@@ -4,6 +4,8 @@ import { EditorProvider } from '@/features/editor/components/EditorProvider';
 import { EditorToolbar } from '@/features/editor/components/EditorToolbar';
 import { EditorStatusBar } from '@/features/editor/components/EditorStatusBar';
 import { SlideLibraryPanel } from '@/features/editor/components/SlideLibrary/SlideLibraryPanel';
+import { PreviewCanvas } from '@/features/editor/components/Preview/PreviewCanvas';
+import { useEditorStore } from '@/features/editor/hooks/useEditorStore';
 import { ProjectSettingsPanel } from '@/features/projects/components/ProjectSettingsPanel';
 import { useProject } from '@/features/projects/hooks/useProject';
 import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
@@ -16,6 +18,7 @@ function EditorContent() {
   const { projectId } = useParams<{ projectId: string }>();
   const { data: project, isLoading: projectLoading, isError: projectError } = useProject(projectId!);
   const { data: filesData, isLoading: filesLoading } = useProjectFiles(projectId!);
+  const { state } = useEditorStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   if (projectLoading || filesLoading) {
@@ -33,7 +36,11 @@ function EditorContent() {
     );
   }
 
-  const slides = (filesData?.data ?? []).filter((f) => f.kind === 'slide');
+  const allFiles = filesData?.data ?? [];
+  const slides = allFiles.filter((f) => f.kind === 'slide');
+  const selectedSlide = allFiles.find((f) => f.id === state.selectedSlideId) ?? null;
+  const styleFile = allFiles.find((f) => f.kind === 'style') ?? null;
+  const layoutFile = allFiles.find((f) => f.kind === 'layout') ?? null;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -46,9 +53,12 @@ function EditorContent() {
           filesLoading={false}
         />
 
-        <div className="flex flex-1 items-center justify-center bg-(--bg)">
-          <p className="text-sm text-(--t3)">Select a slide to preview</p>
-        </div>
+        <PreviewCanvas
+          project={project}
+          selectedSlide={selectedSlide}
+          styleFile={styleFile}
+          layoutFile={layoutFile}
+        />
 
         <aside className="w-67.5 shrink-0 border-l border-(--bor2) bg-(--sur) p-3 overflow-y-auto">
           <div className="text-[11px] font-bold uppercase tracking-wider text-(--t3)">
