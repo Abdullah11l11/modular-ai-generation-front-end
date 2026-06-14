@@ -84,22 +84,26 @@ export type Project = {
 };
 
 export type ProjectFileKind =
-  | 'content'
-  | 'sequence'
   | 'slide'
   | 'style'
   | 'layout'
+  | 'content'
   | 'context'
   | 'rules'
-  | 'meta';
+  | 'meta'
+  | 'asset';
 
 export type ProjectFile = {
   id: Id;
-  owner_type: 'template' | 'project';
-  owner_id: Id;
-  kind: ProjectFileKind;
-  path: string;
-  content: string;
+  template_id: Id | null;
+  project_id: Id | null;
+  layer: ProjectFileKind;
+  name: string;
+  extension: string;
+  sort_order: number;
+  content: string | null;
+  storage_url: string | null;
+  size_bytes: number | null;
   created_at: string;
   updated_at: string;
 };

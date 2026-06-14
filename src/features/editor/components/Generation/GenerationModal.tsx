@@ -40,7 +40,7 @@ type GenerationModalInnerProps = {
   projectId: Id;
   onClose: () => void;
   initialFileId?: Id | null;
-  contextContent?: string;
+  contextContent?: string | null;
   files?: ProjectFile[];
 };
 
@@ -307,7 +307,7 @@ type GenerationModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fileId?: Id | null;
-  contextContent?: string;
+  contextContent?: string | null;
   files?: ProjectFile[];
 };
 

@@ -51,11 +51,11 @@ function EditorContent() {
   }
 
   const allFiles = filesData?.data ?? [];
-  const slides = allFiles.filter((f) => f.kind === 'slide');
+  const slides = allFiles.filter((f) => f.layer === 'slide');
   const selectedSlide = allFiles.find((f) => f.id === state.selectedSlideId) ?? null;
-  const styleFile = allFiles.find((f) => f.kind === 'style') ?? null;
-  const layoutFile = allFiles.find((f) => f.kind === 'layout') ?? null;
-  const contextFile = allFiles.find((f) => f.kind === 'context') ?? null;
+  const styleFile = allFiles.find((f) => f.layer === 'style') ?? null;
+  const layoutFile = allFiles.find((f) => f.layer === 'layout') ?? null;
+  const contextFile = allFiles.find((f) => f.layer === 'context') ?? null;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -99,7 +99,7 @@ function EditorContent() {
         open={genModalOpen}
         onOpenChange={setGenModalOpen}
         fileId={genLayerFileId}
-        contextContent={contextFile?.content}
+        contextContent={contextFile?.content ?? undefined}
         files={allFiles}
       />
     </div>

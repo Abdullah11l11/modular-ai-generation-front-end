@@ -1,3 +1,5 @@
-import type { CreateFileRequest } from '@/features/files/types/createFileRequest';
-
-export type UpdateFileRequest = Partial<CreateFileRequest>;
+export type UpdateFileRequest = {
+  name?: string;
+  content?: string | null;
+  sort_order?: number;
+};

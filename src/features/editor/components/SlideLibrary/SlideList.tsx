@@ -41,7 +41,7 @@ export function SlideList({ slides, selectedSlideId, onSelect, onReorder, onGene
             <SlideThumbnail
               key={slide.id}
               id={slide.id}
-              name={slide.path}
+              name={slide.name}
               isActive={slide.id === selectedSlideId}
               onSelect={() => onSelect(slide.id)}
               onGenerate={onGenerate}

@@ -1,7 +1,9 @@
 import type { ProjectFileKind } from '@/types/api';
 
 export type CreateFileRequest = {
-  kind: ProjectFileKind;
-  path: string;
-  content: string;
+  layer: ProjectFileKind;
+  name: string;
+  extension: string;
+  sort_order?: number;
+  content?: string | null;
 };

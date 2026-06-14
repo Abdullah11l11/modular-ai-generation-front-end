@@ -22,7 +22,7 @@ export const defaultLayerVisibility: LayerVisibility = {
   context: true,
   rules: true,
   meta: true,
-  sequence: true,
+  asset: true,
 };
 
 export type EditorAction =

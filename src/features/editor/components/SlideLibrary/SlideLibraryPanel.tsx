@@ -3,8 +3,8 @@ import { PlusIcon, Trash2Icon } from 'lucide-react';
 import { useEditorStore } from '@/features/editor/hooks/useEditorStore';
 import { SlideList } from '@/features/editor/components/SlideLibrary/SlideList';
 import { useCreateProjectFile } from '@/features/files/hooks/useCreateProjectFile';
-import { useUpdateProjectFile } from '@/features/files/hooks/useUpdateProjectFile';
 import { useDeleteProjectFile } from '@/features/files/hooks/useDeleteProjectFile';
+import { useReorderFiles } from '@/features/files/hooks/useReorderFiles';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -29,21 +29,21 @@ export function SlideLibraryPanel({ projectId, slides, filesLoading, onGenerateL
   const { state, dispatch } = useEditorStore();
   const queryClient = useQueryClient();
   const createFile = useCreateProjectFile();
-  const updateFile = useUpdateProjectFile();
   const deleteFile = useDeleteProjectFile();
+  const reorderFiles = useReorderFiles();
   const [deleteTarget, setDeleteTarget] = useState<Id | null>(null);
 
   const slideCount = slides.length;
   const nextSlideNumber = slideCount > 0
     ? Math.max(...slides.map((s) => {
-        const num = parseInt(s.path.replace(/[^0-9]/g, ''), 10);
+        const num = parseInt(s.name.replace(/[^0-9]/g, ''), 10);
         return isNaN(num) ? 0 : num;
       })) + 1
     : 1;
 
   const handleAddSlide = () => {
     createFile.mutate(
-      { projectId, payload: { kind: 'slide', path: `slide-${nextSlideNumber}.html`, content: '' } },
+      { projectId, payload: { layer: 'slide', name: `slide-${nextSlideNumber}.html`, extension: 'html', content: '' } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'files'] });
@@ -77,9 +77,14 @@ export function SlideLibraryPanel({ projectId, slides, filesLoading, onGenerateL
     const [moved] = reordered.splice(activeIdx, 1);
     reordered.splice(overIdx, 0, moved);
 
-    reordered.forEach((slide, index) => {
-      updateFile.mutate({ projectId, fileId: slide.id, payload: { path: `slide-${index + 1}.html` } });
-    });
+    reorderFiles.mutate(
+      { projectId, order: reordered.map((s) => s.id) },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'files'] });
+        },
+      },
+    );
   };
 
   const handleSelect = (id: string) => {
