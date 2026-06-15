@@ -8,6 +8,7 @@ import { PublicProfilePage } from '@/pages/PublicProfilePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import { EditorPage } from '@/features/editor/components/EditorPage';
+import { TemplatesPage } from '@/pages/templates/TemplatesPage';
 
 export const router = createBrowserRouter([
   {
@@ -30,7 +31,7 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { path: '/', element: <></> },
-      { path: '/templates', element: <></> },
+      { path: '/templates', element: <TemplatesPage /> },
       { path: '/templates/:templateId', element: <></> },
       { path: '/users/:userId', element: <PublicProfilePage /> },
     ],
