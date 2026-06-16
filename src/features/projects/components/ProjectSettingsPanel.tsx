@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useProject } from '@/features/projects/hooks/useProject';
 import { useUpdateProject } from '@/features/projects/hooks/useUpdateProject';
+import {
+  projectSettingsSchema,
+  type ProjectSettingsFormValues,
+} from '@/features/projects/types/projectSettingsSchema';
 import { Field, FieldLabel, FieldGroup, FieldContent, FieldError, FieldDescription } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,17 +29,6 @@ import { TagInput } from '@/components/ui/tag-input';
 import { Loader2Icon } from 'lucide-react';
 import type { Id } from '@/types/api';
 
-const settingsSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
-  description: z.string().optional(),
-  status: z.enum(['draft', 'published', 'archived']),
-  visibility: z.enum(['public', 'private', 'unlisted']),
-  tags: z.array(z.string()).optional(),
-  direction: z.enum(['ltr', 'rtl']),
-});
-
-type FormValues = z.infer<typeof settingsSchema>;
-
 type ProjectSettingsPanelProps = {
   projectId: Id;
   open: boolean;
@@ -54,8 +46,8 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
     watch,
     reset,
     formState: { errors, isDirty, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(settingsSchema),
+  } = useForm<ProjectSettingsFormValues>({
+    resolver: zodResolver(projectSettingsSchema),
     defaultValues: {
       name: '',
       description: '',
@@ -82,7 +74,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
   const tags = watch('tags') ?? [];
   const currentStatus = watch('status');
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: ProjectSettingsFormValues) => {
     await updateProject.mutateAsync(
       { projectId, payload: { ...data, description: data.description || null } },
       { onSuccess: () => onOpenChange(false) },
@@ -161,7 +153,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
               <FieldContent>
                 <Select
                   value={watch('status')}
-                  onValueChange={(v) => setValue('status', v as FormValues['status'])}
+                  onValueChange={(v) => setValue('status', v as ProjectSettingsFormValues['status'])}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -183,7 +175,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
               <FieldContent>
                 <Select
                   value={watch('visibility')}
-                  onValueChange={(v) => setValue('visibility', v as FormValues['visibility'])}
+                  onValueChange={(v) => setValue('visibility', v as ProjectSettingsFormValues['visibility'])}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -202,7 +194,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
               <FieldContent>
                 <Select
                   value={watch('direction')}
-                  onValueChange={(v) => setValue('direction', v as FormValues['direction'])}
+                  onValueChange={(v) => setValue('direction', v as ProjectSettingsFormValues['direction'])}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
