@@ -70,9 +70,10 @@ const LAYER_BUTTONS: { label: string; layer: ProjectFileKind }[] = [
 type SlideLibraryPanelProps = {
   projectId: Id;
   files: ProjectFile[];
+  onGenerateLayer: (stem: string) => void;
 };
 
-export function SlideLibraryPanel({ projectId, files }: SlideLibraryPanelProps) {
+export function SlideLibraryPanel({ projectId, files, onGenerateLayer }: SlideLibraryPanelProps) {
   const queryClient = useQueryClient();
   const { state, dispatch } = useEditorContext();
   const createFile = useCreateProjectFile();
@@ -181,6 +182,7 @@ export function SlideLibraryPanel({ projectId, files }: SlideLibraryPanelProps) 
             onSelectSlide={handleSelectSlide}
             onDeleteSlide={(stem) => setDeleteTarget(stem)}
             onReorder={handleReorder}
+            onGenerateSlide={(stem) => onGenerateLayer(stem)}
             getSlideTitle={getSlideTitle}
           />
         )}

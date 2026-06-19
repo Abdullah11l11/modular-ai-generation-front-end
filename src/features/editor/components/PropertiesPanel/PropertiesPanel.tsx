@@ -12,9 +12,10 @@ type PropertiesPanelProps = {
   projectId: Id;
   files: ProjectFile[];
   filesLoading: boolean;
+  onOpenGeneration: () => void;
 };
 
-export function PropertiesPanel({ projectId, files, filesLoading }: PropertiesPanelProps) {
+export function PropertiesPanel({ projectId, files, filesLoading, onOpenGeneration }: PropertiesPanelProps) {
   const { state, dispatch } = useEditorContext();
 
   const styleFile = useMemo(
@@ -102,7 +103,7 @@ export function PropertiesPanel({ projectId, files, filesLoading }: PropertiesPa
         </TabsContent>
 
         <TabsContent value="ai">
-          <AiTab />
+          <AiTab projectId={projectId} onOpenGeneration={onOpenGeneration} />
         </TabsContent>
       </div>
     </Tabs>

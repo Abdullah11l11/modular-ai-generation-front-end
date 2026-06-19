@@ -30,6 +30,7 @@ type SlideListProps = {
   onSelectSlide: (fileId: string) => void;
   onDeleteSlide: (stem: string) => void;
   onReorder: (stems: string[]) => void;
+  onGenerateSlide: (stem: string) => void;
   getSlideTitle: (group: SlideGroup) => string;
 };
 
@@ -39,6 +40,7 @@ export function SlideList({
   onSelectSlide,
   onDeleteSlide,
   onReorder,
+  onGenerateSlide,
   getSlideTitle,
 }: SlideListProps) {
   const sensors = useSensors(
@@ -75,6 +77,7 @@ export function SlideList({
               isActive={group.slideFile.id === selectedSlideId}
               onSelect={() => onSelectSlide(group.slideFile.id)}
               onDelete={() => onDeleteSlide(group.stem)}
+              onGenerate={() => onGenerateSlide(group.stem)}
             />
           ))}
         </div>

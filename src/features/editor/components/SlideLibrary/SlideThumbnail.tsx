@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVerticalIcon, Trash2Icon } from 'lucide-react';
+import { GripVerticalIcon, SparklesIcon, Trash2Icon } from 'lucide-react';
 
 type SlideThumbnailProps = {
   stem: string;
@@ -8,9 +8,10 @@ type SlideThumbnailProps = {
   isActive: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  onGenerate: () => void;
 };
 
-export function SlideThumbnail({ stem, title, isActive, onSelect, onDelete }: SlideThumbnailProps) {
+export function SlideThumbnail({ stem, title, isActive, onSelect, onDelete, onGenerate }: SlideThumbnailProps) {
   const {
     attributes,
     listeners,
@@ -47,6 +48,14 @@ export function SlideThumbnail({ stem, title, isActive, onSelect, onDelete }: Sl
         <span className="truncate text-xs font-medium text-(--t1)">{title || stem}</span>
         <span className="text-[10px] text-(--t3)">{stem}</span>
       </div>
+
+      <button
+        onClick={(e) => { e.stopPropagation(); onGenerate(); }}
+        className="flex size-5 shrink-0 items-center justify-center rounded-xs text-(--t3) opacity-0 transition-opacity hover:text-(--cy) group-hover:opacity-100"
+        title="Generate for this slide"
+      >
+        <SparklesIcon className="size-3" />
+      </button>
 
       <button
         onClick={(e) => { e.stopPropagation(); onDelete(); }}

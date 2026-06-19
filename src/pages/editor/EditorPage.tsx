@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useProject } from '@/features/projects/hooks/useProject';
 import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
@@ -10,6 +10,7 @@ import { EditorStatusBar } from '@/features/editor/components/EditorStatusBar';
 import { SlideLibraryPanel } from '@/features/editor/components/SlideLibrary/SlideLibraryPanel';
 import { PreviewCanvas } from '@/features/editor/components/Preview/PreviewCanvas';
 import { PropertiesPanel } from '@/features/editor/components/PropertiesPanel/PropertiesPanel';
+import { GenerationModal } from '@/features/editor/components/Generation/GenerationModal';
 import { ErrorFallback } from '@/components/error-fallback';
 import { FullPageLoader } from '@/components/full-page-loader';
 import type { Project, ProjectFile, ProjectFileKind } from '@/types/api';
@@ -17,9 +18,25 @@ import type { Project, ProjectFile, ProjectFileKind } from '@/types/api';
 function EditorShell({ project, files, filesLoading }: { project: Project; files: ProjectFile[]; filesLoading: boolean }) {
   const { state } = useEditorContext();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [genModalOpen, setGenModalOpen] = useState(false);
+  const [genLayerFileId, setGenLayerFileId] = useState<string | undefined>(undefined);
+  const [genLayerStem, setGenLayerStem] = useState<string | undefined>(undefined);
 
   const slideFiles = files.filter((f) => f.layer === 'slide');
   const activeLayers = [...new Set(files.map((f) => f.layer))] as ProjectFileKind[];
+
+  const handleOpenGeneration = useCallback(() => {
+    setGenLayerFileId(undefined);
+    setGenLayerStem(undefined);
+    setGenModalOpen(true);
+  }, []);
+
+  const handleGenerateLayer = useCallback((stem: string) => {
+    const slideFile = files.find((f) => f.name === stem && f.layer === 'slide');
+    setGenLayerFileId(slideFile?.id);
+    setGenLayerStem(stem);
+    setGenModalOpen(true);
+  }, [files]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -28,7 +45,7 @@ function EditorShell({ project, files, filesLoading }: { project: Project; files
 
       <div className="flex flex-1 overflow-hidden">
         <aside className="flex w-64 shrink-0 flex-col border-r border-(--bor2) bg-(--sur)">
-          <SlideLibraryPanel projectId={project.id} files={files} />
+          <SlideLibraryPanel projectId={project.id} files={files} onGenerateLayer={handleGenerateLayer} />
         </aside>
 
         <section className="flex flex-1 overflow-hidden">
@@ -36,7 +53,7 @@ function EditorShell({ project, files, filesLoading }: { project: Project; files
         </section>
 
         <aside className="flex w-72 shrink-0 flex-col border-l border-(--bor2) bg-(--sur)">
-          <PropertiesPanel projectId={project.id} files={files} filesLoading={filesLoading} />
+          <PropertiesPanel projectId={project.id} files={files} filesLoading={filesLoading} onOpenGeneration={handleOpenGeneration} />
         </aside>
       </div>
 
@@ -45,6 +62,15 @@ function EditorShell({ project, files, filesLoading }: { project: Project; files
         totalSlides={slideFiles.length}
         selectedElement={state.selectedElement}
         activeLayers={activeLayers}
+      />
+
+      <GenerationModal
+        projectId={project.id}
+        fileId={genLayerFileId}
+        stem={genLayerStem}
+        files={files}
+        open={genModalOpen}
+        onOpenChange={setGenModalOpen}
       />
     </div>
   );

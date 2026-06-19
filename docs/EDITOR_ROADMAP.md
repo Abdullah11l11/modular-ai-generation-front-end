@@ -247,17 +247,17 @@ A modal/drawer within the editor for editing project metadata. The `ProjectSetti
 
 ## Phase 6 — AI Generation (Full + Per-Layer)
 
-**Status:** ❌ Not started
+**Status:** ✅ Complete
 
 Integrate AI generation into the editor. Both full-project and per-layer generation follow the same async job pattern.
 
 **Checklist:**
 
-- [ ] Create `features/editor/hooks/useJobPoller.ts` — reusable polling hook:
+- [x] Create `features/editor/hooks/useJobPoller.ts` — reusable polling hook:
   - Takes `jobId` and query key
   - Uses TanStack Query's `refetchInterval` (function returns `false` on terminal status)
   - Returns `{ data, isFetching, error }`
-- [ ] Create `features/editor/components/Generation/GenerationModal.tsx`:
+- [x] Create `features/editor/components/Generation/GenerationModal.tsx`:
   - Prompt textarea with placeholder
   - Provider selector dropdown (populated from `useAiProviders()`)
   - If no providers configured → empty state with link to `/settings`
@@ -266,17 +266,17 @@ Integrate AI generation into the editor. Both full-project and per-layer generat
   - Layer checkboxes for per-layer mode
   - Generate button → calls `useGenerateProject` or `useGenerateFile`
   - Progress indicator during generation (spinner + status badge)
-- [ ] Create per-layer generate button: SparklesIcon on each slide thumbnail in Slide Library → opens generation modal with `initialFileId` set
-- [ ] Create `features/editor/components/Generation/GenerationHistory.tsx`:
-  - Paginated list of past `AiJob` records in `AiTab`
+- [x] Create per-layer generate button: SparklesIcon on each slide thumbnail in Slide Library → opens generation modal with `initialFileId` set
+- [x] Create `features/editor/components/Generation/GenerationHistory.tsx`:
+  - List of past `AiJob` records in `AiTab`
   - Status badges with color coding (running=blue, succeeded=green, failed=red)
   - Loading skeleton state
   - Empty state when no jobs exist
-- [ ] Handle edge cases:
+- [x] Handle edge cases:
   - User navigates away during generation → poll cancels via TanStack Query unmount
   - Generation fails → show error message toast with "Try again" prompt
-  - Per-layer generation via `initialFileId` prop
-- [ ] Toast notifications: "Generation complete", "Generation failed" with error message
+  - Per-layer generation via `fileId` prop
+- [x] Toast notifications: "Generation complete", "Generation failed" with error message
 
 **Files to create:**
 
@@ -284,9 +284,9 @@ Integrate AI generation into the editor. Both full-project and per-layer generat
 |------|---------|
 | `src/features/editor/hooks/useJobPoller.ts` | Reusable polling hook using TanStack Query `refetchInterval` |
 | `src/features/editor/components/Generation/GenerationModal.tsx` | Full generation dialog with prompt, provider, layers, progress |
-| `src/features/editor/components/Generation/GenerationHistory.tsx` | Paginated job history list with status badges |
+| `src/features/editor/components/Generation/GenerationHistory.tsx` | Job history list with status badges |
 
-**Files to modify:**
+**Files modified:**
 
 | File | Changes |
 |------|---------|
@@ -294,7 +294,8 @@ Integrate AI generation into the editor. Both full-project and per-layer generat
 | `src/features/editor/components/SlideLibrary/SlideList.tsx` | Add `onGenerate` prop to SlideThumbnail |
 | `src/features/editor/components/SlideLibrary/SlideLibraryPanel.tsx` | Add `onGenerateLayer` prop and wire through SlideList |
 | `src/features/editor/components/PropertiesPanel/AiTab.tsx` | Replace placeholder with "Open Generation Dialog" button + `GenerationHistory` |
-| `src/pages/editor/EditorPage.tsx` | Add `genModalOpen`/`genLayerFileId` state, `GenerationModal`, layer generation handler |
+| `src/features/editor/components/PropertiesPanel/PropertiesPanel.tsx` | Pass `onOpenGeneration` and `projectId` to AiTab |
+| `src/pages/editor/EditorPage.tsx` | Add `genModalOpen`/`genLayerFileId`/`genLayerStem` state, `GenerationModal`, layer generation handler |
 
 **Deliverable:** AI generation modal + per-layer triggers + generation history panel with async job polling.
 
