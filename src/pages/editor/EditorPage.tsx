@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useProject } from '@/features/projects/hooks/useProject';
 import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
+import { ProjectSettingsPanel } from '@/features/projects/components/ProjectSettingsPanel';
 import { EditorProvider } from '@/features/editor/components/EditorProvider';
 import { useEditorContext } from '@/features/editor/hooks/useEditorStore';
 import { EditorToolbar } from '@/features/editor/components/EditorToolbar';
@@ -14,13 +16,15 @@ import type { Project, ProjectFile, ProjectFileKind } from '@/types/api';
 
 function EditorShell({ project, files, filesLoading }: { project: Project; files: ProjectFile[]; filesLoading: boolean }) {
   const { state } = useEditorContext();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const slideFiles = files.filter((f) => f.layer === 'slide');
   const activeLayers = [...new Set(files.map((f) => f.layer))] as ProjectFileKind[];
 
   return (
     <div className="flex flex-1 flex-col">
-      <EditorToolbar projectName={project.name} />
+      <EditorToolbar projectName={project.name} onOpenSettings={() => setSettingsOpen(true)} />
+      <ProjectSettingsPanel projectId={project.id} open={settingsOpen} onOpenChange={setSettingsOpen} />
 
       <div className="flex flex-1 overflow-hidden">
         <aside className="flex w-64 shrink-0 flex-col border-r border-(--bor2) bg-(--sur)">

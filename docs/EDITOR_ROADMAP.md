@@ -225,7 +225,7 @@ A form-based panel for editing visual CSS properties without writing raw CSS.
 
 ## Phase 5 — Project Settings Panel
 
-**Status:** 🟡 Component exists, editor integration not started
+**Status:** ✅ Complete
 
 A modal/drawer within the editor for editing project metadata. The `ProjectSettingsPanel` component at `src/features/projects/components/ProjectSettingsPanel.tsx` already exists with type selector, 422 handling, and TagInput. It needs to be wired into the editor shell.
 
@@ -238,8 +238,8 @@ A modal/drawer within the editor for editing project metadata. The `ProjectSetti
   - Uses `TagInput` shared component
   - 422 validation error handling with field-level `setError`
   - Loading state while data loads
-- [ ] **Trigger**: gear icon (`SettingsIcon`) in `EditorToolbar` calls `onOpenSettings` prop → opens the modal
-- [ ] **On save** → calls `useUpdateProject.mutateAsync` → `onSuccess` invalidates `['projects']` and `['projects', projectId]` queries
+- [x] **Trigger**: gear icon (`SettingsIcon`) in `EditorToolbar` calls `onOpenSettings` prop → opens the modal
+- [x] **On save** → calls `useUpdateProject.mutateAsync` → `onSuccess` invalidates `['projects']` and `['projects', projectId]` queries
 
 **Deliverable:** Project settings modal with type selector, 422 error handling, auto-close on save, and proper loading states.
 

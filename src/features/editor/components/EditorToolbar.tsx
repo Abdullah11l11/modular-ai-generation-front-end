@@ -1,15 +1,16 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeftIcon, EyeIcon, DownloadIcon, SaveIcon } from 'lucide-react';
+import { ArrowLeftIcon, EyeIcon, DownloadIcon, SaveIcon, SettingsIcon } from 'lucide-react';
 
 type EditorToolbarProps = {
   projectName: string;
   onSave?: () => void;
   onExport?: () => void;
   onPreview?: () => void;
+  onOpenSettings?: () => void;
 };
 
-export function EditorToolbar({ projectName, onSave, onExport, onPreview }: EditorToolbarProps) {
+export function EditorToolbar({ projectName, onSave, onExport, onPreview, onOpenSettings }: EditorToolbarProps) {
   const navigate = useNavigate();
 
   return (
@@ -29,6 +30,10 @@ export function EditorToolbar({ projectName, onSave, onExport, onPreview }: Edit
         <Button variant="ghost" size="sm" onClick={onExport}>
           <DownloadIcon className="size-3.5" />
           Export
+        </Button>
+
+        <Button variant="ghost" size="icon" onClick={onOpenSettings}>
+          <SettingsIcon className="size-4" />
         </Button>
 
         <Button variant="accent" size="sm" onClick={onSave}>
