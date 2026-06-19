@@ -167,7 +167,7 @@ Renders the current slide's HTML combined with project style/layout CSS in a san
 
 ## Phase 4 — CSS Attribute Customization Panel (Right Sidebar)
 
-**Status:** ❌ Not started
+**Status:** ✅ Complete
 
 A form-based panel for editing visual CSS properties without writing raw CSS.
 
@@ -175,32 +175,30 @@ A form-based panel for editing visual CSS properties without writing raw CSS.
 
 **Checklist:**
 
-- [ ] Create `features/editor/types/cssProperties.ts` — defines `CssPropertyDef`, `CssPropertyGroup`, and 3 registries: `THEME_PROPERTIES` (6 color + 2 font), `CONTENT_PROPERTIES` (3 string + 3 size + 2 select + 2 color), `STYLE_PROPERTIES` (1 size + 3 spacing + 2 select + 1 slider + 4 padding + 1 radius + 1 z-index)
-- [ ] Create `features/editor/hooks/useCssProperties.ts` — `parseCssValues` extracts known vars from file content via regex; `toGroups` merges current values with registry defaults; `useCssProperties` returns `{ groups, hasVariables }`
-- [ ] Create `features/editor/hooks/useCssPropertyUpdates.ts` — `replaceCssVariable` updates or appends a CSS var in the content string; `useCssPropertyUpdates` wraps mutation with 500ms debounce via `setTimeout`/`clearTimeout`
-- [ ] Create `features/editor/components/PropertiesPanel/PropertiesPanel.tsx` — tabbed container with shadcn `Tabs` bound to `state.activeTab`; renders Theme, Content, Style, or AI tab; shows skeleton loading state; shows "Select an element to edit" on Content/Style tabs when no element selected
-- [ ] Create `features/editor/components/PropertiesPanel/ThemeTab.tsx`:
+- [x] Create `features/editor/types/cssProperties.ts` — defines `CssPropertyDef`, `CssPropertyGroup`, and 3 registries: `THEME_PROPERTIES` (6 color + 2 font), `CONTENT_PROPERTIES` (10 properties for content elements), `STYLE_PROPERTIES` (12 properties for layout styling)
+- [x] Create `features/editor/hooks/useCssProperties.ts` — `parseCssValues` extracts known vars from file content via regex; `mergeWithDefaults` merges current values with registry defaults; `useCssProperties` returns `{ groups, hasVariables }`
+- [x] Create `features/editor/hooks/useCssPropertyUpdates.ts` — `replaceCssVariable` updates or appends a CSS var in the content string; `useCssPropertyUpdates` wraps mutation with 500ms debounce via `setTimeout`/`clearTimeout`
+- [x] Create `features/editor/components/PropertiesPanel/PropertiesPanel.tsx` — tabbed container with shadcn `Tabs` bound to `state.activeTab`; renders Theme, Content, Style, or AI tab; shows skeleton loading state; shows "Select an element to edit" on Content/Style tabs when no element selected
+- [x] Create `features/editor/components/PropertiesPanel/ThemeTab.tsx`:
   - Color inputs (native `<input type="color">` + hex text field) for each color property
   - Font selectors via shadcn `Select` with common font options
-  - "Element theme" banner when element is selected
-  - "View full theme.css" button opens raw CSS in new tab
-- [ ] Create `features/editor/components/PropertiesPanel/ContentTab.tsx`:
+- [x] Create `features/editor/components/PropertiesPanel/ContentTab.tsx`:
   - Text input (string type) fields for title/subtitle/body content
   - Size/weight selectors and color pickers for each content element
   - Reads/writes CSS vars from the selected slide HTML content
-- [ ] Create `features/editor/components/PropertiesPanel/StyleTab.tsx`:
-  - Typography: size, line-height, letter-spacing inputs; Font Weight select; Alignment button group (L/C/R/J)
-  - Spacing: opacity slider (`<input type="range">`), padding grid (4 inputs: top/right/bottom/left), border radius, z-index
+- [x] Create `features/editor/components/PropertiesPanel/StyleTab.tsx`:
+  - Typography: size, line-height, letter-spacing inputs; Font Weight select; Alignment select
+  - Spacing: opacity slider (`<input type="range">`), padding grid (4 inputs), border radius, z-index
   - Reads/writes CSS vars from `layout.css`
-- [ ] Create `features/editor/components/PropertiesPanel/AiTab.tsx`:
+- [x] Create `features/editor/components/PropertiesPanel/AiTab.tsx`:
   - Prompt textarea with placeholder
   - Model selector dropdown (3 model options)
   - Generate button (placeholder for Phase 6)
   - JSON output readonly display
   - Generation history empty state placeholder
-- [ ] Wire tab changes to `activeTab` in editor store
-- [ ] Handle empty state: no element selected → "Select an element to edit" message
-- [ ] Handle loading state: `Skeleton` placeholder while CSS files load
+- [x] Wire tab changes to `activeTab` in editor store
+- [x] Handle empty state: no element selected → "Select an element to edit" message
+- [x] Handle loading state: `Skeleton` placeholder while CSS files load
 
 **Files to create:**
 

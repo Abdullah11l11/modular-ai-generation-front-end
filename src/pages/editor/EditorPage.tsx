@@ -7,11 +7,12 @@ import { EditorToolbar } from '@/features/editor/components/EditorToolbar';
 import { EditorStatusBar } from '@/features/editor/components/EditorStatusBar';
 import { SlideLibraryPanel } from '@/features/editor/components/SlideLibrary/SlideLibraryPanel';
 import { PreviewCanvas } from '@/features/editor/components/Preview/PreviewCanvas';
+import { PropertiesPanel } from '@/features/editor/components/PropertiesPanel/PropertiesPanel';
 import { ErrorFallback } from '@/components/error-fallback';
 import { FullPageLoader } from '@/components/full-page-loader';
 import type { Project, ProjectFile, ProjectFileKind } from '@/types/api';
 
-function EditorShell({ project, files }: { project: Project; files: ProjectFile[] }) {
+function EditorShell({ project, files, filesLoading }: { project: Project; files: ProjectFile[]; filesLoading: boolean }) {
   const { state } = useEditorContext();
 
   const slideFiles = files.filter((f) => f.layer === 'slide');
@@ -31,9 +32,7 @@ function EditorShell({ project, files }: { project: Project; files: ProjectFile[
         </section>
 
         <aside className="flex w-72 shrink-0 flex-col border-l border-(--bor2) bg-(--sur)">
-          <div className="flex flex-1 items-center justify-center text-xs text-(--t3)">
-            Properties Panel
-          </div>
+          <PropertiesPanel projectId={project.id} files={files} filesLoading={filesLoading} />
         </aside>
       </div>
 
@@ -86,7 +85,7 @@ export default function EditorPage() {
 
   return (
     <EditorProvider>
-      <EditorShell project={project} files={files} />
+      <EditorShell project={project} files={files} filesLoading={filesLoading} />
     </EditorProvider>
   );
 }
