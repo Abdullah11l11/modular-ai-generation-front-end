@@ -10,7 +10,7 @@ This roadmap breaks the Editor (the most complex feature in MGF) into 8 phases +
 
 ## Phase 0 — Foundation & Prerequisites
 
-**Status:** ✅ Completed
+**Status:** 🟡 Partially done — infra exists, file model updated
 
 Before editor-specific work begins, these cross-cutting concerns must be in place:
 
@@ -27,36 +27,22 @@ Before editor-specific work begins, these cross-cutting concerns must be in plac
 - [x] Types API hook working: `useTypes()` (needed for output type catalogue)
 - [x] All shadcn primitives needed for forms (dialog, dropdown-menu, select, tooltip, textarea, tabs, field) are generated in `src/components/ui/`
 - [x] `TagInput` shared component built at `src/components/ui/tag-input.tsx`
-
-**Files created:**
-
-| File | Purpose |
-|------|---------|
-| `src/features/files/hooks/useDeleteProjectFile.ts` | Missing hook wrapping `deleteProjectFile` API |
-
-**Fixes applied:**
-
-| Fix | Details |
-|-----|---------|
-| `src/features/me/hooks/useMe.ts` | Added `enabled: !!getToken()` to prevent firing `GET /auth/me` when no token is stored |
-| `src/features/editor/components/EditorToolbar.tsx` | Resolved merge conflict — merged back button + action buttons (HEAD) with settings gear + lucide icons (incoming) |
-| `src/pages/editor/EditorPage.tsx` | Added `settingsOpen` state, `onOpenSettings` prop, and `ProjectSettingsPanel` integration |
-| `src/routes/router.tsx` | Fixed import from stale `@/features/editor/components/EditorPage` to correct `@/pages/editor/EditorPage` |
-| `src/features/editor/components/EditorPage.tsx` | Deleted stale duplicate in feature components directory |
+- [x] `EditorLayout.tsx` shell exists at `src/components/layout/EditorLayout.tsx`
+- [x] **File model updated** — Per-slide files grouped by naming convention `<stem>.<ext>`: `slide-01.html` (layer=slide), `slide-01.css` (layer=style), `slide-01.json` (layer=content). Files with the same stem form one slide. Documented in `docs/openapi_api_contract.yaml`, `docs/FRONTEND_STRUCTURE_GUIDE.md`, and `src/types/api.ts`.
 
 ---
 
 ## Phase 1 — Editor Shell, Context & State Management
 
-**Status:** ✅ Completed
+**Status:** ✅ Complete
 
-The 3-column layout already exists in `EditorLayout.tsx` (left: Slides, center: main, right: Properties). This phase wires it to real data and shared editor state.
+The 3-column layout shell exists in `EditorLayout.tsx` (left: Slides, center: main, right: Properties). This phase wires it to real data and shared editor state. All previous editor code was intentionally deleted to align with the new multi-file slide model.
 
 **Checklist:**
 
 - [x] Create editor context + reducer in `useEditorStore.ts` — holds:
   - `projectId` (from route params)
-  - `selectedSlideId` (currently active slide file ID)
+  - `selectedSlideId` (currently active slide HTML file ID)
   - `selectedElement` (CSS selector or element ID within the preview)
   - `layerVisibility` (all `ProjectFileKind` values: slide, style, layout, content, context, rules, meta, sequence)
   - `activeTab` in right panel (`'theme' | 'content' | 'style' | 'ai'`)
@@ -70,7 +56,7 @@ The 3-column layout already exists in `EditorLayout.tsx` (left: Slides, center: 
 - [x] Create `EditorStatusBar.tsx` with: slide index (from file list), selected element name, active layer labels
 - [x] Build verified: `npm run build` passes
 
-**Files created:**
+**Files to create:**
 
 | File | Purpose |
 |------|---------|
@@ -80,29 +66,43 @@ The 3-column layout already exists in `EditorLayout.tsx` (left: Slides, center: 
 | `src/features/editor/components/EditorStatusBar.tsx` | Bottom bar with slide count, element, layers |
 | `src/pages/editor/EditorPage.tsx` | Route page — loads data, renders shell |
 
+**Files to modify:**
+
+| File | Changes |
+|------|---------|
+| `src/routes/router.tsx` | Replace `element: <></>` with `<EditorPage />` at `/editor/projects/:projectId` |
+
 **Deliverable:** A working 3-column editor shell with project data loaded, slide/properties panels rendered as placeholders, and shared state wired.
 
 ---
 
 ## Phase 2 — Slide Library Panel (Left Sidebar)
 
-**Status:** ✅ Completed
+**Status:** ❌ Not started
 
-A vertical panel listing slide files (`kind: 'slide'`) as labelled thumbnails. Supports add, delete, and reorder.
+A vertical panel listing slides as labelled thumbnails. Each slide is represented by **3 files** sharing the same name stem, differentiated by `layer`:
+
+| `layer`    | Content | Example file |
+|------------|---------|-------------|
+| `slide`    | Slide structure/markup | `slide-01.html` |
+| `style`    | Per-slide styling | `slide-01.css` |
+| `content`  | Content data (title, subtitle, body) | `slide-01.json` |
+
+The frontend groups files by name stem (name without extension) client-side. One thumbnail per stem is shown, with the slide's title read from its JSON file.
 
 **Checklist:**
 
-- [x] Add `@dnd-kit/core` and `@dnd-kit/sortable` to the project (drag-and-drop library)
-- [x] Create `features/editor/components/SlideLibrary/SlideThumbnail.tsx` — thumbnail card per slide (file name, mini preview placeholder, active state highlight)
-- [x] Create `features/editor/components/SlideLibrary/SlideList.tsx` — sortable list using dnd-kit, filtered from `useProjectFiles` where `kind === 'slide'`
-- [x] Create "Add Slide" button at the top of the panel → calls `useCreateProjectFile` with `{ kind: 'slide', path: 'slide-N.html', content: '' }`
-- [x] Delete slide action (with confirmation dialog) → calls `deleteProjectFile` (uses `useDeleteProjectFile` hook)
-- [x] On click/select a slide → update `selectedSlideId` in editor store
-- [x] Drag-to-reorder → on drop, batch-update `sort_order` via sequential `useUpdateProjectFile` calls
-- [x] Add layer visibility toggles at bottom of panel (STR / STY / CON buttons per `design.md` `.lv-btn`)
-- [x] Handle empty state: no slides yet → show "Add your first slide" placeholder
+- [ ] Add `@dnd-kit/core` and `@dnd-kit/sortable` to the project (drag-and-drop library)
+- [ ] Create `features/editor/components/SlideLibrary/SlideThumbnail.tsx` — thumbnail card per slide (reads title from json file, mini preview placeholder, active state highlight)
+- [ ] Create `features/editor/components/SlideLibrary/SlideList.tsx` — sortable list using dnd-kit, groups project files by name stem, shows one thumbnail per group
+- [ ] Create "Add Slide" button at the top of the panel → calls `useCreateProjectFile` three times (once per `layer` — slide, style, content) with the same name stem (e.g. `slide-N`)
+- [ ] Delete slide action (with confirmation dialog) → calls `deleteProjectFile` for all 3 files sharing the same name stem
+- [ ] On click/select a slide → update `selectedSlideId` in editor store (stores the html file ID)
+- [ ] Drag-to-reorder → on drop, batch-update `sort_order` via sequential `useUpdateProjectFile` calls across all 3 files
+- [ ] Add layer visibility toggles at bottom of panel (STR / STY / CON buttons per `design.md` `.lv-btn`)
+- [ ] Handle empty state: no slides yet → show "Add your first slide" placeholder
 
-**Files created:**
+**Files to create:**
 
 | File | Purpose |
 |------|---------|
@@ -110,12 +110,11 @@ A vertical panel listing slide files (`kind: 'slide'`) as labelled thumbnails. S
 | `src/features/editor/components/SlideLibrary/SlideList.tsx` | `DndContext` + `SortableContext` wrapper with drag-end handler |
 | `src/features/editor/components/SlideLibrary/SlideLibraryPanel.tsx` | Composes slide list, add/delete actions, empty state, layer toggles |
 
-**Files modified:**
+**Files to modify:**
 
 | File | Changes |
 |------|---------|
-| `src/components/layout/EditorLayout.tsx` | Removed hardcoded sidebar placeholders; editor page now manages the 3-column layout |
-| `src/pages/editor/EditorPage.tsx` | Replaced placeholder center with full 3-column layout: SlideLibraryPanel left, center canvas, Properties placeholder right |
+| `src/pages/editor/EditorPage.tsx` | Integrate SlideLibraryPanel into left column |
 
 **Deliverable:** Functional slide library with add, delete, drag-reorder, and selection driving the editor context.
 
@@ -123,32 +122,32 @@ A vertical panel listing slide files (`kind: 'slide'`) as labelled thumbnails. S
 
 ## Phase 3 — Live Preview Pane (Center Panel)
 
-**Status:** ✅ Completed
+**Status:** ❌ Not started
 
 Renders the current slide's HTML combined with project style/layout CSS in a sandboxed iframe.
 
 **Checklist:**
 
-- [x] Create `features/editor/hooks/useAssemblePreview.ts` — pure function that:
+- [ ] Create `features/editor/hooks/useAssemblePreview.ts` — pure function that:
   - Takes the active slide HTML, `style.css`, `layout.css`, and project direction
   - Assembles a complete HTML document string with inline CSS
   - Sets `dir` attribute based on project `direction` (ltr/rtl)
   - Returns the assembled document string
-- [x] Create `features/editor/components/Preview/PreviewFrame.tsx`:
+- [ ] Create `features/editor/components/Preview/PreviewFrame.tsx`:
   - Sandboxed `<iframe>` with `sandbox="allow-same-origin"` attribute
   - Uses `srcdoc` to inject the assembled HTML
   - Renders at 16:10 aspect ratio per `docs/design.md`
   - Click handler that extracts element selector and calls `onElementClick`
-- [x] Create `features/editor/components/Preview/PreviewCanvas.tsx`:
+- [ ] Create `features/editor/components/Preview/PreviewCanvas.tsx`:
   - Wraps `PreviewFrame` inside a toolbar-less container
   - Clickable element detection: clicking an element in the iframe sets `selectedElement` in editor store
   - Selected element name displayed as cyan badge overlay at top-left of canvas
   - Empty state when no slide is selected: "Select a slide to preview"
   - Uses `useMemo` for assembled HTML derived from `selectedSlide`, `styleFile`, `layoutFile`, and `project.direction`
-- [x] Handle loading state: full-page loader while project files are loading (existing)
-- [x] Handle error state: `ErrorFallback` on project load failure (existing)
+- [ ] Handle loading state: full-page loader while project files are loading
+- [ ] Handle error state: `ErrorFallback` on project load failure
 
-**Files created:**
+**Files to create:**
 
 | File | Purpose |
 |------|---------|
@@ -156,11 +155,11 @@ Renders the current slide's HTML combined with project style/layout CSS in a san
 | `src/features/editor/components/Preview/PreviewFrame.tsx` | Sandboxed iframe with click-to-select element detection |
 | `src/features/editor/components/Preview/PreviewCanvas.tsx` | Composes PreviewFrame, derives selected slide + style + layout files |
 
-**Files modified:**
+**Files to modify:**
 
 | File | Changes |
 |------|---------|
-| `src/pages/editor/EditorPage.tsx` | Replaced center placeholder with `PreviewCanvas`; finds `selectedSlide`, `styleFile`, `layoutFile` from project files |
+| `src/pages/editor/EditorPage.tsx` | Replace center placeholder with `PreviewCanvas`; find `selectedSlide`, `styleFile`, `layoutFile` from project files grouped by stem |
 
 **Deliverable:** Live preview that renders the active slide with project styles and updates reactively.
 
@@ -168,7 +167,7 @@ Renders the current slide's HTML combined with project style/layout CSS in a san
 
 ## Phase 4 — CSS Attribute Customization Panel (Right Sidebar)
 
-**Status:** ✅ Completed
+**Status:** ❌ Not started
 
 A form-based panel for editing visual CSS properties without writing raw CSS.
 
@@ -176,34 +175,34 @@ A form-based panel for editing visual CSS properties without writing raw CSS.
 
 **Checklist:**
 
-- [x] Create `features/editor/types/cssProperties.ts` — defines `CssPropertyDef`, `CssPropertyGroup`, and 3 registries: `THEME_PROPERTIES` (6 color + 2 font), `CONTENT_PROPERTIES` (3 string + 3 size + 2 select + 2 color), `STYLE_PROPERTIES` (1 size + 3 spacing + 2 select + 1 slider + 4 padding + 1 radius + 1 z-index)
-- [x] Create `features/editor/hooks/useCssProperties.ts` — `parseCssValues` extracts known vars from file content via regex; `toGroups` merges current values with registry defaults; `useCssProperties` returns `{ groups, hasVariables }`
-- [x] Create `features/editor/hooks/useCssPropertyUpdates.ts` — `replaceCssVariable` updates or appends a CSS var in the content string; `useCssPropertyUpdates` wraps mutation with 500ms debounce via `setTimeout`/`clearTimeout`
-- [x] Create `features/editor/components/PropertiesPanel/PropertiesPanel.tsx` — tabbed container with shadcn `Tabs` bound to `state.activeTab`; renders Theme, Content, Style, or AI tab; shows skeleton loading state; shows "Select an element to edit" on Content/Style tabs when no element selected
-- [x] Create `features/editor/components/PropertiesPanel/ThemeTab.tsx`:
+- [ ] Create `features/editor/types/cssProperties.ts` — defines `CssPropertyDef`, `CssPropertyGroup`, and 3 registries: `THEME_PROPERTIES` (6 color + 2 font), `CONTENT_PROPERTIES` (3 string + 3 size + 2 select + 2 color), `STYLE_PROPERTIES` (1 size + 3 spacing + 2 select + 1 slider + 4 padding + 1 radius + 1 z-index)
+- [ ] Create `features/editor/hooks/useCssProperties.ts` — `parseCssValues` extracts known vars from file content via regex; `toGroups` merges current values with registry defaults; `useCssProperties` returns `{ groups, hasVariables }`
+- [ ] Create `features/editor/hooks/useCssPropertyUpdates.ts` — `replaceCssVariable` updates or appends a CSS var in the content string; `useCssPropertyUpdates` wraps mutation with 500ms debounce via `setTimeout`/`clearTimeout`
+- [ ] Create `features/editor/components/PropertiesPanel/PropertiesPanel.tsx` — tabbed container with shadcn `Tabs` bound to `state.activeTab`; renders Theme, Content, Style, or AI tab; shows skeleton loading state; shows "Select an element to edit" on Content/Style tabs when no element selected
+- [ ] Create `features/editor/components/PropertiesPanel/ThemeTab.tsx`:
   - Color inputs (native `<input type="color">` + hex text field) for each color property
   - Font selectors via shadcn `Select` with common font options
   - "Element theme" banner when element is selected
   - "View full theme.css" button opens raw CSS in new tab
-- [x] Create `features/editor/components/PropertiesPanel/ContentTab.tsx`:
+- [ ] Create `features/editor/components/PropertiesPanel/ContentTab.tsx`:
   - Text input (string type) fields for title/subtitle/body content
   - Size/weight selectors and color pickers for each content element
   - Reads/writes CSS vars from the selected slide HTML content
-- [x] Create `features/editor/components/PropertiesPanel/StyleTab.tsx`:
+- [ ] Create `features/editor/components/PropertiesPanel/StyleTab.tsx`:
   - Typography: size, line-height, letter-spacing inputs; Font Weight select; Alignment button group (L/C/R/J)
   - Spacing: opacity slider (`<input type="range">`), padding grid (4 inputs: top/right/bottom/left), border radius, z-index
   - Reads/writes CSS vars from `layout.css`
-- [x] Create `features/editor/components/PropertiesPanel/AiTab.tsx`:
+- [ ] Create `features/editor/components/PropertiesPanel/AiTab.tsx`:
   - Prompt textarea with placeholder
   - Model selector dropdown (3 model options)
-  - Generate button (disabled, placeholder for Phase 6)
+  - Generate button (placeholder for Phase 6)
   - JSON output readonly display
   - Generation history empty state placeholder
-- [x] Wire tab changes to `activeTab` in editor store
-- [x] Handle empty state: no element selected → "Select an element to edit" message
-- [x] Handle loading state: `Skeleton` placeholder while CSS files load
+- [ ] Wire tab changes to `activeTab` in editor store
+- [ ] Handle empty state: no element selected → "Select an element to edit" message
+- [ ] Handle loading state: `Skeleton` placeholder while CSS files load
 
-**Files created:**
+**Files to create:**
 
 | File | Purpose |
 |------|---------|
@@ -216,11 +215,11 @@ A form-based panel for editing visual CSS properties without writing raw CSS.
 | `src/features/editor/components/PropertiesPanel/StyleTab.tsx` | Style tab with typography controls, opacity slider, padding grid |
 | `src/features/editor/components/PropertiesPanel/AiTab.tsx` | AI tab with prompt, model selector, generate, JSON output, history |
 
-**Files modified:**
+**Files to modify:**
 
 | File | Changes |
 |------|---------|
-| `src/pages/editor/EditorPage.tsx` | Replaced placeholder `<aside>` with `<PropertiesPanel>` passing `projectId`, `selectedSlide`, `styleFile`, `layoutFile`, `filesLoading` |
+| `src/pages/editor/EditorPage.tsx` | Replace placeholder right column with `<PropertiesPanel>` passing `projectId`, `selectedSlide`, `styleFile`, `layoutFile`, `filesLoading` |
 
 **Deliverable:** Functional CSS customization panel with four tabs, debounced writes to backend, and loading/empty states.
 
@@ -228,28 +227,21 @@ A form-based panel for editing visual CSS properties without writing raw CSS.
 
 ## Phase 5 — Project Settings Panel
 
-**Status:** ✅ Completed
+**Status:** 🟡 Component exists, editor integration not started
 
-A modal/drawer within the editor for editing project metadata.
+A modal/drawer within the editor for editing project metadata. The `ProjectSettingsPanel` component at `src/features/projects/components/ProjectSettingsPanel.tsx` already exists with type selector, 422 handling, and TagInput. It needs to be wired into the editor shell.
 
 **Checklist:**
 
 - [x] Existing `ProjectSettingsPanel` at `features/projects/components/ProjectSettingsPanel.tsx` enhanced:
   - Fields: name, description, status (draft/published/archived), visibility (public/private/unlisted), tags
-  - **Type selector** — replaced disabled `Input` with interactive `Select` populated from `useTypes()` hook
+  - **Type selector** — interactive `Select` populated from `useTypes()` hook
   - Direction toggle (ltr/rtl)
   - Uses `TagInput` shared component
-- [x] **Trigger**: gear icon (`SettingsIcon`) in `EditorToolbar` calls `onOpenSettings` prop → opens the modal
-- [x] **On save** → calls `useUpdateProject.mutateAsync` → `onSuccess` invalidates `['projects']` and `['projects', projectId]` queries → editor reflects new name/description; modal auto-closes
-- [x] **Handle validation errors from API (422)**: `onSubmit` catches `ApiError` with `status === 422`, extracts `details.errors` map, and sets field-level errors via `setError`; non-422 errors show generic toast via `toastError`
-- [x] **Loading state**: spinner in dialog while project data loads; save button `disabled` when submitting or form not dirty; type selector shows "Loading types..." placeholder
-
-**Files modified:**
-
-| File | Changes |
-|------|---------|
-| `src/features/projects/components/ProjectSettingsPanel.tsx` | Added `type_id` to schema; replaced disabled type input with `<Select>` from `useTypes()`; added `setError` for API 422 field errors; added `ApiError`/`toastError` imports; error-to-field mapping in `onSubmit` |
-| `src/features/projects/hooks/useUpdateProject.ts` | Removed `onError` handler (callers now handle errors directly); removed `toastError` import |
+  - 422 validation error handling with field-level `setError`
+  - Loading state while data loads
+- [ ] **Trigger**: gear icon (`SettingsIcon`) in `EditorToolbar` calls `onOpenSettings` prop → opens the modal
+- [ ] **On save** → calls `useUpdateProject.mutateAsync` → `onSuccess` invalidates `['projects']` and `['projects', projectId]` queries
 
 **Deliverable:** Project settings modal with type selector, 422 error handling, auto-close on save, and proper loading states.
 
@@ -257,19 +249,17 @@ A modal/drawer within the editor for editing project metadata.
 
 ## Phase 6 — AI Generation (Full + Per-Layer)
 
-**Status:** ✅ Completed
+**Status:** ❌ Not started
 
 Integrate AI generation into the editor. Both full-project and per-layer generation follow the same async job pattern.
 
 **Checklist:**
 
-- [x] Create `features/editor/hooks/useJobPoller.ts` — reusable polling hook:
+- [ ] Create `features/editor/hooks/useJobPoller.ts` — reusable polling hook:
   - Takes `jobId` and query key
   - Uses TanStack Query's `refetchInterval` (function returns `false` on terminal status)
   - Returns `{ data, isFetching, error }`
-  - On `succeeded`/`failed`: terminal status stops polling
-  - Cleans up polling on unmount automatically via TanStack Query
-- [x] Create `features/editor/components/Generation/GenerationModal.tsx`:
+- [ ] Create `features/editor/components/Generation/GenerationModal.tsx`:
   - Prompt textarea with placeholder
   - Provider selector dropdown (populated from `useAiProviders()`)
   - If no providers configured → empty state with link to `/settings`
@@ -278,21 +268,19 @@ Integrate AI generation into the editor. Both full-project and per-layer generat
   - Layer checkboxes for per-layer mode
   - Generate button → calls `useGenerateProject` or `useGenerateFile`
   - Progress indicator during generation (spinner + status badge)
-  - On completion → close modal, invalidate files/jobs queries, preview updates
-- [x] Create per-layer generate button: SparklesIcon on each slide thumbnail in Slide Library → opens generation modal with `initialFileId` set
-- [x] Create `features/editor/components/Generation/GenerationHistory.tsx`:
+- [ ] Create per-layer generate button: SparklesIcon on each slide thumbnail in Slide Library → opens generation modal with `initialFileId` set
+- [ ] Create `features/editor/components/Generation/GenerationHistory.tsx`:
   - Paginated list of past `AiJob` records in `AiTab`
   - Status badges with color coding (running=blue, succeeded=green, failed=red)
-  - Uses `useGenerationJobs(projectId)`
   - Loading skeleton state
   - Empty state when no jobs exist
-- [x] Handle edge cases:
+- [ ] Handle edge cases:
   - User navigates away during generation → poll cancels via TanStack Query unmount
   - Generation fails → show error message toast with "Try again" prompt
   - Per-layer generation via `initialFileId` prop
-- [x] Toast notifications: "Generation complete", "Generation failed" with error message
+- [ ] Toast notifications: "Generation complete", "Generation failed" with error message
 
-**Files created:**
+**Files to create:**
 
 | File | Purpose |
 |------|---------|
@@ -300,15 +288,15 @@ Integrate AI generation into the editor. Both full-project and per-layer generat
 | `src/features/editor/components/Generation/GenerationModal.tsx` | Full generation dialog with prompt, provider, layers, progress |
 | `src/features/editor/components/Generation/GenerationHistory.tsx` | Paginated job history list with status badges |
 
-**Files modified:**
+**Files to modify:**
 
 | File | Changes |
 |------|---------|
-| `src/features/editor/components/SlideLibrary/SlideThumbnail.tsx` | Added SparklesIcon per-layer AI button (hover visibility, stopPropagation) |
-| `src/features/editor/components/SlideLibrary/SlideList.tsx` | Added `onGenerate` prop to SlideThumbnail |
-| `src/features/editor/components/SlideLibrary/SlideLibraryPanel.tsx` | Added `onGenerateLayer` prop and wired through SlideList |
-| `src/features/editor/components/PropertiesPanel/AiTab.tsx` | Replaced placeholder with "Open Generation Dialog" button + `GenerationHistory` |
-| `src/pages/editor/EditorPage.tsx` | Added `genModalOpen`/`genLayerFileId` state, `GenerationModal`, layer generation handler |
+| `src/features/editor/components/SlideLibrary/SlideThumbnail.tsx` | Add SparklesIcon per-layer AI button |
+| `src/features/editor/components/SlideLibrary/SlideList.tsx` | Add `onGenerate` prop to SlideThumbnail |
+| `src/features/editor/components/SlideLibrary/SlideLibraryPanel.tsx` | Add `onGenerateLayer` prop and wire through SlideList |
+| `src/features/editor/components/PropertiesPanel/AiTab.tsx` | Replace placeholder with "Open Generation Dialog" button + `GenerationHistory` |
+| `src/pages/editor/EditorPage.tsx` | Add `genModalOpen`/`genLayerFileId` state, `GenerationModal`, layer generation handler |
 
 **Deliverable:** AI generation modal + per-layer triggers + generation history panel with async job polling.
 
@@ -316,16 +304,16 @@ Integrate AI generation into the editor. Both full-project and per-layer generat
 
 ## Phase 7 — Export Dialog
 
-**Status:** ✅ Completed
+**Status:** ❌ Not started
 
 A modal for exporting the project to various formats.
 
 **Checklist:**
 
-- [x] Align `ExportJob` type with OpenAPI spec: `status` enum (`pending`/`processing`/`ready`/`failed`), add `expires_at`, remove `updated_at`
-- [x] Align `ExportRequest` type with OpenAPI spec: typed `ExportOptions` with `page_size`, `width_px`, `height_px`, `quality`, `slides`
-- [x] Create `useExportJobPoller` hook (parallel to `useJobPoller` but for export — checks `ready`/`failed` as terminal)
-- [x] Create `features/editor/components/Export/ExportDialog.tsx`:
+- [x] `ExportJob` type aligned with OpenAPI spec (`src/types/api.ts`)
+- [x] `ExportRequest` type aligned with OpenAPI spec (`src/features/export/types/exportRequest.ts`)
+- [ ] Create `useExportJobPoller` hook (parallel to `useJobPoller` but for export — checks `ready`/`failed` as terminal)
+- [ ] Create `features/editor/components/Export/ExportDialog.tsx`:
   - Format selector: HTML, PDF, PNG, JPG, ZIP, Markdown
   - Conditional options:
     - Page size (A4, Letter, Custom) for PDF
@@ -336,26 +324,24 @@ A modal for exporting the project to various formats.
   - On `ready`: show download button with `download_url` (opens in new tab)
   - On `failed`: show error toast with "Try again" prompt
   - Cancel button to dismiss without exporting
-- [x] Wire export button in editor toolbar → opens ExportDialog
-- [x] Handle error state: export failed → toast error message
-- [x] Handle loading state: spinner + status badge while processing
-- [x] Toast notifications: "Export ready for download", "Export failed"
+- [ ] Wire export button in editor toolbar → opens ExportDialog
+- [ ] Handle error state: export failed → toast error message
+- [ ] Handle loading state: spinner + status badge while processing
+- [ ] Toast notifications: "Export ready for download", "Export failed"
 
-**Files created:**
+**Files to create:**
 
 | File | Purpose |
 |------|---------|
 | `src/features/editor/hooks/useExportJobPoller.ts` | Export-specific polling hook (stops on ready/failed) |
 | `src/features/editor/components/Export/ExportDialog.tsx` | Full export dialog with format selector, options, progress, download |
 
-**Files modified:**
+**Files to modify:**
 
 | File | Changes |
 |------|---------|
-| `src/types/api.ts` | `ExportJob`: status enum fixed to spec, added `expires_at`, removed `updated_at` |
-| `src/features/export/types/exportRequest.ts` | Typed `ExportOptions` interface instead of `Record<string, unknown>` |
-| `src/features/editor/components/EditorToolbar.tsx` | Added `onOpenExport` prop, wired Export button |
-| `src/pages/editor/EditorPage.tsx` | Added `exportOpen` state, `ExportDialog` wiring |
+| `src/features/editor/components/EditorToolbar.tsx` | Add `onOpenExport` prop, wire Export button |
+| `src/pages/editor/EditorPage.tsx` | Add `exportOpen` state, `ExportDialog` wiring |
 
 **Deliverable:** Export modal supporting all MVP formats with async job polling.
 

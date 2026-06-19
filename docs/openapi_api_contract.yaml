@@ -327,7 +327,7 @@ components:
         template_id:  { type: string, format: uuid, nullable: true }
         project_id:   { type: string, format: uuid, nullable: true }
         layer:        { type: string, enum: [slide, style, layout, content, context, rules, meta, asset] }
-        name:         { type: string, example: "slide-01.html" }
+        name:         { type: string, example: "slide-01.html", description: "Per-slide files share a stem: slide-01.html (layer=slide), slide-01.css (layer=style), slide-01.json (layer=content). The frontend groups by stem." }
         extension:    { type: string, example: "html" }
         sort_order:   { type: integer }
         content:      { type: string, nullable: true, description: "File body (DB-stored, <~100KB)" }
@@ -341,7 +341,7 @@ components:
       required: [layer, name, extension]
       properties:
         layer:      { type: string, enum: [slide, style, layout, content, context, rules, meta, asset] }
-        name:       { type: string, example: "slide-02.html" }
+        name:       { type: string, example: "slide-01.html", description: "Per-slide files follow <stem>.<ext>. The stem groups them: slide-01.html (layer=slide), slide-01.css (layer=style), slide-01.json (layer=content)." }
         extension:  { type: string, example: "html" }
         sort_order: { type: integer, default: 0 }
         content:    { type: string, nullable: true }
