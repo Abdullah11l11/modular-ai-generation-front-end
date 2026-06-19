@@ -78,7 +78,7 @@ The 3-column layout shell exists in `EditorLayout.tsx` (left: Slides, center: ma
 
 ## Phase 2 — Slide Library Panel (Left Sidebar)
 
-**Status:** ❌ Not started
+**Status:** ✅ Complete
 
 A vertical panel listing slides as labelled thumbnails. Each slide is represented by **3 files** sharing the same name stem, differentiated by `layer`:
 
@@ -92,15 +92,15 @@ The frontend groups files by name stem (name without extension) client-side. One
 
 **Checklist:**
 
-- [ ] Add `@dnd-kit/core` and `@dnd-kit/sortable` to the project (drag-and-drop library)
-- [ ] Create `features/editor/components/SlideLibrary/SlideThumbnail.tsx` — thumbnail card per slide (reads title from json file, mini preview placeholder, active state highlight)
-- [ ] Create `features/editor/components/SlideLibrary/SlideList.tsx` — sortable list using dnd-kit, groups project files by name stem, shows one thumbnail per group
-- [ ] Create "Add Slide" button at the top of the panel → calls `useCreateProjectFile` three times (once per `layer` — slide, style, content) with the same name stem (e.g. `slide-N`)
-- [ ] Delete slide action (with confirmation dialog) → calls `deleteProjectFile` for all 3 files sharing the same name stem
-- [ ] On click/select a slide → update `selectedSlideId` in editor store (stores the html file ID)
-- [ ] Drag-to-reorder → on drop, batch-update `sort_order` via sequential `useUpdateProjectFile` calls across all 3 files
-- [ ] Add layer visibility toggles at bottom of panel (STR / STY / CON buttons per `design.md` `.lv-btn`)
-- [ ] Handle empty state: no slides yet → show "Add your first slide" placeholder
+- [x] Add `@dnd-kit/core` and `@dnd-kit/sortable` to the project (drag-and-drop library)
+- [x] Create `features/editor/components/SlideLibrary/SlideThumbnail.tsx` — thumbnail card per slide (reads title from json file, mini preview placeholder, active state highlight)
+- [x] Create `features/editor/components/SlideLibrary/SlideList.tsx` — sortable list using dnd-kit, groups project files by name stem, shows one thumbnail per group
+- [x] Create "Add Slide" button at the top of the panel → calls `useCreateProjectFile` three times (once per `layer` — slide, style, content) with the same name stem (e.g. `slide-N`)
+- [x] Delete slide action (with confirmation dialog) → calls `deleteProjectFile` for all 3 files sharing the same name stem
+- [x] On click/select a slide → update `selectedSlideId` in editor store (stores the html file ID)
+- [x] Drag-to-reorder → on drop, batch-update `sort_order` via sequential `useUpdateProjectFile` calls across all 3 files
+- [x] Add layer visibility toggles at bottom of panel (STR / STY / CON buttons per `design.md` `.lv-btn`)
+- [x] Handle empty state: no slides yet → show "Add your first slide" placeholder
 
 **Files to create:**
 

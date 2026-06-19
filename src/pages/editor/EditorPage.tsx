@@ -4,6 +4,7 @@ import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
 import { EditorProvider } from '@/features/editor/components/EditorProvider';
 import { EditorToolbar } from '@/features/editor/components/EditorToolbar';
 import { EditorStatusBar } from '@/features/editor/components/EditorStatusBar';
+import { SlideLibraryPanel } from '@/features/editor/components/SlideLibrary/SlideLibraryPanel';
 import { ErrorFallback } from '@/components/error-fallback';
 import { FullPageLoader } from '@/components/full-page-loader';
 import type { ProjectFileKind } from '@/types/api';
@@ -54,9 +55,7 @@ export default function EditorPage() {
 
         <div className="flex flex-1 overflow-hidden">
           <aside className="flex w-64 shrink-0 flex-col border-r border-(--bor2) bg-(--sur)">
-            <div className="flex flex-1 items-center justify-center text-xs text-(--t3)">
-              Slide Library
-            </div>
+            <SlideLibraryPanel projectId={projectId} files={files} />
           </aside>
 
           <section className="flex flex-1 items-center justify-center text-xs text-(--t3)">
