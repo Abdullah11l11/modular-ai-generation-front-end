@@ -122,30 +122,30 @@ The frontend groups files by name stem (name without extension) client-side. One
 
 ## Phase 3 — Live Preview Pane (Center Panel)
 
-**Status:** ❌ Not started
+**Status:** ✅ Complete
 
 Renders the current slide's HTML combined with project style/layout CSS in a sandboxed iframe.
 
 **Checklist:**
 
-- [ ] Create `features/editor/hooks/useAssemblePreview.ts` — pure function that:
+- [x] Create `features/editor/hooks/useAssemblePreview.ts` — pure function that:
   - Takes the active slide HTML, `style.css`, `layout.css`, and project direction
   - Assembles a complete HTML document string with inline CSS
   - Sets `dir` attribute based on project `direction` (ltr/rtl)
   - Returns the assembled document string
-- [ ] Create `features/editor/components/Preview/PreviewFrame.tsx`:
+- [x] Create `features/editor/components/Preview/PreviewFrame.tsx`:
   - Sandboxed `<iframe>` with `sandbox="allow-same-origin"` attribute
   - Uses `srcdoc` to inject the assembled HTML
   - Renders at 16:10 aspect ratio per `docs/design.md`
   - Click handler that extracts element selector and calls `onElementClick`
-- [ ] Create `features/editor/components/Preview/PreviewCanvas.tsx`:
+- [x] Create `features/editor/components/Preview/PreviewCanvas.tsx`:
   - Wraps `PreviewFrame` inside a toolbar-less container
   - Clickable element detection: clicking an element in the iframe sets `selectedElement` in editor store
   - Selected element name displayed as cyan badge overlay at top-left of canvas
   - Empty state when no slide is selected: "Select a slide to preview"
   - Uses `useMemo` for assembled HTML derived from `selectedSlide`, `styleFile`, `layoutFile`, and `project.direction`
-- [ ] Handle loading state: full-page loader while project files are loading
-- [ ] Handle error state: `ErrorFallback` on project load failure
+- [x] Handle loading state: full-page loader while project files are loading
+- [x] Handle error state: `ErrorFallback` on project load failure
 
 **Files to create:**
 
