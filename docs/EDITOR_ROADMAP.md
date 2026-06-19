@@ -10,7 +10,7 @@ This roadmap breaks the Editor (the most complex feature in MGF) into 8 phases +
 
 ## Phase 0 — Foundation & Prerequisites
 
-**Status:** 🟡 Partially done — infra exists, file model updated
+**Status:** ✅ Complete
 
 Before editor-specific work begins, these cross-cutting concerns must be in place:
 
