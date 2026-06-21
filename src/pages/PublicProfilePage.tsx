@@ -1,38 +1,45 @@
-import type { User } from '@/types/api';
+import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import { UserProfileHeader } from '@/features/users/components/UserProfileHeader';
+import { useUserProjects } from '@/features/users/hooks/useUserProjects';
+import { useUserTemplates } from '@/features/users/hooks/useUserTemplates';
 import { UserTemplatesGrid } from '@/features/users/components/UserTemplatesGrid';
 import { UserProjectsGrid } from '@/features/users/components/UserProjectsGrid';
 import { useParams } from 'react-router-dom';
-const MOCK_USER: User = {
-  id: '1',
-  name: 'Sara Ali',
-  email: 'saraali@gmail.com',
-  role: 'user',
-  profile: {
-    bio: 'Frontend Developer & UI/UX ',
-    avatar_url:
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjN8fGF2YXRhcnxlbnwwfHwwfHx8MA%3D%3D',
-    website: 'https://ayamgf.dev',
-    location: 'Aman ,Jorban',
-  },
-  created_at: '2026-01-15T10:30:00Z',
-};
+import { useUser } from '@/features/users/hooks/useUser';
+
 export function PublicProfilePage() {
   const { userId } = useParams<{ userId: string }>();
+  const { data: templatesData } = useUserTemplates(userId as string);
+  const { data: projectsData } = useUserProjects(userId as string);
+  const { data: user, isLoading, error } = useUser(userId as string);
+  if (isLoading)
+    return (
+      <div className="mx-auto max-w-4xl p-6">
+        <Skeleton className="h-32 w-full rounded-xl" />
+      </div>
+    );
+  if (error || !user) return <p className="p-6 text-red-600">Failed to load user</p>;
+
   return (
     <div className="mx-auto max-w-4xl p-6">
-      <UserProfileHeader user={MOCK_USER} templatesCount={2} resourcesCount={1} upvotesCount={20} />
+      <UserProfileHeader
+        user={user}
+        templatesCount={templatesData?.meta.total}
+        projectsCount={projectsData?.meta.total}
+        upvotesCount={20}
+      />
       <Tabs defaultValue="templates">
         <TabsList>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
         </TabsList>
         <TabsContent value="templates">
-          <UserTemplatesGrid userId={userId!}></UserTemplatesGrid>
+          <UserTemplatesGrid userId={userId! as string}></UserTemplatesGrid>
         </TabsContent>
         <TabsContent value="projects">
-          <UserProjectsGrid userId={userId!}></UserProjectsGrid>
+          <UserProjectsGrid userId={userId! as string}></UserProjectsGrid>
         </TabsContent>
       </Tabs>
     </div>
