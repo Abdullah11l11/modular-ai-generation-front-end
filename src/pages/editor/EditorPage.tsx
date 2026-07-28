@@ -21,9 +21,14 @@ function EditorShell({ project, files, filesLoading }: { project: Project; files
   const [genModalOpen, setGenModalOpen] = useState(false);
   const [genLayerFileId, setGenLayerFileId] = useState<string | undefined>(undefined);
   const [genLayerStem, setGenLayerStem] = useState<string | undefined>(undefined);
+  const [saveVersion, setSaveVersion] = useState(0);
 
   const slideFiles = files.filter((f) => f.layer === 'slide');
   const activeLayers = [...new Set(files.map((f) => f.layer))] as ProjectFileKind[];
+
+  const handleSave = useCallback(() => {
+    setSaveVersion((v) => v + 1);
+  }, []);
 
   const handleOpenGeneration = useCallback(() => {
     setGenLayerFileId(undefined);
@@ -40,7 +45,7 @@ function EditorShell({ project, files, filesLoading }: { project: Project; files
 
   return (
     <div className="flex flex-1 flex-col">
-      <EditorToolbar projectName={project.name} onOpenSettings={() => setSettingsOpen(true)} />
+      <EditorToolbar projectName={project.name} onSave={handleSave} onOpenSettings={() => setSettingsOpen(true)} />
       <ProjectSettingsPanel projectId={project.id} open={settingsOpen} onOpenChange={setSettingsOpen} />
 
       <div className="flex flex-1 overflow-hidden">
@@ -53,7 +58,7 @@ function EditorShell({ project, files, filesLoading }: { project: Project; files
         </section>
 
         <aside className="flex w-72 shrink-0 flex-col border-l border-(--bor2) bg-(--sur)">
-          <PropertiesPanel projectId={project.id} files={files} filesLoading={filesLoading} onOpenGeneration={handleOpenGeneration} />
+          <PropertiesPanel projectId={project.id} files={files} filesLoading={filesLoading} onOpenGeneration={handleOpenGeneration} saveVersion={saveVersion} />
         </aside>
       </div>
 

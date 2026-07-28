@@ -13,9 +13,10 @@ type PropertiesPanelProps = {
   files: ProjectFile[];
   filesLoading: boolean;
   onOpenGeneration: () => void;
+  saveVersion: number;
 };
 
-export function PropertiesPanel({ projectId, files, filesLoading, onOpenGeneration }: PropertiesPanelProps) {
+export function PropertiesPanel({ projectId, files, filesLoading, onOpenGeneration, saveVersion }: PropertiesPanelProps) {
   const { state, dispatch } = useEditorContext();
 
   const styleFile = useMemo(
@@ -37,6 +38,15 @@ export function PropertiesPanel({ projectId, files, filesLoading, onOpenGenerati
     () => (selectedSlide
       ? files.find(
           (f) => f.layer === 'content' && f.name === selectedSlide.name && f.extension === 'json',
+        ) ?? null
+      : null),
+    [selectedSlide, files],
+  );
+
+  const slideStyleFile = useMemo(
+    () => (selectedSlide
+      ? files.find(
+          (f) => f.layer === 'style' && f.name === selectedSlide.name && f.extension === 'css',
         ) ?? null
       : null),
     [selectedSlide, files],
@@ -86,8 +96,9 @@ export function PropertiesPanel({ projectId, files, filesLoading, onOpenGenerati
           ) : (
             <ContentTab
               projectId={projectId}
-              slideHtmlFile={selectedSlide}
               slideContentFile={slideContentFile}
+              slideStyleFile={slideStyleFile}
+              saveVersion={saveVersion}
             />
           )}
         </TabsContent>

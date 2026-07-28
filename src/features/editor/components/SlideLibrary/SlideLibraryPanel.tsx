@@ -89,25 +89,47 @@ export function SlideLibraryPanel({ projectId, files, onGenerateLayer }: SlideLi
     queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'files'] });
   }, [queryClient, projectId]);
 
+  const DEFAULT_SLIDE_HTML = `\
+<div class="slide-content" style="padding: 2rem;">
+  <h1 class="title" style="font-size: var(--title-size); font-weight: var(--title-weight); color: var(--title-color); text-align: var(--text-align); margin: 0 0 0.5rem 0;">{{title}}</h1>
+  <p class="subtitle" style="font-size: var(--subtitle-size); font-weight: var(--subtitle-weight); color: var(--subtitle-color); text-align: var(--text-align); margin: 0 0 0.5rem 0;">{{subtitle}}</p>
+  <p class="body" style="font-size: var(--body-size); font-weight: var(--body-weight); color: var(--body-color); text-align: var(--text-align); margin: 0;">{{body}}</p>
+</div>`;
+
+  const DEFAULT_SLIDE_CSS = `\
+:root {
+  --title-size: 2rem;
+  --title-weight: bold;
+  --title-color: #111827;
+  --subtitle-size: 1.25rem;
+  --subtitle-weight: normal;
+  --subtitle-color: #4b5563;
+  --body-size: 1rem;
+  --body-weight: normal;
+  --body-color: #374151;
+  --text-align: left;
+}`;
+
   async function handleAddSlide() {
     const stem = nextSlideStem(stems);
     const sortOrder = slideGroups.length + 1;
 
     try {
-      await createFile.mutateAsync({
+      const slideFile = await createFile.mutateAsync({
         projectId,
-        payload: { layer: 'slide', name: stem, extension: 'html', sort_order: sortOrder, content: '' },
+        payload: { layer: 'slide', name: stem, extension: 'html', sort_order: sortOrder, content: DEFAULT_SLIDE_HTML },
       });
       await createFile.mutateAsync({
         projectId,
-        payload: { layer: 'style', name: stem, extension: 'css', sort_order: sortOrder, content: '' },
+        payload: { layer: 'style', name: stem, extension: 'css', sort_order: sortOrder, content: DEFAULT_SLIDE_CSS },
       });
       await createFile.mutateAsync({
         projectId,
-        payload: { layer: 'content', name: stem, extension: 'json', sort_order: sortOrder, content: JSON.stringify({ title: 'New Slide' }) },
+        payload: { layer: 'content', name: stem, extension: 'json', sort_order: sortOrder, content: JSON.stringify({ title: 'New Slide', subtitle: 'Subtitle', body: 'Body content' }) },
       });
 
-      invalidateFiles();
+      await queryClient.refetchQueries({ queryKey: ['projects', projectId, 'files'] });
+      dispatch({ type: 'SET_SELECTED_SLIDE_ID', payload: slideFile.id });
       toastSuccess(`Slide ${stem} created`);
     } catch {
       toastError('Failed to create slide');

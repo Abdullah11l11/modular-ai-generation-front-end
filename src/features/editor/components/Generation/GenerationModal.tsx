@@ -58,18 +58,24 @@ export function GenerationModal({ projectId, fileId, stem, files, open, onOpenCh
 
   useEffect(() => {
     if (firstProvider && !providerId) {
-      setProviderId(firstProvider.id);
-      setModel(firstProvider.default_model ?? '');
+      const id = setTimeout(() => {
+        setProviderId(firstProvider.id);
+        setModel(firstProvider.default_model ?? '');
+      }, 0);
+      return () => clearTimeout(id);
     }
   }, [firstProvider, providerId]);
 
   useEffect(() => {
     if (!open) {
-      setPrompt('');
-      setModel(providers.find((p) => p.id === providerId)?.default_model ?? '');
-      setMode('all');
-      setSelectedLayers(['slide', 'style', 'content']);
-      setActiveJobId(null);
+      const id = setTimeout(() => {
+        setPrompt('');
+        setModel(providers.find((p) => p.id === providerId)?.default_model ?? '');
+        setMode('all');
+        setSelectedLayers(['slide', 'style', 'content']);
+        setActiveJobId(null);
+      }, 0);
+      return () => clearTimeout(id);
     }
   }, [open, providerId, providers]);
 

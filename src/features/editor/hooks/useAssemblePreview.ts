@@ -4,7 +4,15 @@ export function assemblePreviewHtml(
   styleCss: string,
   layoutCss: string,
   direction: 'ltr' | 'rtl',
+  contentVars?: Record<string, string>,
 ): string {
+  let body = slideHtml;
+  if (contentVars) {
+    for (const [key, value] of Object.entries(contentVars)) {
+      body = body.replaceAll(`{{${key}}}`, value);
+    }
+  }
+
   return `<!DOCTYPE html>
 <html dir="${direction}">
 <head>
@@ -14,6 +22,6 @@ export function assemblePreviewHtml(
   <style>${styleCss}</style>
   <style>${perSlideCss}</style>
 </head>
-<body>${slideHtml}</body>
+<body>${body}</body>
 </html>`;
 }

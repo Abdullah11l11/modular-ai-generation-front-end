@@ -1,4 +1,9 @@
 import type { AiProvider } from '@/features/me/types/aiProvider';
 import { apiClient } from '@/lib/api/client';
 
-export const listAiProviders = () => apiClient.get<AiProvider[]>('me/ai-providers');
+type ListAiProvidersResponse = {
+  data: AiProvider[];
+};
+
+export const listAiProviders = () =>
+  apiClient.get<ListAiProvidersResponse>('me/ai-providers').then((r) => r.data);

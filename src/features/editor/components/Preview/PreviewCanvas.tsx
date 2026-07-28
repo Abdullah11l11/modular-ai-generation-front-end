@@ -18,14 +18,33 @@ export function PreviewCanvas({ files, direction }: PreviewCanvasProps) {
     return files.find((f) => f.id === state.selectedSlideId) ?? null;
   }, [state.selectedSlideId, files]);
 
+  const stem = selectedSlide?.name ?? '';
+
   const perSlideCss = useMemo(() => {
     if (!selectedSlide) return '';
-    const stem = selectedSlide.name;
     const cssFile = files.find(
       (f) => f.layer === 'style' && f.name === stem && f.extension === 'css',
     );
     return cssFile?.content ?? '';
-  }, [selectedSlide, files]);
+  }, [selectedSlide, files, stem]);
+
+  const contentVars = useMemo(() => {
+    if (!stem) return undefined;
+    const contentFile = files.find(
+      (f) => f.layer === 'content' && f.name === stem && f.extension === 'json',
+    );
+    if (!contentFile?.content) return undefined;
+    try {
+      const parsed = JSON.parse(contentFile.content) as Record<string, unknown>;
+      const vars: Record<string, string> = {};
+      for (const [k, v] of Object.entries(parsed)) {
+        if (typeof v === 'string') vars[k] = v;
+      }
+      return Object.keys(vars).length > 0 ? vars : undefined;
+    } catch {
+      return undefined;
+    }
+  }, [stem, files]);
 
   const styleCss = useMemo(() => {
     const file = files.find(
@@ -49,8 +68,9 @@ export function PreviewCanvas({ files, direction }: PreviewCanvasProps) {
       styleCss,
       layoutCss,
       direction,
+      contentVars,
     );
-  }, [selectedSlide, perSlideCss, styleCss, layoutCss, direction]);
+  }, [selectedSlide, perSlideCss, styleCss, layoutCss, direction, contentVars]);
 
   const handleElementClick = useCallback(
     (selector: string) => {
