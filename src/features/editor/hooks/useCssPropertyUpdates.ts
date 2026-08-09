@@ -1,73 +1,63 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUpdateProjectFile } from '@/features/files/hooks/useUpdateProjectFile';
-import type { Id } from '@/types/api';
+import type { ProjectFile } from '@/types/api';
 
-export function replaceCssVariable(content: string, varName: string, value: string): string {
-  const escaped = varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped}\\s*:\\s*)[^;]+;`);
+export function replaceCssVariable(content: string, key: string, value: string): string {
+  const cssVar = `--${key}`;
+  const regex = new RegExp(`(${cssVar}\\s*:\\s*)[^;]+`);
 
   if (regex.test(content)) {
-    return content.replace(regex, `$1${value};`);
+    return content.replace(regex, `$1${value}`);
   }
 
-  const rootMatch = content.match(/(:root\s*\{)/);
-  if (rootMatch) {
-    const idx = content.indexOf(rootMatch[1]) + rootMatch[1].length;
-    return content.slice(0, idx) + `\n  ${varName}: ${value};` + content.slice(idx);
+  if (content.includes(':root')) {
+    return content.replace(/(:root\s*\{)/, `$1\n  ${cssVar}: ${value};`);
   }
 
-  return `:root {\n  ${varName}: ${value};\n}\n${content}`;
+  return `:root {\n  ${cssVar}: ${value};\n}\n\n${content}`;
 }
 
-export function useCssPropertyUpdates({
-  projectId,
-  fileId,
-  content,
-}: {
-  projectId: Id;
-  fileId: Id | null;
-  content: string;
-}) {
-  const updateFile = useUpdateProjectFile();
-  const queryClient = useQueryClient();
+export function useCssPropertyUpdates(projectId: string) {
+  const updateMutation = useUpdateProjectFile();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingRef = useRef<Map<string, string>>(new Map());
-  const contentRef = useRef(content);
-  contentRef.current = content;
+  const pendingRef = useRef<{ fileId: string; content: string } | null>(null);
+  const queryClient = useQueryClient();
 
-  const update = useCallback(
-    (varName: string, value: string) => {
-      pendingRef.current.set(varName, value);
+  const scheduleUpdate = useCallback(
+    (fileId: string, content: string) => {
+      pendingRef.current = { fileId, content };
+
+      queryClient.setQueryData(['projects', projectId, 'files'], (old: { data: ProjectFile[] } | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.map((f) =>
+            f.id === fileId ? { ...f, content } : f,
+          ),
+        };
+      });
 
       if (timerRef.current) clearTimeout(timerRef.current);
-
       timerRef.current = setTimeout(() => {
-        if (!fileId) return;
-        const currentContent = contentRef.current;
-        let updated = currentContent;
-        for (const [key, val] of pendingRef.current) {
-          updated = replaceCssVariable(updated, key, val);
-        }
-        updateFile.mutate(
-          { projectId, fileId, payload: { content: updated } },
+        const pending = pendingRef.current;
+        if (!pending) return;
+        updateMutation.mutate(
+          { projectId, fileId: pending.fileId, payload: { content: pending.content } },
           {
+            onError: () => {
+              queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'files'] });
+            },
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'files'] });
             },
           },
         );
-        pendingRef.current.clear();
+        pendingRef.current = null;
       }, 500);
     },
-    [projectId, fileId, updateFile, queryClient],
+    [projectId, updateMutation, queryClient],
   );
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  return { update, isPending: updateFile.isPending };
+  return { scheduleUpdate, isPending: updateMutation.isPending };
 }

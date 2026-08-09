@@ -13,5 +13,11 @@ export default defineConfig({
   },
   server: {
     open: true,
+    proxy: {
+      '/api': {
+        target: 'http://mgf.vortex-tech.tech',
+        changeOrigin: true,
+      },
+    },
   },
 });

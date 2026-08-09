@@ -1,81 +1,65 @@
 export type CssPropertyType =
-  | 'color'
-  | 'font'
-  | 'string'
-  | 'size'
-  | 'select'
-  | 'slider'
-  | 'padding';
+  | 'color' | 'font' | 'size' | 'weight' | 'spacing'
+  | 'text' | 'select' | 'range'
+  | 'color-text' | 'opacity' | 'line-height' | 'letter-spacing' | 'align'
+  | 'border-radius' | 'z-index';
 
 export type CssPropertyDef = {
-  varName: string;
+  key: string;
   label: string;
   type: CssPropertyType;
-  defaultValue: string;
+  default: string;
   options?: string[];
-  min?: number;
-  max?: number;
-  step?: number;
+  group: string;
 };
 
 export type CssPropertyGroup = {
-  title: string;
-  fileLayer: 'style' | 'layout' | 'slide';
-  properties: CssPropertyDef[];
+  name: string;
+  label: string;
+  properties: (CssPropertyDef & { value: string })[];
 };
 
-const COMMON_FONTS = [
-  'Inter', 'Arial', 'Helvetica', 'Georgia', 'Times New Roman',
-  'sans-serif', 'serif', 'monospace',
+export const THEME_PROPERTIES: CssPropertyDef[] = [
+  { key: 'background-color', label: 'Background', type: 'color', default: '#ffffff', group: 'colors' },
+  { key: 'title-font-size', label: 'Title Font Size', type: 'size', default: '2rem', group: 'title' },
+  { key: 'title-text-color', label: 'Title Text Color', type: 'color', default: '#0f172a', group: 'title' },
+  { key: 'title-text-align', label: 'Title Text Align', type: 'align', default: 'left', options: ['left', 'center', 'right'], group: 'title' },
+  { key: 'title-margin-bottom', label: 'Title Margin Bottom', type: 'spacing', default: '0.5rem', group: 'title' },
+  { key: 'title-margin-top', label: 'Title Margin Top', type: 'spacing', default: '0', group: 'title' },
 ];
 
-export const THEME_PROPERTIES: CssPropertyGroup = {
-  title: 'Theme',
-  fileLayer: 'style',
-  properties: [
-    { varName: '--primary-color', label: 'Primary', type: 'color', defaultValue: '#3b82f6' },
-    { varName: '--secondary-color', label: 'Secondary', type: 'color', defaultValue: '#8b5cf6' },
-    { varName: '--accent-color', label: 'Accent', type: 'color', defaultValue: '#06b6d4' },
-    { varName: '--bg-color', label: 'Background', type: 'color', defaultValue: '#ffffff' },
-    { varName: '--text-color', label: 'Text', type: 'color', defaultValue: '#1f2937' },
-    { varName: '--border-color', label: 'Border', type: 'color', defaultValue: '#e5e7eb' },
-    { varName: '--body-font', label: 'Body Font', type: 'font', defaultValue: 'Inter', options: COMMON_FONTS },
-    { varName: '--heading-font', label: 'Heading Font', type: 'font', defaultValue: 'Inter', options: COMMON_FONTS },
-  ],
-};
+export const FONT_OPTIONS = [
+  'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat',
+  'Poppins', 'Nunito', 'Playfair Display', 'Merriweather',
+  'Source Sans Pro', 'Ubuntu', 'system-ui',
+];
 
-export const CONTENT_PROPERTIES: CssPropertyGroup = {
-  title: 'Content',
-  fileLayer: 'slide',
-  properties: [
-    { varName: '--title-size', label: 'Title Size', type: 'size', defaultValue: '2rem', min: 0.5, max: 6, step: 0.1 },
-    { varName: '--title-weight', label: 'Title Weight', type: 'select', defaultValue: 'bold', options: ['normal', 'bold', '600', '700', '800'] },
-    { varName: '--title-color', label: 'Title Color', type: 'color', defaultValue: '#111827' },
-    { varName: '--subtitle-size', label: 'Subtitle Size', type: 'size', defaultValue: '1.25rem', min: 0.5, max: 4, step: 0.1 },
-    { varName: '--subtitle-weight', label: 'Subtitle Weight', type: 'select', defaultValue: 'normal', options: ['normal', '500', '600', 'bold'] },
-    { varName: '--subtitle-color', label: 'Subtitle Color', type: 'color', defaultValue: '#4b5563' },
-    { varName: '--body-size', label: 'Body Size', type: 'size', defaultValue: '1rem', min: 0.5, max: 3, step: 0.1 },
-    { varName: '--body-weight', label: 'Body Weight', type: 'select', defaultValue: 'normal', options: ['normal', '300', '400', '500', '600'] },
-    { varName: '--body-color', label: 'Body Color', type: 'color', defaultValue: '#374151' },
-    { varName: '--text-align', label: 'Text Align', type: 'select', defaultValue: 'left', options: ['left', 'center', 'right', 'justify'] },
-  ],
-};
+export const CONTENT_PROPERTIES: CssPropertyDef[] = [
+  { key: 'title-text', label: 'Title Text', type: 'text', default: 'Title', group: 'title' },
+  { key: 'title-size', label: 'Title Size', type: 'size', default: '2.5rem', group: 'title' },
+  { key: 'title-weight', label: 'Title Weight', type: 'weight', default: '700', group: 'title' },
+  { key: 'title-color', label: 'Title Color', type: 'color', default: '#0f172a', group: 'title' },
+  { key: 'subtitle-text', label: 'Subtitle Text', type: 'text', default: 'Subtitle', group: 'subtitle' },
+  { key: 'subtitle-size', label: 'Subtitle Size', type: 'size', default: '1.25rem', group: 'subtitle' },
+  { key: 'subtitle-weight', label: 'Subtitle Weight', type: 'weight', default: '400', group: 'subtitle' },
+  { key: 'subtitle-color', label: 'Subtitle Color', type: 'color', default: '#64748b', group: 'subtitle' },
+  { key: 'body-text', label: 'Body Text', type: 'text', default: 'Body content', group: 'body' },
+  { key: 'body-size', label: 'Body Size', type: 'size', default: '1rem', group: 'body' },
+  { key: 'body-weight', label: 'Body Weight', type: 'weight', default: '400', group: 'body' },
+  { key: 'body-color', label: 'Body Color', type: 'color', default: '#334155', group: 'body' },
+];
 
-export const STYLE_PROPERTIES: CssPropertyGroup = {
-  title: 'Style',
-  fileLayer: 'layout',
-  properties: [
-    { varName: '--font-size', label: 'Font Size', type: 'size', defaultValue: '1rem', min: 0.5, max: 4, step: 0.1 },
-    { varName: '--line-height', label: 'Line Height', type: 'select', defaultValue: '1.5', options: ['1', '1.25', '1.5', '1.75', '2'] },
-    { varName: '--letter-spacing', label: 'Letter Spacing', type: 'size', defaultValue: '0', min: -0.1, max: 0.5, step: 0.01 },
-    { varName: '--font-weight', label: 'Font Weight', type: 'select', defaultValue: 'normal', options: ['100', '200', '300', '400', '500', '600', '700', '800', '900', 'normal', 'bold'] },
-    { varName: '--text-align', label: 'Alignment', type: 'select', defaultValue: 'left', options: ['left', 'center', 'right', 'justify'] },
-    { varName: '--opacity', label: 'Opacity', type: 'slider', defaultValue: '1', min: 0, max: 1, step: 0.05 },
-    { varName: '--padding-top', label: 'Padding Top', type: 'size', defaultValue: '0', min: 0, max: 8, step: 0.25 },
-    { varName: '--padding-right', label: 'Padding Right', type: 'size', defaultValue: '0', min: 0, max: 8, step: 0.25 },
-    { varName: '--padding-bottom', label: 'Padding Bottom', type: 'size', defaultValue: '0', min: 0, max: 8, step: 0.25 },
-    { varName: '--padding-left', label: 'Padding Left', type: 'size', defaultValue: '0', min: 0, max: 8, step: 0.25 },
-    { varName: '--border-radius', label: 'Border Radius', type: 'size', defaultValue: '0', min: 0, max: 4, step: 0.25 },
-    { varName: '--z-index', label: 'Z-Index', type: 'select', defaultValue: 'auto', options: ['auto', '1', '10', '100', '1000'] },
-  ],
-};
+export const STYLE_PROPERTIES: CssPropertyDef[] = [
+  { key: 'font-size', label: 'Font Size', type: 'size', default: '16px', group: 'typography' },
+  { key: 'line-height', label: 'Line Height', type: 'line-height', default: '1.5', group: 'typography' },
+  { key: 'letter-spacing', label: 'Letter Spacing', type: 'letter-spacing', default: '0', group: 'typography' },
+  { key: 'font-weight', label: 'Font Weight', type: 'weight', default: '400', group: 'typography' },
+  { key: 'text-align', label: 'Alignment', type: 'align', default: 'left', options: ['left', 'center', 'right', 'justify'], group: 'typography' },
+  { key: 'opacity', label: 'Opacity', type: 'opacity', default: '1', group: 'spacing' },
+  { key: 'padding-top', label: 'Padding Top', type: 'spacing', default: '0', group: 'spacing' },
+  { key: 'padding-right', label: 'Padding Right', type: 'spacing', default: '0', group: 'spacing' },
+  { key: 'padding-bottom', label: 'Padding Bottom', type: 'spacing', default: '0', group: 'spacing' },
+  { key: 'padding-left', label: 'Padding Left', type: 'spacing', default: '0', group: 'spacing' },
+  { key: 'border-radius', label: 'Border Radius', type: 'border-radius', default: '0', group: 'spacing' },
+  { key: 'z-index', label: 'Z-Index', type: 'z-index', default: '1', group: 'spacing' },
+];

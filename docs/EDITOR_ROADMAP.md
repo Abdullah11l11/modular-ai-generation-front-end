@@ -4,7 +4,7 @@
 **Feature folder:** `features/editor`
 **Dependencies:** `features/projects`, `features/files`, `features/generation`, `features/export`
 
-This roadmap breaks the Editor (the most complex feature in MGF) into 8 phases + a final polish phase. Each phase has a checklist of concrete deliverables. Phases should be completed in order — later phases depend on earlier ones.
+This roadmap breaks the Editor (the most complex feature in MGF) into 9 phases + a final polish phase. Each phase has a checklist of concrete deliverables. Phases should be completed in order — later phases depend on earlier ones.
 
 ---
 
@@ -42,11 +42,13 @@ The 3-column layout shell exists in `EditorLayout.tsx` (left: Slides, center: ma
 
 - [x] Create editor context + reducer in `useEditorStore.ts` — holds:
   - `projectId` (from route params)
+  - `editorMode` (`'per-slide' | 'single-page'` — detected from project output type)
   - `selectedSlideId` (currently active slide HTML file ID)
   - `selectedElement` (CSS selector or element ID within the preview)
   - `layerVisibility` (all `ProjectFileKind` values: slide, style, layout, content, context, rules, meta, sequence)
   - `activeTab` in right panel (`'theme' | 'content' | 'style' | 'ai'`)
   - `isGenerating` (boolean for AI generation in progress)
+- [x] Create editor mode detection utility `features/editor/utils/editorMode.ts` — maps output type name to editor mode
 - [x] Create `EditorProvider` component that wraps children with `EditorContext.Provider`
 - [x] Create the Editor page at `src/pages/editor/EditorPage.tsx` (thin page that reads route params, fetches project + files, renders toolbar + placeholder center + status bar)
 - [x] Wire `EditorPage` into `router.tsx` at `/editor/projects/:projectId`
@@ -60,6 +62,7 @@ The 3-column layout shell exists in `EditorLayout.tsx` (left: Slides, center: ma
 
 | File | Purpose |
 |------|---------|
+| `src/features/editor/utils/editorMode.ts` | Mode detection: maps `OutputType.name` to `'per-slide' \| 'single-page'` |
 | `src/features/editor/hooks/useEditorStore.ts` | Context, reducer, types (`EditorState`, `EditorAction`, `ActiveTab`, `LayerVisibility`) |
 | `src/features/editor/components/EditorProvider.tsx` | `EditorProvider` wrapper component |
 | `src/features/editor/components/EditorToolbar.tsx` | Top toolbar with back nav, project name, action buttons |
@@ -79,6 +82,8 @@ The 3-column layout shell exists in `EditorLayout.tsx` (left: Slides, center: ma
 ## Phase 2 — Slide Library Panel (Left Sidebar)
 
 **Status:** ✅ Complete
+
+> **Note:** This panel is only visible in **per-slide mode** (`presentation`, `carousel`). In single-page mode (`poster`, `landing-page`) the left panel is hidden entirely.
 
 A vertical panel listing slides as labelled thumbnails. Each slide is represented by **3 files** sharing the same name stem, differentiated by `layer`:
 
@@ -139,11 +144,13 @@ Renders the current slide's HTML combined with project style/layout CSS in a san
   - Renders at 16:10 aspect ratio per `docs/design.md`
   - Click handler that extracts element selector and calls `onElementClick`
 - [x] Create `features/editor/components/Preview/PreviewCanvas.tsx`:
-  - Wraps `PreviewFrame` inside a toolbar-less container
+  - Branches by `editorMode` from context
+  - **Per-slide mode:** derives `selectedSlide`, `perSlideCss`, `contentVars`, `styleFile`, `layoutFile` from slide groups
+  - **Single-page mode:** derives the single HTML file, CSS file, layout file, and content JSON directly from the files array
   - Clickable element detection: clicking an element in the iframe sets `selectedElement` in editor store
   - Selected element name displayed as cyan badge overlay at top-left of canvas
-  - Empty state when no slide is selected: "Select a slide to preview"
-  - Uses `useMemo` for assembled HTML derived from `selectedSlide`, `styleFile`, `layoutFile`, and `project.direction`
+  - Empty state when no content is selected: "Select a slide to preview" (per-slide) or "No content yet" (single-page)
+  - Uses `useMemo` for assembled HTML derived from active files and `project.direction`
 - [x] Handle loading state: full-page loader while project files are loading
 - [x] Handle error state: `ErrorFallback` on project load failure
 
@@ -178,7 +185,9 @@ A form-based panel for editing visual CSS properties without writing raw CSS.
 - [x] Create `features/editor/types/cssProperties.ts` — defines `CssPropertyDef`, `CssPropertyGroup`, and 3 registries: `THEME_PROPERTIES` (6 color + 2 font), `CONTENT_PROPERTIES` (10 properties for content elements), `STYLE_PROPERTIES` (12 properties for layout styling)
 - [x] Create `features/editor/hooks/useCssProperties.ts` — `parseCssValues` extracts known vars from file content via regex; `mergeWithDefaults` merges current values with registry defaults; `useCssProperties` returns `{ groups, hasVariables }`
 - [x] Create `features/editor/hooks/useCssPropertyUpdates.ts` — `replaceCssVariable` updates or appends a CSS var in the content string; `useCssPropertyUpdates` wraps mutation with 500ms debounce via `setTimeout`/`clearTimeout`
-- [x] Create `features/editor/components/PropertiesPanel/PropertiesPanel.tsx` — tabbed container with shadcn `Tabs` bound to `state.activeTab`; renders Theme, Content, Style, or AI tab; shows skeleton loading state; shows "Select an element to edit" on Content/Style tabs when no element selected
+- [x] Create `features/editor/components/PropertiesPanel/PropertiesPanel.tsx` — tabbed container with shadcn `Tabs` bound to `state.activeTab`; branches by `editorMode`:
+  - **Per-slide mode:** Theme, Content, Style, AI tabs (existing behavior)
+  - **Single-page mode:** Layout tab replaces Theme tab, adds HTML and CSS tabs; shows skeleton loading state; shows "Select an element to edit" on Content/Style tabs when no element selected
 - [x] Create `features/editor/components/PropertiesPanel/ThemeTab.tsx`:
   - Color inputs (native `<input type="color">` + hex text field) for each color property
   - Font selectors via shadcn `Select` with common font options
@@ -245,19 +254,106 @@ A modal/drawer within the editor for editing project metadata. The `ProjectSetti
 
 ---
 
-## Phase 6 — AI Generation (Full + Per-Layer)
+## Phase 5.5 — Single-Page Editor Mode
 
 **Status:** ✅ Complete
+
+A simplified editor mode for output types that produce a single page (`poster`, `landing-page`). Instead of the 3-column per-slide layout, the editor renders **2 columns** (preview + properties) with 4 file tabs on the right.
+
+**Mode detection:** `project.type?.name` determines the mode at editor mount:
+- `presentation`, `carousel` → `per-slide`
+- `poster`, `landing-page` → `single-page`
+
+**File structure for single-page projects:**
+
+| File | `layer` | `name` | `extension` | Purpose |
+|------|---------|--------|-------------|---------|
+| Layout (optional) | `layout` | `layout` | `css` | Template-based basic styles (bg color, text color). Only exists if `project.template_id` is set. |
+| HTML | `slide` | `content` | `html` | Project structure markup |
+| CSS | `style` | `style` | `css` | Styling with custom properties in `:root {}` |
+| JSON | `content` | `content` | `json` | Text content (title, subtitle, body, custom fields) |
+
+**Checklist:**
+
+- [x] Create `features/editor/components/SinglePageEditor/SinglePageEditorShell.tsx` — 2-column layout (full-width preview + right properties panel, no left sidebar):
+  ```
+  ┌──────────────────────────────────────────────────────────┐
+  │ EditorToolbar (existing, adapted for single-page mode)   │
+  ├─────────────────────────────────┬────────────────────────┤
+  │                                 │  Layout / HTML / CSS   │
+  │    PreviewCanvas (full left)    │  / Content / AI tabs   │
+  │                                 │                        │
+  ├─────────────────────────────────┴────────────────────────┤
+  │ EditorStatusBar (adapted — no "Slide X of Y")            │
+  └──────────────────────────────────────────────────────────┘
+  ```
+- [x] Create `features/editor/components/SinglePageEditor/SinglePagePropertiesPanel.tsx` — tabbed right panel with 5 tabs: Layout, HTML, CSS, Content, AI
+- [x] Create `features/editor/components/SinglePageEditor/tabs/LayoutTab.tsx`:
+  - Visual form for layout CSS variables (background color, text color, border color, font)
+  - Uses `useCssProperties` + `useCssPropertyUpdates` (existing hooks)
+  - If `layoutFile` is null (no template) → show "No layout file — layout is only available when created from a template"
+- [x] Create `features/editor/components/SinglePageEditor/tabs/HtmlTab.tsx`:
+  - `<textarea>` with monospace font (JetBrains Mono per `design.md` `.json-area` class)
+  - Debounced auto-save via `useUpdateProjectFile` (500ms debounce, same pattern as `useCssPropertyUpdates`)
+  - Syntax: raw HTML editing
+- [x] Create `features/editor/components/SinglePageEditor/tabs/CssTab.tsx`:
+  - Visual form for CSS custom properties (same `THEME_PROPERTIES` registry from `cssProperties.ts`)
+  - Reuses existing `useCssProperties` + `useCssPropertyUpdates` hooks
+- [x] Create `features/editor/components/SinglePageEditor/tabs/ContentTab.tsx`:
+  - Visual form for JSON text fields (title, subtitle, body + custom key-value pairs)
+  - Parses JSON content, renders form inputs, serializes on save
+  - Debounced auto-save via `useUpdateProjectFile`
+  - Support for adding/removing custom text fields
+- [x] Create `features/editor/hooks/useInitSinglePageProject.ts` — auto-create files when a single-page project is created:
+  - 3 files always: `content.html` (slide), `style.css` (style), `content.json` (content)
+  - 1 optional file: `layout.css` (layout) if `template_id` is present
+  - Uses `useCreateProjectFile` sequentially
+- [x] Adapt `EditorPage` at `src/pages/editor/EditorPage.tsx`:
+  - Read `project.type?.name` on mount, compute `editorMode`, dispatch `SET_EDITOR_MODE`
+  - Conditionally render `SinglePageEditorShell` vs the per-slide 3-column shell
+- [x] Adapt `EditorStatusBar` — in single-page mode, omit slide counter, show "Single page" instead
+- [x] Handle loading state: `FullPageLoader` while files load
+- [x] Handle empty state: "No files yet" in single-page properties when no files exist
+- [x] Build verified: `npm run build` passes
+
+**Files to create:**
+
+| File | Purpose |
+|------|---------|
+| `src/features/editor/components/SinglePageEditor/SinglePageEditorShell.tsx` | 2-column layout shell for single-page mode |
+| `src/features/editor/components/SinglePageEditor/SinglePagePropertiesPanel.tsx` | Tabbed right panel with Layout/HTML/CSS/Content/AI tabs |
+| `src/features/editor/components/SinglePageEditor/tabs/LayoutTab.tsx` | Visual form for layout CSS variables (template-based) |
+| `src/features/editor/components/SinglePageEditor/tabs/HtmlTab.tsx` | Textarea for raw HTML editing with auto-save |
+| `src/features/editor/components/SinglePageEditor/tabs/CssTab.tsx` | Visual form for CSS custom properties |
+| `src/features/editor/components/SinglePageEditor/tabs/ContentTab.tsx` | Visual form for JSON text fields with custom key-value support |
+| `src/features/editor/hooks/useInitSinglePageProject.ts` | Auto-create files on single-page project init |
+
+**Files to modify:**
+
+| File | Changes |
+|------|---------|
+| `src/pages/editor/EditorPage.tsx` | Compute `editorMode` from project type, branch between per-slide and single-page shells |
+| `src/features/editor/components/EditorStatusBar.tsx` | Adapt for single-page mode (no slide counter) |
+| `src/features/editor/components/Preview/PreviewCanvas.tsx` | Handle single-page file resolution in assembly |
+| `src/features/editor/hooks/useEditorStore.ts` | Add `SET_EDITOR_MODE` action to reducer |
+
+**Deliverable:** Fully functional single-page editor with visual forms for all 4 file types, auto-save, and mode-aware preview.
+
+---
+
+## Phase 6 — AI Generation (Full + Per-Layer)
+
+**Status:** ❌ Not started
 
 Integrate AI generation into the editor. Both full-project and per-layer generation follow the same async job pattern.
 
 **Checklist:**
 
-- [x] Create `features/editor/hooks/useJobPoller.ts` — reusable polling hook:
+- [ ] Create `features/editor/hooks/useJobPoller.ts` — reusable polling hook:
   - Takes `jobId` and query key
   - Uses TanStack Query's `refetchInterval` (function returns `false` on terminal status)
   - Returns `{ data, isFetching, error }`
-- [x] Create `features/editor/components/Generation/GenerationModal.tsx`:
+- [ ] Create `features/editor/components/Generation/GenerationModal.tsx`:
   - Prompt textarea with placeholder
   - Provider selector dropdown (populated from `useAiProviders()`)
   - If no providers configured → empty state with link to `/settings`
@@ -266,17 +362,17 @@ Integrate AI generation into the editor. Both full-project and per-layer generat
   - Layer checkboxes for per-layer mode
   - Generate button → calls `useGenerateProject` or `useGenerateFile`
   - Progress indicator during generation (spinner + status badge)
-- [x] Create per-layer generate button: SparklesIcon on each slide thumbnail in Slide Library → opens generation modal with `initialFileId` set
-- [x] Create `features/editor/components/Generation/GenerationHistory.tsx`:
+- [ ] Create per-layer generate button: SparklesIcon on each slide thumbnail in Slide Library → opens generation modal with `initialFileId` set
+- [ ] Create `features/editor/components/Generation/GenerationHistory.tsx`:
   - List of past `AiJob` records in `AiTab`
   - Status badges with color coding (running=blue, succeeded=green, failed=red)
   - Loading skeleton state
   - Empty state when no jobs exist
-- [x] Handle edge cases:
+- [ ] Handle edge cases:
   - User navigates away during generation → poll cancels via TanStack Query unmount
   - Generation fails → show error message toast with "Try again" prompt
   - Per-layer generation via `fileId` prop
-- [x] Toast notifications: "Generation complete", "Generation failed" with error message
+- [ ] Toast notifications: "Generation complete", "Generation failed" with error message
 
 **Files to create:**
 
@@ -309,8 +405,8 @@ A modal for exporting the project to various formats.
 
 **Checklist:**
 
-- [x] `ExportJob` type aligned with OpenAPI spec (`src/types/api.ts`)
-- [x] `ExportRequest` type aligned with OpenAPI spec (`src/features/export/types/exportRequest.ts`)
+- [ ] `ExportJob` type aligned with OpenAPI spec (`src/types/api.ts`)
+- [ ] `ExportRequest` type aligned with OpenAPI spec (`src/features/export/types/exportRequest.ts`)
 - [ ] Create `useExportJobPoller` hook (parallel to `useJobPoller` but for export — checks `ready`/`failed` as terminal)
 - [ ] Create `features/editor/components/Export/ExportDialog.tsx`:
   - Format selector: HTML, PDF, PNG, JPG, ZIP, Markdown
@@ -398,13 +494,14 @@ Phase 0 (Foundation)
           ├── Phase 3 (Live Preview)
           └── Phase 4 (CSS Panel)
                  └── Phase 5 (Project Settings)
+                        ├── Phase 5.5 (Single-Page Mode)
                         ├── Phase 6 (AI Generation)
                         ├── Phase 7 (Export)
                         └── Phase 8 (Code Editor)
                                └── Phase 9 (Polish)
 ```
 
-Phases 2, 3, and 4 can be built in parallel after Phase 1 is complete. Phase 5 depends on Phase 4 (shares the Properties panel area). Phases 6 and 7 depend on Phase 3 (preview must work to show generation/export results). Phase 8 is lowest priority.
+Phases 2, 3, and 4 can be built in parallel after Phase 1 is complete. Phase 5 depends on Phase 4 (shares the Properties panel area). Phase 5.5 depends on Phase 1 (state + mode detection) and Phase 3 (shared preview canvas) but is otherwise independent of Phases 2, 4, 5. Phases 6 and 7 depend on Phase 3 (preview must work to show generation/export results). Phase 8 is lowest priority.
 
 ---
 
@@ -414,10 +511,10 @@ Phases 2, 3, and 4 can be built in parallel after Phase 1 is complete. Phase 5 d
 |--------|----------|-------|---------|
 | GET | `/projects/{id}` | 1 | Load project metadata |
 | PUT | `/projects/{id}` | 5 | Save project settings |
-| GET | `/projects/{id}/files` | 1,2,3,4 | List all project files |
-| POST | `/projects/{id}/files` | 2 | Add new slide/file |
+| GET | `/projects/{id}/files` | 1,2,3,4,5.5 | List all project files |
+| POST | `/projects/{id}/files` | 2,5.5 | Add new slide/file |
 | PATCH | `/projects/{id}/files/reorder` | 2 | Reorder slides via ID array |
-| PUT | `/projects/{id}/files/{id}` | 2,4,8 | Update file content/metadata |
+| PUT | `/projects/{id}/files/{id}` | 2,4,5.5,8 | Update file content/metadata |
 | DELETE | `/projects/{id}/files/{id}` | 2 | Delete slide/file |
 | POST | `/projects/{id}/generate` | 6 | Full project AI generation |
 | POST | `/projects/{id}/files/{id}/generate` | 6 | Per-file AI generation |

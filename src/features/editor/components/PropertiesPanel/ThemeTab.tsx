@@ -1,64 +1,63 @@
-import { useCssProperties, type CssPropertyWithValue } from '@/features/editor/hooks/useCssProperties';
-import { useCssPropertyUpdates } from '@/features/editor/hooks/useCssPropertyUpdates';
-import { THEME_PROPERTIES } from '@/features/editor/types/cssProperties';
-import { Label } from '@/components/ui/label';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import type { Id, ProjectFile } from '@/types/api';
+import { useCssProperties } from '@/features/editor/hooks/useCssProperties';
+import { THEME_PROPERTIES, FONT_OPTIONS } from '@/features/editor/types/cssProperties';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type ThemeTabProps = {
-  projectId: Id;
-  styleFile: ProjectFile | null;
+  fileContent: string;
+  fileId: string;
+  onUpdate: (fileId: string, content: string) => void;
 };
 
-export function ThemeTab({ projectId, styleFile }: ThemeTabProps) {
-  const content = styleFile?.content ?? '';
-  const { groups } = useCssProperties(content, [THEME_PROPERTIES]);
-  const { update } = useCssPropertyUpdates({
-    projectId,
-    fileId: styleFile?.id ?? null,
-    content,
-  });
-
-  const group = groups[0];
-  if (!group) return null;
+export function ThemeTab({ fileContent, fileId, onUpdate }: ThemeTabProps) {
+  const { groups } = useCssProperties(fileContent, THEME_PROPERTIES);
 
   return (
-    <div className="flex flex-col gap-3 p-3">
-      {group.properties.map((prop: CssPropertyWithValue) => (
-        <div key={prop.varName} className="flex flex-col gap-1">
-          <Label className="text-xs text-(--t2)">{prop.label}</Label>
-
-          {prop.type === 'color' && (
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={prop.currentValue}
-                onChange={(e) => update(prop.varName, e.target.value)}
-                className="size-7 cursor-pointer rounded border border-(--bor2) bg-transparent p-0.5"
-              />
-              <input
-                type="text"
-                value={prop.currentValue}
-                onChange={(e) => update(prop.varName, e.target.value)}
-                className="flex-1 rounded-md border border-(--bor2) bg-(--bg) px-2 py-1 text-xs text-(--t1) outline-none focus:border-(--cy)"
-              />
+    <div className="flex flex-col gap-4">
+      {groups.map((group) => (
+        <div key={group.name} className="flex flex-col gap-2">
+          <span className="text-xs font-semibold text-(--t2) uppercase tracking-wider">{group.label}</span>
+          {group.properties.map((prop) => (
+            <div key={prop.key} className="flex items-center justify-between gap-2">
+              <label className="text-xs text-(--t3)">{prop.label}</label>
+              {prop.type === 'color' ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="color"
+                    value={prop.value}
+                    onChange={(e) => {
+                      const newContent = fileContent.replace(
+                        new RegExp(`(--${prop.key}\\s*:\\s*)[^;]+`),
+                        `$1${e.target.value}`,
+                      );
+                      onUpdate(fileId, newContent);
+                    }}
+                    className="size-6 cursor-pointer rounded border border-(--bor2)"
+                  />
+                  <span className="w-16 text-xs text-(--t3) font-mono">{prop.value}</span>
+                </div>
+              ) : prop.type === 'font' ? (
+                <Select
+                  value={prop.value}
+                  onValueChange={(val) => {
+                    const newContent = fileContent.replace(
+                      new RegExp(`(--${prop.key}\\s*:\\s*)[^;]+`),
+                      `$1${val}`,
+                    );
+                    onUpdate(fileId, newContent);
+                  }}
+                >
+                  <SelectTrigger className="w-32 h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map((font) => (
+                      <SelectItem key={font} value={font} className="text-xs">{font}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : null}
             </div>
-          )}
-
-          {prop.type === 'font' && (
-            <Select value={prop.currentValue} onValueChange={(v) => update(prop.varName, v)}>
-              <SelectTrigger className="h-7 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(prop.options ?? []).map((opt) => (
-                  <SelectItem key={opt} value={opt} className="text-xs">
-                    {opt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          ))}
         </div>
       ))}
     </div>

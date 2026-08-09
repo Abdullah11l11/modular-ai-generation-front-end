@@ -1,41 +1,54 @@
 import { useMemo } from 'react';
-import type { CssPropertyGroup, CssPropertyDef } from '@/features/editor/types/cssProperties';
+import type { CssPropertyDef, CssPropertyGroup } from '@/features/editor/types/cssProperties';
 
-export type CssPropertyWithValue = CssPropertyDef & { currentValue: string };
-export type CssGroupWithValues = CssPropertyGroup & { properties: CssPropertyWithValue[] };
+export function parseCssValues(content: string, registry: CssPropertyDef[]): Record<string, string> {
+  const result: Record<string, string> = {};
+  const regex = /--([\w-]+)\s*:\s*([^;]+);/g;
+  let match: RegExpExecArray | null;
 
-export function parseCssValues(content: string): Record<string, string> {
-  const vars: Record<string, string> = {};
-  const regex = /(--[\w-]+)\s*:\s*([^;]+);/g;
-  let match;
   while ((match = regex.exec(content)) !== null) {
-    vars[match[1]] = match[2].trim();
+    const key = match[1];
+    const value = match[2].trim();
+    if (registry.some((p) => p.key === key)) {
+      result[key] = value;
+    }
   }
-  return vars;
+
+  return result;
 }
 
-export function mergeWithDefaults(
-  groups: CssPropertyGroup[],
-  parsed: Record<string, string>,
-): CssGroupWithValues[] {
-  return groups.map((group) => ({
-    ...group,
-    properties: group.properties.map((prop) => ({
-      ...prop,
-      currentValue: parsed[prop.varName] ?? prop.defaultValue,
-    })),
-  }));
+function groupBy<T>(items: T[], keyFn: (item: T) => string): Map<string, T[]> {
+  const map = new Map<string, T[]>();
+  for (const item of items) {
+    const key = keyFn(item);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(item);
+  }
+  return map;
 }
 
-export function useCssProperties(content: string, groups: CssPropertyGroup[]) {
-  const parsed = useMemo(() => parseCssValues(content), [content]);
+export function useCssProperties(
+  fileContent: string | null | undefined,
+  registry: CssPropertyDef[],
+): { groups: CssPropertyGroup[]; hasVariables: boolean } {
+  return useMemo(() => {
+    const parsed = parseCssValues(fileContent ?? '', registry);
+    const groupsByName = groupBy(registry, (p) => p.group);
+    const groups: CssPropertyGroup[] = [];
+    const groupOrder = [...groupsByName.keys()];
 
-  const mergedGroups: CssGroupWithValues[] = useMemo(
-    () => mergeWithDefaults(groups, parsed),
-    [groups, parsed],
-  );
+    for (const groupName of groupOrder) {
+      const props = groupsByName.get(groupName)!;
+      groups.push({
+        name: groupName,
+        label: groupName.charAt(0).toUpperCase() + groupName.slice(1),
+        properties: props.map((p) => ({
+          ...p,
+          value: parsed[p.key] ?? p.default,
+        })),
+      });
+    }
 
-  const hasVariables = Object.keys(parsed).length > 0;
-
-  return { groups: mergedGroups, hasVariables };
+    return { groups, hasVariables: Object.keys(parsed).length > 0 };
+  }, [fileContent, registry]);
 }

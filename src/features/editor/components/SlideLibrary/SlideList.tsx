@@ -1,83 +1,57 @@
-import { useMemo } from 'react';
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { SlideThumbnail } from './SlideThumbnail';
-import type { ProjectFile } from '@/types/api';
-
-export type SlideGroup = {
-  stem: string;
-  sortOrder: number;
-  slideFile: ProjectFile;
-  styleFile?: ProjectFile;
-  contentFile?: ProjectFile;
-};
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SlideThumbnail } from '@/features/editor/components/SlideLibrary/SlideThumbnail';
+import type { SlideGroup } from '@/features/editor/utils/groupSlides';
 
 type SlideListProps = {
-  slideGroups: SlideGroup[];
+  slides: SlideGroup[];
   selectedSlideId: string | null;
-  onSelectSlide: (fileId: string) => void;
-  onDeleteSlide: (stem: string) => void;
+  onSelect: (fileId: string) => void;
+  onDelete: (stem: string) => void;
   onReorder: (stems: string[]) => void;
-  onGenerateSlide: (stem: string) => void;
-  getSlideTitle: (group: SlideGroup) => string;
 };
 
-export function SlideList({
-  slideGroups,
-  selectedSlideId,
-  onSelectSlide,
-  onDeleteSlide,
-  onReorder,
-  onGenerateSlide,
-  getSlideTitle,
-}: SlideListProps) {
+export function SlideList({ slides, selectedSlideId, onSelect, onDelete, onReorder }: SlideListProps) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
   );
-
-  const stems = useMemo(() => slideGroups.map((g) => g.stem), [slideGroups]);
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = slideGroups.findIndex((g) => g.stem === active.id);
-    const newIndex = slideGroups.findIndex((g) => g.stem === over.id);
+    const oldIndex = slides.findIndex((s) => s.stem === active.id);
+    const newIndex = slides.findIndex((s) => s.stem === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
 
-    const reordered = [...slideGroups];
+    const reordered = [...slides];
     const [moved] = reordered.splice(oldIndex, 1);
     reordered.splice(newIndex, 0, moved);
 
-    onReorder(reordered.map((g) => g.stem));
+    onReorder(reordered.map((s) => s.stem));
   }
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={stems} strategy={verticalListSortingStrategy}>
-        <div className="flex flex-col gap-1.5 p-2">
-          {slideGroups.map((group) => (
+      <SortableContext items={slides.map((s) => s.stem)} strategy={verticalListSortingStrategy}>
+        <div className="flex flex-col gap-1">
+          {slides.map((slide, i) => (
             <SlideThumbnail
-              key={group.stem}
-              stem={group.stem}
-              title={getSlideTitle(group)}
-              isActive={group.slideFile.id === selectedSlideId}
-              onSelect={() => onSelectSlide(group.slideFile.id)}
-              onDelete={() => onDeleteSlide(group.stem)}
-              onGenerate={() => onGenerateSlide(group.stem)}
+              key={slide.stem}
+              slide={slide}
+              index={i}
+              isSelected={selectedSlideId === slide.files.slide?.id}
+              onSelect={onSelect}
+              onDelete={onDelete}
             />
           ))}
         </div>

@@ -1,25 +1,22 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVerticalIcon, SparklesIcon, Trash2Icon } from 'lucide-react';
+import { GripVerticalIcon, Trash2Icon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import type { SlideGroup } from '@/features/editor/utils/groupSlides';
 
 type SlideThumbnailProps = {
-  stem: string;
-  title: string;
-  isActive: boolean;
-  onSelect: () => void;
-  onDelete: () => void;
-  onGenerate: () => void;
+  slide: SlideGroup;
+  index: number;
+  isSelected: boolean;
+  onSelect: (fileId: string) => void;
+  onDelete: (stem: string) => void;
 };
 
-export function SlideThumbnail({ stem, title, isActive, onSelect, onDelete, onGenerate }: SlideThumbnailProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: stem });
+export function SlideThumbnail({ slide, index, isSelected, onSelect, onDelete }: SlideThumbnailProps) {
+  const slideFileId = slide.files.slide?.id ?? '';
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: slide.stem,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -31,38 +28,39 @@ export function SlideThumbnail({ stem, title, isActive, onSelect, onDelete, onGe
     <div
       ref={setNodeRef}
       style={style}
-      data-active={isActive || undefined}
-      onClick={onSelect}
-      className="group flex cursor-pointer items-center gap-2 rounded-md border border-(--bor2) bg-(--bg) p-2 transition-colors hover:border-(--cy)/40 data-[active]:border-(--cy) data-[active]:bg-(--cy-d)"
+      className={`group flex cursor-pointer items-center gap-2 rounded-md border px-2 py-2 text-xs transition-colors ${
+        isSelected
+          ? 'border-(--cy) bg-(--cy-d)/20 text-(--t1)'
+          : 'border-(--bor2) bg-(--sur) text-(--t2) hover:border-(--bor1) hover:text-(--t1)'
+      }`}
+      onClick={() => {
+        if (slideFileId) onSelect(slideFileId);
+      }}
     >
       <button
+        className="cursor-grab touch-none text-(--t3) hover:text-(--t1)"
         {...attributes}
         {...listeners}
-        className="flex size-5 shrink-0 cursor-grab items-center justify-center rounded-xs text-(--t3) hover:text-(--t1) active:cursor-grabbing"
-        onClick={(e) => e.stopPropagation()}
       >
         <GripVerticalIcon className="size-3.5" />
       </button>
 
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-xs font-medium text-(--t1)">{title || stem}</span>
-        <span className="text-[10px] text-(--t3)">{stem}</span>
+        <span className="truncate font-medium">{slide.title}</span>
+        <span className="text-(--t3)">#{index + 1}</span>
       </div>
 
-      <button
-        onClick={(e) => { e.stopPropagation(); onGenerate(); }}
-        className="flex size-5 shrink-0 items-center justify-center rounded-xs text-(--t3) opacity-0 transition-opacity hover:text-(--cy) group-hover:opacity-100"
-        title="Generate for this slide"
-      >
-        <SparklesIcon className="size-3" />
-      </button>
-
-      <button
-        onClick={(e) => { e.stopPropagation(); onDelete(); }}
-        className="flex size-5 shrink-0 items-center justify-center rounded-xs text-(--t3) opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
+      <Button
+        variant="ghost"
+        size="icon"
+        className="invisible size-6 text-(--t3) opacity-0 group-hover:visible group-hover:opacity-100"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(slide.stem);
+        }}
       >
         <Trash2Icon className="size-3" />
-      </button>
+      </Button>
     </div>
   );
 }

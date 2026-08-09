@@ -1,105 +1,77 @@
-import { useMemo, useCallback } from 'react';
+import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
 import { useEditorContext } from '@/features/editor/hooks/useEditorStore';
-import { assemblePreviewHtml } from '@/features/editor/hooks/useAssemblePreview';
-import { PreviewFrame } from './PreviewFrame';
-import { EmptyState } from '@/components/empty-state';
+import { useAssemblePreview } from '@/features/editor/hooks/useAssemblePreview';
+import { groupSlides } from '@/features/editor/utils/groupSlides';
+import { PreviewFrame } from '@/features/editor/components/Preview/PreviewFrame';
 import type { ProjectFile } from '@/types/api';
 
-type PreviewCanvasProps = {
-  files: ProjectFile[];
-  direction: 'ltr' | 'rtl';
-};
+function findFile(files: ProjectFile[], layer: string, name: string): ProjectFile | undefined {
+  return files.find((f) => f.layer === layer && f.name === name);
+}
 
-export function PreviewCanvas({ files, direction }: PreviewCanvasProps) {
+export function PreviewCanvas() {
   const { state, dispatch } = useEditorContext();
+  const { data: filesResponse } = useProjectFiles(state.projectId);
+  const files = filesResponse?.data ?? [];
 
-  const selectedSlide = useMemo(() => {
-    if (!state.selectedSlideId) return null;
-    return files.find((f) => f.id === state.selectedSlideId) ?? null;
-  }, [state.selectedSlideId, files]);
+  const isPerSlide = state.editorMode === 'per-slide';
+  const slides = groupSlides(files);
 
-  const stem = selectedSlide?.name ?? '';
+  const selectedGroup = isPerSlide
+    ? slides.find((s) => s.files.slide?.id === state.selectedSlideId) ?? null
+    : null;
 
-  const perSlideCss = useMemo(() => {
-    if (!selectedSlide) return '';
-    const cssFile = files.find(
-      (f) => f.layer === 'style' && f.name === stem && f.extension === 'css',
-    );
-    return cssFile?.content ?? '';
-  }, [selectedSlide, files, stem]);
+  const slideHtml = isPerSlide
+    ? (selectedGroup?.files.slide?.content ?? '')
+    : (findFile(files, 'slide', 'content.html')?.content ?? '');
 
-  const contentVars = useMemo(() => {
-    if (!stem) return undefined;
-    const contentFile = files.find(
-      (f) => f.layer === 'content' && f.name === stem && f.extension === 'json',
-    );
-    if (!contentFile?.content) return undefined;
-    try {
-      const parsed = JSON.parse(contentFile.content) as Record<string, unknown>;
-      const vars: Record<string, string> = {};
-      for (const [k, v] of Object.entries(parsed)) {
-        if (typeof v === 'string') vars[k] = v;
-      }
-      return Object.keys(vars).length > 0 ? vars : undefined;
-    } catch {
-      return undefined;
-    }
-  }, [stem, files]);
+  const slideCss = selectedGroup?.files.style?.content ?? '';
 
-  const styleCss = useMemo(() => {
-    const file = files.find(
-      (f) => f.layer === 'style' && f.name === 'style' && f.extension === 'css',
-    );
-    return file?.content ?? '';
-  }, [files]);
+  const contentJson = isPerSlide
+    ? (selectedGroup?.files.content?.content ?? null)
+    : (findFile(files, 'content', 'content.json')?.content ?? null);
 
-  const layoutCss = useMemo(() => {
-    const file = files.find(
-      (f) => f.layer === 'layout' && f.name === 'layout' && f.extension === 'css',
-    );
-    return file?.content ?? '';
-  }, [files]);
+  const layoutFile = findFile(files, 'layout', 'layout.css');
+  const styleFile = findFile(files, 'style', 'style.css');
 
-  const assembledHtml = useMemo(() => {
-    if (!selectedSlide?.content) return '';
-    return assemblePreviewHtml(
-      selectedSlide.content,
-      perSlideCss,
-      styleCss,
-      layoutCss,
-      direction,
-      contentVars,
-    );
-  }, [selectedSlide, perSlideCss, styleCss, layoutCss, direction, contentVars]);
+  const layoutCss = layoutFile?.content ?? '';
+  const styleCss = styleFile?.content ?? '';
 
-  const handleElementClick = useCallback(
-    (selector: string) => {
-      dispatch({ type: 'SET_SELECTED_ELEMENT', payload: selector });
-    },
-    [dispatch],
-  );
+  const empty = isPerSlide ? !selectedGroup : (!slideHtml && !layoutCss && !styleCss);
 
-  if (!state.selectedSlideId || !selectedSlide) {
+  const srcDoc = useAssemblePreview({
+    slideHtml,
+    slideCss,
+    layoutCss,
+    styleCss,
+    contentJson,
+    direction: state.direction,
+  });
+
+  function handleElementClick(selector: string) {
+    dispatch({ type: 'SET_SELECTED_ELEMENT', payload: selector });
+  }
+
+  if (empty) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <EmptyState
-          title="Select a slide to preview"
-          description="Choose a slide from the library to see a live preview."
-        />
+        <p className="text-sm text-(--t3)">
+          {isPerSlide ? 'Select a slide to preview' : 'No content yet'}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="relative flex flex-1 items-center justify-center p-4">
+    <div className="relative flex flex-1 items-center justify-center p-8">
       {state.selectedElement && (
-        <div className="absolute left-4 top-4 z-10 rounded-xs bg-(--cy) px-2 py-0.5 text-[10px] font-medium text-white">
+        <span className="absolute left-4 top-4 z-10 rounded-xs bg-(--cy) px-2 py-0.5 text-xs font-medium text-(--cy-fg)">
           {state.selectedElement}
-        </div>
+        </span>
       )}
 
-      <div className="aspect-[16/10] w-full max-w-4xl overflow-hidden rounded-lg border border-(--bor2) bg-white shadow-sm">
-        <PreviewFrame html={assembledHtml} onElementClick={handleElementClick} />
+      <div className="w-full max-w-3xl">
+        <PreviewFrame srcDoc={srcDoc} onElementClick={handleElementClick} />
       </div>
     </div>
   );

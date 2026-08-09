@@ -1,120 +1,105 @@
-import { useMemo } from 'react';
-import { useEditorContext, type ActiveTab } from '@/features/editor/hooks/useEditorStore';
+import { useEditorContext } from '@/features/editor/hooks/useEditorStore';
+import { useCssPropertyUpdates } from '@/features/editor/hooks/useCssPropertyUpdates';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ThemeTab } from './ThemeTab';
-import { ContentTab } from './ContentTab';
-import { StyleTab } from './StyleTab';
-import { AiTab } from './AiTab';
-import type { Id, ProjectFile } from '@/types/api';
+import { ThemeTab } from '@/features/editor/components/PropertiesPanel/ThemeTab';
+import { ContentTab } from '@/features/editor/components/PropertiesPanel/ContentTab';
+import { StyleTab } from '@/features/editor/components/PropertiesPanel/StyleTab';
+import { AiTab } from '@/features/editor/components/PropertiesPanel/AiTab';
+import type { ProjectFile } from '@/types/api';
 
 type PropertiesPanelProps = {
-  projectId: Id;
-  files: ProjectFile[];
+  projectId: string;
+  selectedSlideHtmlFile: ProjectFile | null;
+  styleCssFile: ProjectFile | null;
+  layoutCssFile: ProjectFile | null;
   filesLoading: boolean;
-  onOpenGeneration: () => void;
-  saveVersion: number;
 };
 
-export function PropertiesPanel({ projectId, files, filesLoading, onOpenGeneration, saveVersion }: PropertiesPanelProps) {
+export function PropertiesPanel({
+  projectId,
+  selectedSlideHtmlFile,
+  styleCssFile,
+  layoutCssFile,
+  filesLoading,
+}: PropertiesPanelProps) {
   const { state, dispatch } = useEditorContext();
+  const { scheduleUpdate } = useCssPropertyUpdates(projectId);
 
-  const styleFile = useMemo(
-    () => files.find((f) => f.layer === 'style' && f.name === 'style' && f.extension === 'css') ?? null,
-    [files],
-  );
+  const styleContent = styleCssFile?.content ?? '';
+  const slideContent = selectedSlideHtmlFile?.content ?? '';
+  const layoutContent = layoutCssFile?.content ?? '';
 
-  const layoutFile = useMemo(
-    () => files.find((f) => f.layer === 'layout' && f.name === 'layout' && f.extension === 'css') ?? null,
-    [files],
-  );
-
-  const selectedSlide = useMemo(
-    () => (state.selectedSlideId ? files.find((f) => f.id === state.selectedSlideId) ?? null : null),
-    [state.selectedSlideId, files],
-  );
-
-  const slideContentFile = useMemo(
-    () => (selectedSlide
-      ? files.find(
-          (f) => f.layer === 'content' && f.name === selectedSlide.name && f.extension === 'json',
-        ) ?? null
-      : null),
-    [selectedSlide, files],
-  );
-
-  const slideStyleFile = useMemo(
-    () => (selectedSlide
-      ? files.find(
-          (f) => f.layer === 'style' && f.name === selectedSlide.name && f.extension === 'css',
-        ) ?? null
-      : null),
-    [selectedSlide, files],
-  );
+  const isPerSlide = state.editorMode === 'per-slide';
 
   if (filesLoading) {
     return (
-      <div className="flex flex-col gap-3 p-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-7 w-full rounded-md" />
-        ))}
+      <div className="flex flex-col gap-3">
+        <div className="h-7 w-full animate-pulse rounded-md bg-(--bor2)" />
+        <div className="h-7 w-3/4 animate-pulse rounded-md bg-(--bor2)" />
+        <div className="h-7 w-1/2 animate-pulse rounded-md bg-(--bor2)" />
       </div>
     );
   }
 
-  const tabs: { value: ActiveTab; label: string }[] = [
-    { value: 'theme', label: 'Theme' },
-    { value: 'content', label: 'Content' },
-    { value: 'style', label: 'Style' },
-    { value: 'ai', label: 'AI' },
-  ];
+  const tabs = isPerSlide
+    ? [
+        { value: 'theme' as const, label: 'Theme' },
+        { value: 'content' as const, label: 'Content' },
+        { value: 'style' as const, label: 'Style' },
+        { value: 'ai' as const, label: 'AI' },
+      ]
+    : [
+        { value: 'theme' as const, label: 'Layout' },
+        { value: 'content' as const, label: 'Content' },
+        { value: 'style' as const, label: 'Style' },
+        { value: 'ai' as const, label: 'AI' },
+      ];
 
   return (
     <Tabs
       value={state.activeTab}
-      onValueChange={(v) => dispatch({ type: 'SET_ACTIVE_TAB', payload: v as ActiveTab })}
-      className="flex flex-1 flex-col overflow-hidden"
+      onValueChange={(val) => dispatch({ type: 'SET_ACTIVE_TAB', payload: val as typeof state.activeTab })}
+      className="flex h-full flex-col"
     >
-      <TabsList variant="line" className="w-full px-3 pt-1">
+      <TabsList className="w-full">
         {tabs.map((tab) => (
-          <TabsTrigger key={tab.value} value={tab.value} className="text-xs">
+          <TabsTrigger key={tab.value} value={tab.value} className="flex-1 text-xs">
             {tab.label}
           </TabsTrigger>
         ))}
       </TabsList>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pt-3">
         <TabsContent value="theme">
-          <ThemeTab projectId={projectId} styleFile={styleFile} />
+          {isPerSlide ? (
+            <ThemeTab fileContent={styleContent} fileId={styleCssFile?.id ?? ''} onUpdate={(_, c) => {
+              if (styleCssFile) scheduleUpdate(styleCssFile.id, c);
+            }} />
+          ) : (
+            <ThemeTab fileContent={layoutContent} fileId={layoutCssFile?.id ?? ''} onUpdate={(_, c) => {
+              if (layoutCssFile) scheduleUpdate(layoutCssFile.id, c);
+            }} />
+          )}
         </TabsContent>
 
         <TabsContent value="content">
-          {!state.selectedElement || !selectedSlide ? (
-            <div className="flex items-center justify-center p-6 text-center text-xs text-(--t3)">
-              Select an element to edit
-            </div>
+          {state.selectedElement ? (
+            <ContentTab fileContent={slideContent} fileId={selectedSlideHtmlFile?.id ?? ''} onUpdate={(_, c) => {
+              if (selectedSlideHtmlFile) scheduleUpdate(selectedSlideHtmlFile.id, c);
+            }} />
           ) : (
-            <ContentTab
-              projectId={projectId}
-              slideContentFile={slideContentFile}
-              slideStyleFile={slideStyleFile}
-              saveVersion={saveVersion}
-            />
+            <p className="text-xs text-(--t3) px-1">Select an element to edit</p>
           )}
         </TabsContent>
 
         <TabsContent value="style">
-          {!state.selectedElement ? (
-            <div className="flex items-center justify-center p-6 text-center text-xs text-(--t3)">
-              Select an element to edit
-            </div>
-          ) : (
-            <StyleTab projectId={projectId} layoutFile={layoutFile} />
-          )}
+          <StyleTab fileContent={layoutContent} fileId={layoutCssFile?.id ?? ''} onUpdate={(_, c) => {
+            if (layoutCssFile) scheduleUpdate(layoutCssFile.id, c);
+          }} />
         </TabsContent>
 
         <TabsContent value="ai">
-          <AiTab projectId={projectId} onOpenGeneration={onOpenGeneration} />
+          <AiTab />
         </TabsContent>
       </div>
     </Tabs>
