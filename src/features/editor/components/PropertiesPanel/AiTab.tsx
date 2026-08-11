@@ -1,59 +1,23 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AiPanelRoot } from '@/features/editor/components/AI/AiPanelRoot';
+import type { ProjectFile } from '@/types/api';
 
-const MODELS = [
-  { value: 'gpt-4o', label: 'GPT-4o' },
-  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-  { value: 'claude-3.5-sonnet', label: 'Claude 3.5 Sonnet' },
-];
+type AiTabProps = {
+  selectedSlideHtmlFile: ProjectFile | null;
+  styleCssFile: ProjectFile | null;
+  layoutCssFile: ProjectFile | null;
+  onInsertIntoEditor: (text: string) => void;
+};
 
-export function AiTab() {
-  const [prompt, setPrompt] = useState('');
-  const [model, setModel] = useState(MODELS[0].value);
-
+export function AiTab({ onInsertIntoEditor }: AiTabProps) {
+  // parent already wraps us in <TabsContent value="ai"> via PropertiesPanel
+  // we render just the AI panel content
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-(--t3)">Model</label>
-        <Select value={model} onValueChange={setModel}>
-          <SelectTrigger className="h-7 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {MODELS.map((m) => (
-              <SelectItem key={m.value} value={m.value} className="text-xs">{m.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-(--t3)">Prompt</label>
-        <Textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe the changes you want..."
-          className="min-h-24 resize-none text-xs"
-        />
-      </div>
-
-      <Button variant="accent" size="sm" disabled className="gap-1.5">
-        Generate
-      </Button>
-
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-(--t3)">JSON Output</label>
-        <pre className="min-h-16 rounded-md border border-(--bor2) bg-(--bg) p-2 text-xs text-(--t3) font-mono">
-          No generation yet
-        </pre>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <span className="text-xs font-semibold text-(--t2) uppercase tracking-wider">History</span>
-        <p className="text-xs text-(--t3)">No previous generations</p>
-      </div>
+    <div className="flex h-full flex-col">
+      <p className="text-[11px] text-(--t3) mb-2">
+        AI calls run in your browser. Your key stays in your session unless you opt into
+        localStorage.
+      </p>
+      <AiPanelRoot onInsertIntoEditor={onInsertIntoEditor} />
     </div>
   );
 }

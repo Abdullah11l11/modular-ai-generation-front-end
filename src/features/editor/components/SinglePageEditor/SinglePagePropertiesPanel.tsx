@@ -5,6 +5,7 @@ import { LayoutTab } from '@/features/editor/components/SinglePageEditor/tabs/La
 import { HtmlTab } from '@/features/editor/components/SinglePageEditor/tabs/HtmlTab';
 import { CssTab } from '@/features/editor/components/SinglePageEditor/tabs/CssTab';
 import { ContentTab } from '@/features/editor/components/SinglePageEditor/tabs/ContentTab';
+import { useCssPropertyUpdates } from '@/features/editor/hooks/useCssPropertyUpdates';
 import type { ProjectFile } from '@/types/api';
 
 type SinglePagePropertiesPanelProps = {
@@ -33,6 +34,7 @@ export function SinglePagePropertiesPanel({
   filesLoading,
 }: SinglePagePropertiesPanelProps) {
   const [activeTab, setActiveTab] = useState('layout');
+  const { scheduleUpdate } = useCssPropertyUpdates(projectId);
 
   if (filesLoading) {
     return (
@@ -74,7 +76,17 @@ export function SinglePagePropertiesPanel({
           <ContentTab projectId={projectId} contentFile={contentFile} />
         </TabsContent>
         <TabsContent value="ai">
-          <AiTab />
+          <AiTab
+            selectedSlideHtmlFile={htmlFile}
+            styleCssFile={styleFile}
+            layoutCssFile={layoutFile}
+            onInsertIntoEditor={(text) => {
+              const match = text.match(/<mgf-slide[\s\S]*?<\/mgf-slide>/);
+              if (match && htmlFile) {
+                scheduleUpdate(htmlFile.id, match[0]);
+              }
+            }}
+          />
         </TabsContent>
       </div>
     </Tabs>

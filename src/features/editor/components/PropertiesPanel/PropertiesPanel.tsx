@@ -58,7 +58,9 @@ export function PropertiesPanel({
   return (
     <Tabs
       value={state.activeTab}
-      onValueChange={(val) => dispatch({ type: 'SET_ACTIVE_TAB', payload: val as typeof state.activeTab })}
+      onValueChange={(val) =>
+        dispatch({ type: 'SET_ACTIVE_TAB', payload: val as typeof state.activeTab })
+      }
       className="flex h-full flex-col"
     >
       <TabsList className="w-full">
@@ -72,34 +74,60 @@ export function PropertiesPanel({
       <div className="flex-1 overflow-y-auto pt-3">
         <TabsContent value="theme">
           {isPerSlide ? (
-            <ThemeTab fileContent={styleContent} fileId={styleCssFile?.id ?? ''} onUpdate={(_, c) => {
-              if (styleCssFile) scheduleUpdate(styleCssFile.id, c);
-            }} />
+            <ThemeTab
+              fileContent={styleContent}
+              fileId={styleCssFile?.id ?? ''}
+              onUpdate={(_, c) => {
+                if (styleCssFile) scheduleUpdate(styleCssFile.id, c);
+              }}
+            />
           ) : (
-            <ThemeTab fileContent={layoutContent} fileId={layoutCssFile?.id ?? ''} onUpdate={(_, c) => {
-              if (layoutCssFile) scheduleUpdate(layoutCssFile.id, c);
-            }} />
+            <ThemeTab
+              fileContent={layoutContent}
+              fileId={layoutCssFile?.id ?? ''}
+              onUpdate={(_, c) => {
+                if (layoutCssFile) scheduleUpdate(layoutCssFile.id, c);
+              }}
+            />
           )}
         </TabsContent>
 
         <TabsContent value="content">
           {state.selectedElement ? (
-            <ContentTab fileContent={slideContent} fileId={selectedSlideHtmlFile?.id ?? ''} onUpdate={(_, c) => {
-              if (selectedSlideHtmlFile) scheduleUpdate(selectedSlideHtmlFile.id, c);
-            }} />
+            <ContentTab
+              fileContent={slideContent}
+              fileId={selectedSlideHtmlFile?.id ?? ''}
+              onUpdate={(_, c) => {
+                if (selectedSlideHtmlFile) scheduleUpdate(selectedSlideHtmlFile.id, c);
+              }}
+            />
           ) : (
             <p className="text-xs text-(--t3) px-1">Select an element to edit</p>
           )}
         </TabsContent>
 
         <TabsContent value="style">
-          <StyleTab fileContent={layoutContent} fileId={layoutCssFile?.id ?? ''} onUpdate={(_, c) => {
-            if (layoutCssFile) scheduleUpdate(layoutCssFile.id, c);
-          }} />
+          <StyleTab
+            fileContent={layoutContent}
+            fileId={layoutCssFile?.id ?? ''}
+            onUpdate={(_, c) => {
+              if (layoutCssFile) scheduleUpdate(layoutCssFile.id, c);
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="ai">
-          <AiTab />
+          <AiTab
+            selectedSlideHtmlFile={selectedSlideHtmlFile}
+            styleCssFile={styleCssFile}
+            layoutCssFile={layoutCssFile}
+            onInsertIntoEditor={(text) => {
+              const match = text.match(/<mgf-slide[\s\S]*?<\/mgf-slide>/);
+              if (match && selectedSlideHtmlFile) {
+                scheduleUpdate(selectedSlideHtmlFile.id, match[0]);
+              }
+            }}
+          />
         </TabsContent>
       </div>
     </Tabs>
