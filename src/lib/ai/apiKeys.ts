@@ -7,6 +7,7 @@ const USE_PROXY_KEY = 'mgf.ai.useProxy';
 const PROVIDER_KEY = 'mgf.ai.provider';
 
 type StorageMode = 'session' | 'local';
+/** Renamed from `Storage` to avoid shadowing the DOM `Storage` interface (TS2456). */
 type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 const pickStorage = (mode: StorageMode): StorageLike =>
