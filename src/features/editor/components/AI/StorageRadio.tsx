@@ -1,5 +1,7 @@
 import { useId } from 'react';
 
+import { FieldLegend, FieldSet } from '@/components/ui/field';
+
 type Mode = 'session' | 'local';
 
 type StorageRadioProps = {
@@ -11,12 +13,20 @@ type StorageRadioProps = {
 export function StorageRadio({ value, onChange, compact = false }: StorageRadioProps) {
   const groupId = useId();
   return (
-    <div className={compact ? 'flex flex-col gap-1' : 'flex flex-col gap-2'}>
-      {!compact && (
-        <span className="text-xs font-semibold uppercase tracking-wider text-(--t2)">
-          API key storage
-        </span>
-      )}
+    <FieldSet
+      className={
+        compact ? 'flex flex-col gap-1 border-0 p-0 m-0' : 'flex flex-col gap-2 border-0 p-0 m-0'
+      }
+    >
+      <FieldLegend
+        className={
+          compact
+            ? 'sr-only mb-0'
+            : 'text-xs font-semibold uppercase tracking-wider text-(--t2) mb-0'
+        }
+      >
+        API key storage
+      </FieldLegend>
       <label
         htmlFor={`${groupId}-session`}
         className="flex cursor-pointer items-start gap-2 rounded-md border border-(--bor2) p-2 text-xs hover:border-(--bor1)"
@@ -53,6 +63,6 @@ export function StorageRadio({ value, onChange, compact = false }: StorageRadioP
           </div>
         </div>
       </label>
-    </div>
+    </FieldSet>
   );
 }
