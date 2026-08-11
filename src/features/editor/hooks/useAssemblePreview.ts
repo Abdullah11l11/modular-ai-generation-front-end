@@ -94,6 +94,52 @@ section[class*="-slide"], section.uvcp-slide, section.mgf-slide {
   opacity: 0.4;
   font-variant-numeric: tabular-nums;
 }
+/* Multi-column containers: any element that ends in "-cards",
+   "-grid", or "-columns" becomes a CSS grid. The user can target
+   2/3/4 columns by suffixing -cards-2, -cards-3, -cards-4, etc. */
+[class*="-cards"], [class*="-grid"], [class*="-columns"],
+.uvcp-cards, .uvcp-grid, .uvcp-columns,
+.mgf-cards, .mgf-grid, .mgf-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+[class*="-cards-2"], .uvcp-cards-2, .mgf-cards-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+[class*="-cards-3"], .uvcp-cards-3, .mgf-cards-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+[class*="-cards-4"], .uvcp-cards-4, .mgf-cards-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+/* Card surface — every element ending in "-card" (uvcp-card, mgf-card,
+   etc.) gets a default bordered surface if the project doesn't bring
+   its own rules. Variable lookups fall back to the same defaults as
+   the rest of the base CSS. */
+[class*="-card"], .uvcp-card, .mgf-card {
+  background: var(--uvcp-color-surface, var(--mgf-surface, #0f1218));
+  border: 1px solid var(--uvcp-color-border, var(--mgf-border, rgba(255,255,255,0.08)));
+  border-radius: var(--uvcp-radius-lg, var(--mgf-radius, 12px));
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+[class*="-card-label"], .uvcp-card-label, .mgf-card-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+  margin: 0;
+}
+[class*="-card-value"], .uvcp-card-value, .mgf-card-value {
+  font-family: var(--uvcp-font-display, var(--mgf-font, system-ui, sans-serif));
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.1;
+}
 `;
 
 /**

@@ -79,7 +79,11 @@ export function PropertiesPanel({
       </TabsList>
 
       <div className="flex-1 overflow-y-auto pt-3">
-        <TabsContent value="theme">
+        {/* `forceMount` keeps every tab's content mounted. Without it Radix
+            unmounts inactive tabs, which destroys local state — e.g. the
+            AI chat messages disappear as soon as the user switches away
+            and back. */}
+        <TabsContent value="theme" forceMount className={state.activeTab === 'theme' ? '' : 'hidden'}>
           {isPerSlide ? (
             <ThemeTab
               fileContent={styleContent}
@@ -99,7 +103,7 @@ export function PropertiesPanel({
           )}
         </TabsContent>
 
-        <TabsContent value="content">
+        <TabsContent value="content" forceMount className={state.activeTab === 'content' ? '' : 'hidden'}>
           <ContentTab
             fileContent={slideContent}
             fileId={selectedSlideHtmlFile?.id ?? ''}
@@ -109,7 +113,7 @@ export function PropertiesPanel({
           />
         </TabsContent>
 
-        <TabsContent value="style">
+        <TabsContent value="style" forceMount className={state.activeTab === 'style' ? '' : 'hidden'}>
           <StyleTab
             fileContent={styleTabContent}
             fileId={styleTabFile?.id ?? ''}
@@ -119,7 +123,7 @@ export function PropertiesPanel({
           />
         </TabsContent>
 
-        <TabsContent value="ai">
+        <TabsContent value="ai" forceMount className={state.activeTab === 'ai' ? '' : 'hidden'}>
           <AiTab
             selectedSlideHtmlFile={selectedSlideHtmlFile}
             styleCssFile={styleCssFile}
