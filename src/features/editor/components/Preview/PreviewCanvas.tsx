@@ -25,17 +25,29 @@ export function PreviewCanvas() {
     ? (selectedGroup?.files.slide?.content ?? '')
     : (findFile(files, 'slide', 'content.html')?.content ?? '');
 
-  const slideCss = selectedGroup?.files.style?.content ?? '';
+  // Project-level style.css is the single source of truth for theming in
+  // both editor modes. In per-slide mode it also stands in for the
+  // per-slide style file when one isn't present (UVCP convention).
+  const styleFile = findFile(files, 'style', 'style.css');
+  const styleCss = styleFile?.content ?? '';
+
+  const slideCss = isPerSlide ? styleCss : '';
 
   const contentJson = isPerSlide
-    ? (selectedGroup?.files.content?.content ?? null)
+    ? (findFile(files, 'content', 'data.json')?.content
+      ?? findFile(files, 'content', 'content.json')?.content
+      ?? null)
     : (findFile(files, 'content', 'content.json')?.content ?? null);
 
-  const layoutFile = findFile(files, 'layout', 'layout.css');
-  const styleFile = findFile(files, 'style', 'style.css');
-
-  const layoutCss = layoutFile?.content ?? '';
-  const styleCss = styleFile?.content ?? '';
+  // Per-slide UVCP projects use `layout.html` as a body wrapper template
+  // (with `{{slides}}` substituted with the rendered slide HTML). Single-
+  // page mode keeps the original `layout.css` convention.
+  const layoutHtml = isPerSlide
+    ? (findFile(files, 'layout', 'layout.html')?.content ?? '')
+    : '';
+  const layoutCss = isPerSlide
+    ? ''
+    : (findFile(files, 'layout', 'layout.css')?.content ?? '');
 
   const empty = isPerSlide ? !selectedGroup : (!slideHtml && !layoutCss && !styleCss);
 
@@ -43,6 +55,7 @@ export function PreviewCanvas() {
     slideHtml,
     slideCss,
     layoutCss,
+    layoutHtml,
     styleCss,
     contentJson,
     direction: state.direction,
