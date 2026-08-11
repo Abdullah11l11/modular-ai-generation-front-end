@@ -58,6 +58,19 @@ The user will provide:
 
 ## Output
 
-Output the complete updated project, with ONLY the targeted layer changed. The other seven layers must be returned verbatim from the user's input. Use a single markdown response with seven code-fenced blocks (one per layer except \`asset\`), each labeled with the layer name. After the seven blocks, list any updated component HTML files if the content or layout change affected them.
+The response must contain one labeled code-fenced block per layer. The non-target layers must be returned verbatim from the user's input; only the target layer should differ.
 
-No markdown code fences around the response. No preamble. No explanation of what was changed — just the updated project.`;
+### When the target layer is anything other than \`asset\`
+
+Emit seven labeled code-fenced blocks — one for each of the other seven layers — each labeled with the layer name as the language tag (e.g., \`\`\`style\`, \`\`\`content\`, \`\`\`layout\`, \`\`\`slide\`, \`\`\`context\`, \`\`\`rules\`, \`\`\`meta\`). The block whose name matches the target layer holds the regenerated content; the other six hold the user's original content, unchanged. Order the blocks in the canonical layer order: slide, style, layout, content, context, rules, meta.
+
+### When the target layer is \`asset\`
+
+Emit a single \`\`\`asset code-fenced block listing the asset descriptors to add, remove, or replace, in the canonical layer order. Do not re-emit the other seven layers.
+
+### Format rules
+
+- Each block is a standalone, labeled code fence — do NOT wrap the entire response in a single outer code fence.
+- The seven (or one) labeled blocks stand alone in plain markdown; the response is just the blocks.
+- After the blocks, if the content or layout change affected component HTML files, list the updated files separately (same pattern as the full-project prompt).
+- No preamble. No explanation of what was changed — just the labeled blocks.`;

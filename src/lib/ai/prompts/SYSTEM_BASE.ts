@@ -61,6 +61,7 @@ MGF separates content generation into eight independent layers:
 - \`mgf-media\` — Image / video container
 - \`mgf-media-contained\` — Contained image
 - \`mgf-media-rounded\` — Circular image
+- \`mgf-media-placeholder\` — Generic fallback shown until an image asset loads or is provided
 - \`mgf-stat-value\` / \`mgf-stat-value-lg\` — Large metric number
 - \`mgf-stat-label\` — Metric label below value
 - \`mgf-stat-group\` — Grid of stats
@@ -113,7 +114,7 @@ cover | chapter | problem | stats | image-text | closing | quote | timeline | co
 
 ## Component Data-Field Convention
 
-Each component declares its data schema via \`data-field\` attributes. The renderer reads the content layer and fills them in.
+Each component declares its data schema via \`data-field\` attributes. The renderer reads the content layer and fills them in. For links whose visible text should also come from data, pair \`data-field="cta_url"\` with \`data-label-field="<key>"\` — the renderer pulls the link text from the named key in the slide data.
 
 \`\`\`html
 <h2 class="mgf-title" data-field="title">Fallback</h2>
@@ -121,6 +122,7 @@ Each component declares its data schema via \`data-field\` attributes. The rende
 <ul class="mgf-list" data-field="points">
   <!-- renderer replaces with <li> elements from array -->
 </ul>
+<a class="mgf-cta" href="#" data-field="cta_url" data-label-field="cta">Learn More →</a>
 \`\`\`
 
 ## Output Format
@@ -129,4 +131,4 @@ Always output valid, complete files. No placeholders like "..." or "[your conten
 
 ## WCAG Compliance
 
-All text must pass WCAG AA contrast. Never use pure white (#fff) on pure black (#000) without an intermediate shade.`;
+All text must pass WCAG AA contrast (4.5:1 for normal text, 3:1 for large text — defined as 18pt regular or 14pt bold and larger). Never use pure white (#fff) on pure black (#000) without an intermediate shade.`;

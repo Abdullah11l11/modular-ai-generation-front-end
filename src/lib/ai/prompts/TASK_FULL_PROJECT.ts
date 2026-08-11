@@ -153,6 +153,13 @@ presentation
 
 Reference the standard presentation layout. Copy the file structure and adjust \`--mgf-slide-w\`, \`--mgf-slide-h\`, \`--mgf-slide-pad-x\`, \`--mgf-slide-pad-y\` for the target format. Keep ALL \`.mgf-*\` class names identical.
 
+\`\`\`css
+.mgf-slide { width: var(--mgf-slide-w); height: var(--mgf-slide-h); padding: var(--mgf-slide-pad-y) var(--mgf-slide-pad-x); box-sizing: border-box; display: grid; gap: var(--mgf-space-4); }
+.mgf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--mgf-space-8); }
+.mgf-title { font: var(--mgf-weight-bold) var(--mgf-text-3xl)/var(--mgf-leading-tight) var(--mgf-font-display); letter-spacing: var(--mgf-tracking-tight); }
+/* …continue with rules for every .mgf-* class used in components */
+\`\`\`
+
 ## Block 5 — slide (index.html, html)
 
 \`\`\`html
