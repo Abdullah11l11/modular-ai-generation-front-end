@@ -1,13 +1,19 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
+import { ScaledIframe } from './ScaledIframe';
 
 type PreviewFrameProps = {
   srcDoc: string;
   onElementClick?: (selector: string) => void;
 };
 
+/**
+ * Editor canvas preview. Renders the assembled slide HTML inside a
+ * scaled iframe so the slide (1280×720 by default) always fits the
+ * available canvas area without scroll. Click-to-select fires the
+ * `element-click` postMessage from `useAssemblePreview`'s injected
+ * handler.
+ */
 export function PreviewFrame({ srcDoc, onElementClick }: PreviewFrameProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
   const handleMessage = useCallback(
     (e: MessageEvent) => {
       if (e.data?.type === 'element-click' && onElementClick) {
@@ -23,14 +29,11 @@ export function PreviewFrame({ srcDoc, onElementClick }: PreviewFrameProps) {
   }, [handleMessage]);
 
   return (
-    <div className="aspect-[16/10] w-full overflow-hidden rounded-lg border border-(--bor2) bg-white shadow-sm">
-      <iframe
-        ref={iframeRef}
-        title="Preview"
-        srcDoc={srcDoc}
-        sandbox="allow-same-origin"
-        className="size-full"
-      />
-    </div>
+    <ScaledIframe
+      srcDoc={srcDoc}
+      sandbox="allow-same-origin"
+      title="Preview"
+      className="rounded-lg border border-(--bor2) bg-white shadow-sm"
+    />
   );
 }

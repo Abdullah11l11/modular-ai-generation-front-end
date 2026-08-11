@@ -3,6 +3,7 @@ import { useEditorContext } from '@/features/editor/hooks/useEditorStore';
 import { groupSlides } from '@/features/editor/utils/groupSlides';
 import { isScrollableType } from '@/features/editor/utils/editorMode';
 import { assemblePreviewHtml } from '@/features/editor/hooks/useAssemblePreview';
+import { ScaledIframe } from '@/features/editor/components/Preview/ScaledIframe';
 import type { ProjectFile } from '@/types/api';
 import { ChevronLeftIcon, ChevronRightIcon, XIcon, Maximize2Icon } from 'lucide-react';
 
@@ -207,12 +208,12 @@ export function FullScreenPreview({ files, onClose }: FullScreenPreviewProps) {
             className="min-h-full w-full border-0"
           />
         ) : (
-          <div className="aspect-[16/10] max-h-full w-full max-w-6xl overflow-hidden rounded-lg bg-white shadow-2xl">
-            <iframe
-              title="Full-screen preview"
+          <div className="flex max-h-full max-w-6xl items-center justify-center">
+            <ScaledIframe
               srcDoc={html}
               sandbox="allow-same-origin allow-popups"
-              className="size-full border-0"
+              title="Full-screen preview"
+              className="w-full rounded-lg bg-white shadow-2xl"
             />
           </div>
         )}
