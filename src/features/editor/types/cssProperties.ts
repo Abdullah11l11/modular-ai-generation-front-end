@@ -20,24 +20,30 @@ export type CssPropertyGroup = {
 };
 
 export const THEME_PROPERTIES: CssPropertyDef[] = [
-  // MGF defaults (legacy single-page convention)
-  { key: 'background-color', label: 'Background', type: 'color', default: '#ffffff', group: 'colors' },
-  { key: 'title-font-size', label: 'Title Font Size', type: 'size', default: '2rem', group: 'title' },
-  { key: 'title-text-color', label: 'Title Text Color', type: 'color', default: '#0f172a', group: 'title' },
-  { key: 'title-text-align', label: 'Title Text Align', type: 'align', default: 'left', options: ['left', 'center', 'right'], group: 'title' },
-  { key: 'title-margin-bottom', label: 'Title Margin Bottom', type: 'spacing', default: '0.5rem', group: 'title' },
-  { key: 'title-margin-top', label: 'Title Margin Top', type: 'spacing', default: '0', group: 'title' },
+  // MGF color tokens — see `src/lib/ai/prompts/standards/tokens.md`
+  { key: 'mgf-color-bg', label: 'Background', type: 'color', default: '#0b0f17', group: 'colors' },
+  { key: 'mgf-color-surface', label: 'Surface', type: 'color', default: '#0f1218', group: 'colors' },
+  { key: 'mgf-color-surface-2', label: 'Surface 2', type: 'color', default: '#1a1f2b', group: 'colors' },
+  { key: 'mgf-color-border', label: 'Border', type: 'color', default: 'rgba(255,255,255,0.08)', group: 'colors' },
+  { key: 'mgf-color-border-strong', label: 'Border Strong', type: 'color', default: 'rgba(255,255,255,0.16)', group: 'colors' },
+  { key: 'mgf-color-text-primary', label: 'Text Primary', type: 'color', default: '#f4f6fa', group: 'colors' },
+  { key: 'mgf-color-text-secondary', label: 'Text Secondary', type: 'color', default: '#94a3b8', group: 'colors' },
+  { key: 'mgf-color-text-inverse', label: 'Text Inverse', type: 'color', default: '#0b0f17', group: 'colors' },
+  { key: 'mgf-color-accent', label: 'Accent', type: 'color', default: '#2f80ff', group: 'colors' },
+  { key: 'mgf-color-accent-soft', label: 'Accent Soft', type: 'color', default: 'rgba(47,128,255,0.16)', group: 'colors' },
+  { key: 'mgf-color-accent-2', label: 'Accent 2', type: 'color', default: '#10b981', group: 'colors' },
 
-  // UVCP theme tokens (seeded projects)
-  { key: 'uvcp-color-bg', label: 'UVCP Background', type: 'color', default: '#080A0F', group: 'uvcp colors' },
-  { key: 'uvcp-color-surface', label: 'UVCP Surface', type: 'color', default: '#0F1218', group: 'uvcp colors' },
-  { key: 'uvcp-color-accent', label: 'UVCP Accent', type: 'color', default: '#2F80FF', group: 'uvcp colors' },
-  { key: 'uvcp-color-text-primary', label: 'UVCP Text', type: 'color', default: '#F4F6FA', group: 'uvcp colors' },
-  { key: 'uvcp-font-display', label: 'UVCP Display Font', type: 'font', default: 'Inter', group: 'uvcp typography' },
-  { key: 'uvcp-font-body', label: 'UVCP Body Font', type: 'font', default: 'Inter', group: 'uvcp typography' },
-  { key: 'uvcp-space-4', label: 'UVCP Space 4', type: 'spacing', default: '1rem', group: 'uvcp spacing' },
-  { key: 'uvcp-space-8', label: 'UVCP Space 8', type: 'spacing', default: '2rem', group: 'uvcp spacing' },
-  { key: 'uvcp-radius-lg', label: 'UVCP Radius Large', type: 'border-radius', default: '14px', group: 'uvcp spacing' },
+  // MGF typography tokens
+  { key: 'mgf-font-display', label: 'Display Font', type: 'font', default: 'Inter', group: 'typography' },
+  { key: 'mgf-font-body', label: 'Body Font', type: 'font', default: 'Inter', group: 'typography' },
+  { key: 'mgf-font-mono', label: 'Mono Font', type: 'font', default: 'JetBrains Mono', group: 'typography' },
+
+  // MGF spacing tokens
+  { key: 'mgf-space-4', label: 'Space 4', type: 'spacing', default: '1rem', group: 'spacing' },
+  { key: 'mgf-space-8', label: 'Space 8', type: 'spacing', default: '2rem', group: 'spacing' },
+  { key: 'mgf-space-12', label: 'Space 12', type: 'spacing', default: '3rem', group: 'spacing' },
+  { key: 'mgf-radius-lg', label: 'Radius Large', type: 'border-radius', default: '16px', group: 'spacing' },
+  { key: 'mgf-radius-xl', label: 'Radius XL', type: 'border-radius', default: '24px', group: 'spacing' },
 ];
 
 export const FONT_OPTIONS = [

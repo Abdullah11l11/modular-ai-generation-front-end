@@ -7,17 +7,17 @@ import {
 } from '../dataFields';
 
 const SAMPLE = `
-<section class="uvcp-slide">
-  <span class="uvcp-label" data-field="label">Problem</span>
-  <h2 class="uvcp-title" data-field="title">The problem</h2>
-  <p class="uvcp-body" data-field="body">A long paragraph...</p>
-  <div class="uvcp-card">
-    <p class="uvcp-card-label" data-field="card_0_label">Cost</p>
-    <p class="uvcp-card-value" data-field="card_0_value">$3.2M</p>
+<section class="mgf-slide">
+  <span class="mgf-label" data-field="label">Problem</span>
+  <h2 class="mgf-title" data-field="title">The problem</h2>
+  <p class="mgf-body" data-field="body">A long paragraph...</p>
+  <div class="mgf-card">
+    <p class="mgf-card-label" data-field="card_0_label">Cost</p>
+    <p class="mgf-card-value" data-field="card_0_value">$3.2M</p>
   </div>
-  <div class="uvcp-card">
-    <p class="uvcp-card-label" data-field="card_1_label">Risk</p>
-    <p class="uvcp-card-value" data-field="card_1_value">High</p>
+  <div class="mgf-card">
+    <p class="mgf-card-label" data-field="card_1_label">Risk</p>
+    <p class="mgf-card-value" data-field="card_1_value">High</p>
   </div>
 </section>
 `;
@@ -62,8 +62,8 @@ describe('updateDataField', () => {
 
   it('preserves other attributes and structure', () => {
     const next = updateDataField(SAMPLE, 'title', 'Updated');
-    expect(next).toContain('class="uvcp-title"');
-    expect(next).toContain('section class="uvcp-slide"');
+    expect(next).toContain('class="mgf-title"');
+    expect(next).toContain('section class="mgf-slide"');
   });
 
   it('updates all elements with the same key (e.g. cards)', () => {
