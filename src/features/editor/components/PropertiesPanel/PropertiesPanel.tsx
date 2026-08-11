@@ -122,7 +122,7 @@ export function PropertiesPanel({
             styleCssFile={styleCssFile}
             layoutCssFile={layoutCssFile}
             onInsertIntoEditor={(text) => {
-              const match = text.match(/<mgf-slide[\s\S]*?<\/mgf-slide>/);
+              const match = text.match(/<(\w+)[^>]*\bmgf-slide\b[^>]*>[\s\S]*?<\/\1>/);
               if (match && selectedSlideHtmlFile) {
                 scheduleUpdate(selectedSlideHtmlFile.id, match[0]);
               }

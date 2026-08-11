@@ -81,7 +81,7 @@ export function SinglePagePropertiesPanel({
             styleCssFile={styleFile}
             layoutCssFile={layoutFile}
             onInsertIntoEditor={(text) => {
-              const match = text.match(/<mgf-slide[\s\S]*?<\/mgf-slide>/);
+              const match = text.match(/<(\w+)[^>]*\bmgf-slide\b[^>]*>[\s\S]*?<\/\1>/);
               if (match && htmlFile) {
                 scheduleUpdate(htmlFile.id, match[0]);
               }
