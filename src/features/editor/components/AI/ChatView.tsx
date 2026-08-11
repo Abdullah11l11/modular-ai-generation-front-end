@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/select';
 import { minimaxService } from '@/lib/ai/providers/minimax';
 import { lmstudioService } from '@/lib/ai/providers/lmstudio';
-import { getProvider, setProvider, clearKey, getKey, getUseProxy } from '@/lib/ai/apiKeys';
+import { getProvider, setProvider, clearKey, getUseProxy } from '@/lib/ai/apiKeys';
 import { getEffectiveBaseUrl } from '@/lib/ai/baseUrl';
 import { buildSystemPrompt } from '@/lib/ai/prompts';
 import type { AIProvider, ChatMessage } from '@/lib/ai/AIService';
@@ -19,10 +19,10 @@ type Props = {
   onInsertIntoEditor: (text: string) => void;
 };
 
-const SLIDE_INSERT_REGEX = /^---\n[\s\S]*?\n---\n[\s\S]*<mgf-slide/;
+const SLIDE_INSERT_REGEX = /^---\n[\s\S]*?\n---\n[\s\S]*mgf-slide/;
 
 export function ChatView({ onInsertIntoEditor }: Props) {
-  const [provider, setLocalProvider] = useState<AIProvider>(getProvider());
+  const [provider, setLocalProvider] = useState<AIProvider>(() => getProvider());
   const [model, setModel] = useState(() => {
     const svc = getProvider() === 'minimax' ? minimaxService : lmstudioService;
     return svc.suggestedModels[0] ?? '';
@@ -30,6 +30,20 @@ export function ChatView({ onInsertIntoEditor }: Props) {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streaming, setStreaming] = useState(false);
+
+  const abortRef = useRef<AbortController | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+  }, [messages.length]);
 
   const switchProvider = (next: AIProvider) => {
     setLocalProvider(next);
@@ -39,16 +53,17 @@ export function ChatView({ onInsertIntoEditor }: Props) {
 
   const send = async () => {
     if (!input.trim() || streaming) return;
-    const nextMessages: ChatMessage[] = [...messages, { role: 'user', content: input.trim() }];
-    setMessages(nextMessages);
+    const userContent = input.trim();
+    setMessages((m) => [...m, { role: 'user', content: userContent }]);
     setInput('');
     setStreaming(true);
 
     let assistantText = '';
     const svc = provider === 'minimax' ? minimaxService : lmstudioService;
     const baseUrl = getEffectiveBaseUrl(provider);
-    const apiKey = provider === 'minimax' ? getKey('minimax') : undefined;
-    void apiKey;
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     setMessages((m) => [...m, { role: 'assistant', content: '' }]);
     try {
@@ -56,9 +71,10 @@ export function ChatView({ onInsertIntoEditor }: Props) {
         {
           model,
           system: buildSystemPrompt(),
-          messages: nextMessages,
+          messages: [...messages, { role: 'user', content: userContent }],
           baseUrl,
           useProxy: getUseProxy(),
+          signal: controller.signal,
         },
         {
           onDelta: (text) => {
@@ -70,6 +86,7 @@ export function ChatView({ onInsertIntoEditor }: Props) {
             });
           },
           onDone: (full) => {
+            if (abortRef.current === controller) abortRef.current = null;
             setMessages((m) => {
               const copy = [...m];
               copy[copy.length - 1] = { role: 'assistant', content: full };
@@ -78,9 +95,13 @@ export function ChatView({ onInsertIntoEditor }: Props) {
             setStreaming(false);
           },
           onError: (err) => {
+            if (abortRef.current === controller) abortRef.current = null;
             setMessages((m) => {
               const copy = [...m];
-              copy[copy.length - 1] = { role: 'assistant', content: `[error] ${err.message}` };
+              copy[copy.length - 1] = {
+                role: 'assistant',
+                content: `[error] ${err instanceof Error ? err.message : String(err)}`,
+              };
               return copy;
             });
             setStreaming(false);
@@ -88,16 +109,24 @@ export function ChatView({ onInsertIntoEditor }: Props) {
         },
       );
     } catch (err) {
+      if (abortRef.current === controller) abortRef.current = null;
       setMessages((m) => {
         const copy = [...m];
-        copy[copy.length - 1] = { role: 'assistant', content: `[error] ${(err as Error).message}` };
+        copy[copy.length - 1] = {
+          role: 'assistant',
+          content: `[error] ${err instanceof Error ? err.message : String(err)}`,
+        };
         return copy;
       });
       setStreaming(false);
     }
   };
 
-  const resetChat = () => setMessages([]);
+  const resetChat = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setMessages([]);
+  };
 
   return (
     <div className="flex h-full flex-col gap-2 text-xs">
@@ -119,7 +148,10 @@ export function ChatView({ onInsertIntoEditor }: Props) {
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto rounded-md border border-(--bor2) bg-(--bg) p-2">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto rounded-md border border-(--bor2) bg-(--bg) p-2"
+      >
         {messages.length === 0 && (
           <p className="text-(--t3) text-[11px]">
             Ask anything. AI responses that match the mgf-* slide grammar get an Insert button.
@@ -186,6 +218,8 @@ export function ChatView({ onInsertIntoEditor }: Props) {
         <button
           type="button"
           onClick={() => {
+            abortRef.current?.abort();
+            abortRef.current = null;
             if (provider === 'minimax') clearKey('minimax');
             resetChat();
           }}
