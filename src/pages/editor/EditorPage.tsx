@@ -54,7 +54,7 @@ function EditorShell({ project }: EditorShellProps) {
   const isPerSlide = state.editorMode === 'per-slide';
 
   const selectedGroup = isPerSlide
-    ? slides.find((s) => s.files.slide?.id === state.selectedSlideId) ?? null
+    ? (slides.find((s) => s.files.slide?.id === state.selectedSlideId) ?? null)
     : null;
 
   const selectedSlideHtmlFile = selectedGroup?.files.slide ?? null;
@@ -74,23 +74,55 @@ function EditorShell({ project }: EditorShellProps) {
     queryClient.invalidateQueries({ queryKey: ['projects', state.projectId, 'files'] });
   }, [queryClient, state.projectId]);
 
-  const handleAddSlide = useCallback(() => {
-    const stem = getNextStem(slides);
-    const extensions: { layer: ProjectFileKind; extension: string; content?: string }[] = [
-      { layer: 'slide', extension: 'html', content: '' },
-      { layer: 'style', extension: 'css', content: '' },
-      { layer: 'content', extension: 'json', content: JSON.stringify({ title: stem }) },
-    ];
+  const handleAddSlide = useCallback(
+    (sourceStem: string | null = null) => {
+      const stem = getNextStem(slides);
+      const sourceGroup = sourceStem ? (slides.find((s) => s.stem === sourceStem) ?? null) : null;
 
-    Promise.all(
-      extensions.map(({ layer, extension, content }) =>
-        createMutation.mutateAsync({
-          projectId: state.projectId,
-          payload: { layer, name: stem, extension, content: content ?? null },
-        }),
-      ),
-    ).then(() => invalidateFiles());
-  }, [slides, state.projectId, createMutation, invalidateFiles]);
+      type FileSpec = { layer: ProjectFileKind; extension: string; content: string };
+
+      // Clone every layer the source slide has. UVCP projects only carry
+      // a `slide` file per slide, so cloning just produces one file. MGF
+      // projects may carry slide/style/content companions.
+      const clonedFiles: FileSpec[] = sourceGroup
+        ? (['slide', 'style', 'content'] as const).flatMap((layer) => {
+            const f = sourceGroup.files[layer];
+            if (!f) return [];
+            return [{ layer, extension: f.extension, content: f.content ?? '' }];
+          })
+        : [];
+
+      // No source → fall back to a blank triple (legacy behaviour for
+      // empty projects that have no slides to clone from).
+      const filesToCreate: FileSpec[] =
+        clonedFiles.length > 0
+          ? clonedFiles
+          : [
+              { layer: 'slide', extension: 'html', content: '' },
+              { layer: 'style', extension: 'css', content: '' },
+              {
+                layer: 'content',
+                extension: 'json',
+                content: JSON.stringify({ title: stem }, null, 2),
+              },
+            ];
+
+      Promise.all(
+        filesToCreate.map(({ layer, extension, content }) =>
+          createMutation.mutateAsync({
+            projectId: state.projectId,
+            payload: {
+              layer,
+              name: `${stem}.${extension}`,
+              extension,
+              content,
+            },
+          }),
+        ),
+      ).then(() => invalidateFiles());
+    },
+    [slides, state.projectId, createMutation, invalidateFiles],
+  );
 
   const handleDeleteSlides = useCallback(
     (stems: string[]) => {
@@ -98,14 +130,16 @@ function EditorShell({ project }: EditorShellProps) {
       for (const stem of stems) {
         const group = slides.find((s) => s.stem === stem);
         if (group) {
-          const ids = [group.files.slide?.id, group.files.style?.id, group.files.content?.id].filter(Boolean) as Id[];
+          const ids = [
+            group.files.slide?.id,
+            group.files.style?.id,
+            group.files.content?.id,
+          ].filter(Boolean) as Id[];
           fileIds.push(...ids);
         }
       }
       Promise.all(
-        fileIds.map((fileId) =>
-          deleteMutation.mutateAsync({ projectId: state.projectId, fileId }),
-        ),
+        fileIds.map((fileId) => deleteMutation.mutateAsync({ projectId: state.projectId, fileId })),
       ).then(() => invalidateFiles());
     },
     [slides, state.projectId, deleteMutation, invalidateFiles],
@@ -113,10 +147,7 @@ function EditorShell({ project }: EditorShellProps) {
 
   const handleReorderFiles = useCallback(
     (projectId: string, order: string[]) => {
-      reorderMutation.mutate(
-        { projectId, order },
-        { onSuccess: () => invalidateFiles() },
-      );
+      reorderMutation.mutate({ projectId, order }, { onSuccess: () => invalidateFiles() });
     },
     [reorderMutation, invalidateFiles],
   );
@@ -132,7 +163,9 @@ function EditorShell({ project }: EditorShellProps) {
               files={files}
               selectedSlideId={state.selectedSlideId}
               layerVisibility={state.layerVisibility}
-              onSelectSlide={(fileId) => dispatch({ type: 'SET_SELECTED_SLIDE_ID', payload: fileId })}
+              onSelectSlide={(fileId) =>
+                dispatch({ type: 'SET_SELECTED_SLIDE_ID', payload: fileId })
+              }
               onToggleLayer={(kind) => dispatch({ type: 'TOGGLE_LAYER', payload: kind })}
               onAddSlide={handleAddSlide}
               onDeleteSlides={handleDeleteSlides}
@@ -157,11 +190,7 @@ function EditorShell({ project }: EditorShellProps) {
         </div>
       ) : (
         <div className="flex flex-1 overflow-hidden">
-          <SinglePageEditorShell
-            project={project}
-            files={files}
-            filesLoading={filesLoading}
-          />
+          <SinglePageEditorShell project={project} files={files} filesLoading={filesLoading} />
         </div>
       )}
 
