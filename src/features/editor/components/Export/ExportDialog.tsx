@@ -9,6 +9,148 @@ import { buildZip, downloadBytes } from '@/lib/zip';
 import { DownloadIcon, FileArchiveIcon, FileCodeIcon, CheckCircleIcon } from 'lucide-react';
 import type { ProjectFile } from '@/types/api';
 
+const DECK_EXPORT_CSS = `
+/* MGF deck-export chrome — frames, controls, counter. Sits alongside
+   the project's own layout.css + style.css without overriding them. */
+body { margin: 0; background: #050505; color: #f4f6fa; font-family: system-ui, -apple-system, sans-serif; }
+.mgf-deck-export {
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+.mgf-deck-stage {
+  position: relative;
+  width: min(96vw, calc((96vh - 6rem) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  max-height: calc(100vh - 6rem);
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+}
+.mgf-deck-frame {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+.mgf-deck-frame.is-active { display: block; }
+.mgf-deck-frame section.mgf-slide {
+  width: 100%;
+  height: 100%;
+}
+.mgf-deck-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(96vw, calc((96vh - 6rem) * 16 / 9));
+  margin-top: 1rem;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.mgf-deck-controls button {
+  background: transparent;
+  color: #f4f6fa;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.mgf-deck-controls button:hover { background: rgba(255, 255, 255, 0.08); }
+.mgf-deck-controls button:disabled { opacity: 0.3; cursor: not-allowed; }
+.mgf-deck-counter { font-variant-numeric: tabular-nums; }
+.mgf-deck-hint { font-size: 11px; opacity: 0.7; }
+`;
+
+const DECK_EXPORT_JS = `
+(function () {
+  var frames = Array.prototype.slice.call(document.querySelectorAll('.mgf-deck-frame'));
+  var counter = document.querySelector('.mgf-deck-counter');
+  var prevBtn = document.querySelector('.mgf-deck-prev');
+  var nextBtn = document.querySelector('.mgf-deck-next');
+  if (frames.length === 0) return;
+  var idx = 0;
+  function show(i) {
+    idx = Math.max(0, Math.min(frames.length - 1, i));
+    frames.forEach(function (f, n) { f.classList.toggle('is-active', n === idx); });
+    if (counter) counter.textContent = (idx + 1) + ' / ' + frames.length;
+    if (prevBtn) prevBtn.disabled = idx === 0;
+    if (nextBtn) nextBtn.disabled = idx === frames.length - 1;
+    try { history.replaceState(null, '', '#slide-' + (idx + 1)); } catch (e) {}
+  }
+  if (prevBtn) prevBtn.addEventListener('click', function () { show(idx - 1); });
+  if (nextBtn) nextBtn.addEventListener('click', function () { show(idx + 1); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(idx - 1); }
+    else if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(idx + 1); }
+    else if (e.key === 'Home') { e.preventDefault(); show(0); }
+    else if (e.key === 'End') { e.preventDefault(); show(frames.length - 1); }
+  });
+  var hashMatch = (location.hash || '').match(/^#slide-(\d+)$/);
+  if (hashMatch) show(parseInt(hashMatch[1], 10) - 1);
+  else show(0);
+})();
+`;
+
+/**
+ * Build a single-file HTML export that behaves like the full-screen
+ * preview: one slide per viewport, keyboard navigation, counter,
+ * responsive stage. For non-deck types the caller's assembled HTML
+ * (a scrollable page) is used as-is.
+ */
+function buildDeckHtml(
+  slides: ReturnType<typeof groupSlides>,
+  layoutHtml: string,
+  layoutCss: string,
+  styleCss: string,
+  contentJson: string | null,
+  direction: 'ltr' | 'rtl',
+): string {
+  const frames = slides
+    .map((s, i) => {
+      const inner = (s.files.slide?.content ?? '').trim();
+      return `<div class="mgf-deck-frame" data-slide-index="${i}">${inner}</div>`;
+    })
+    .join('\n');
+
+  const stage = `<div class="mgf-deck-stage">${frames}</div>`;
+  const controls = `<div class="mgf-deck-controls">
+    <div class="mgf-deck-hint">← / → navigate · Home / End jump</div>
+    <div class="mgf-deck-counter">1 / ${slides.length}</div>
+    <div>
+      <button type="button" class="mgf-deck-prev">Previous</button>
+      <button type="button" class="mgf-deck-next">Next</button>
+    </div>
+  </div>`;
+  const body = `<div class="mgf-deck-export">${stage}${controls}</div>`;
+
+  // Inject the deck body into the layout template (using the same
+  // {{key}} + {{slides}} substitution as the editor canvas). The
+  // project's own `layoutCss` is included so `.mgf-card`, `.mgf-grid-*`,
+  // etc. still apply inside each slide frame.
+  const html = assemblePreviewHtml({
+    slideHtml: body,
+    slideCss: '',
+    layoutCss,
+    layoutHtml,
+    styleCss,
+    contentJson,
+    direction,
+  });
+
+  // Splice in the deck-only CSS + JS right before </head> and </body>.
+  return html
+    .replace('</head>', `<style>${DECK_EXPORT_CSS}</style></head>`)
+    .replace('</body>', `<script>${DECK_EXPORT_JS}</script></body>`);
+}
+
 type ExportDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -78,17 +220,31 @@ export function ExportDialog({ open, onOpenChange, files, projectName }: ExportD
       findFile(files, 'content', 'content.json')?.content ??
       null;
 
-    let slideHtml = '';
     if (state.editorMode === 'single-page') {
-      slideHtml = findFile(files, 'slide', 'content.html')?.content ?? '';
-    } else {
-      const slides = groupSlides(files);
-      // For deck-style types, the single-file export renders every slide
-      // concatenated (each in its own .mgf-slide section) so the result
-      // looks like a self-contained webpage of the deck.
-      slideHtml = slides.map((s) => s.files.slide?.content ?? '').join('\n');
+      const slideHtml = findFile(files, 'slide', 'content.html')?.content ?? '';
+      return assemblePreviewHtml({
+        slideHtml,
+        slideCss: '',
+        layoutCss,
+        layoutHtml,
+        styleCss,
+        contentJson,
+        direction: state.direction,
+      });
     }
 
+    const slides = groupSlides(files);
+
+    // Deck-style projects (presentation, carousel) export as a navigable
+    // deck: one slide per viewport, keyboard nav, counter. Matches what
+    // the user sees in the full-screen preview.
+    if (!scrollable) {
+      return buildDeckHtml(slides, layoutHtml, layoutCss, styleCss, contentJson, state.direction);
+    }
+
+    // Scrollable types (website, poster, infographic, document) keep
+    // their natural scroll behaviour.
+    const slideHtml = slides.map((s) => s.files.slide?.content ?? '').join('\n');
     return assemblePreviewHtml({
       slideHtml,
       slideCss: '',

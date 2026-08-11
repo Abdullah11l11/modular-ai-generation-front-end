@@ -39,11 +39,17 @@ export function PreviewCanvas() {
       null)
     : (findFile(files, 'content', 'content.json')?.content ?? null);
 
-  // Per-slide UVCP projects use `layout.html` as a body wrapper template
-  // (with `{{slides}}` substituted with the rendered slide HTML). Single-
-  // page mode keeps the original `layout.css` convention.
+  // `layout.css` is the project's class-rule stylesheet (the MGF layout
+  // layer). It must be injected in BOTH editor modes — per-slide AND
+  // single-page — because that's where `.mgf-card`, `.mgf-grid-*`,
+  // `.mgf-deck`, `.mgf-slide { width:1280px; height:720px; ... }`, etc.
+  // are defined. `style.css` only carries `:root { --mgf-* }` tokens.
+  const layoutCss = findFile(files, 'layout', 'layout.css')?.content ?? '';
+
+  // `layout.html` is a body-wrapper template (with `{{slides}}`
+  // substitution) used in per-slide mode. Single-page mode doesn't have
+  // a wrapper — the slide IS the body.
   const layoutHtml = isPerSlide ? (findFile(files, 'layout', 'layout.html')?.content ?? '') : '';
-  const layoutCss = isPerSlide ? '' : (findFile(files, 'layout', 'layout.css')?.content ?? '');
 
   const empty = isPerSlide ? !selectedGroup : !slideHtml && !layoutCss && !styleCss;
 

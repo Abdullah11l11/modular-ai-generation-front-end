@@ -37,7 +37,9 @@ export function FullScreenPreview({ files, onClose }: FullScreenPreviewProps) {
 
   const isPerSlide = state.editorMode === 'per-slide';
   const layoutHtml = findFile(files, 'layout', 'layout.html')?.content ?? '';
-  const layoutCss = isPerSlide ? '' : (findFile(files, 'layout', 'layout.css')?.content ?? '');
+  // Inject `layout.css` in both modes — that's where the MGF class
+  // rules (`.mgf-card`, `.mgf-grid-*`, `.mgf-deck`, etc.) live.
+  const layoutCss = findFile(files, 'layout', 'layout.css')?.content ?? '';
   const styleCss = findFile(files, 'style', 'style.css')?.content ?? '';
   const contentJson =
     findFile(files, 'content', 'data.json')?.content ??
