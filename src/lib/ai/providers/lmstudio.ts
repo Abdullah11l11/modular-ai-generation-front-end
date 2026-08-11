@@ -36,7 +36,12 @@ export const lmstudioService: AIService = {
     }
 
     if (!response.ok || !response.body) {
-      handlers.onError(new Error(`LM Studio request failed: HTTP ${response.status}`));
+      const detail = response.status === 404
+        ? ' (check that LM Studio is running with the OpenAI-compatible server enabled and that the Base URL in Advanced settings points to its endpoint)'
+        : '';
+      handlers.onError(
+        new Error(`LM Studio request failed: HTTP ${response.status} at ${url}${detail}`),
+      );
       return;
     }
 
