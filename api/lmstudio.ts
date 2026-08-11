@@ -12,6 +12,14 @@ type Body = {
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
 };
 
+const validateBody = (body: Partial<Body> | undefined): body is Body => {
+  if (!body || typeof body !== 'object') return false;
+  if (typeof body.baseUrl !== 'string' || !body.baseUrl) return false;
+  if (typeof body.model !== 'string' || !body.model) return false;
+  if (!Array.isArray(body.messages) || body.messages.length === 0) return false;
+  return true;
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -20,17 +28,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(204).end();
   }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const body = req.body as Body;
-  if (!body?.baseUrl || !body?.model) {
-    return res.status(400).json({ error: 'baseUrl and model are required' });
+  if (!validateBody(req.body as Partial<Body>)) {
+    return res.status(400).json({ error: 'baseUrl, model, and non-empty messages are required' });
   }
+  const body = req.body as Body;
 
-  const upstream = await fetch(body.baseUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: body.model, messages: body.messages, stream: true }),
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(body.baseUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: body.model, messages: body.messages, stream: true }),
+    });
+  } catch {
+    return res.status(502).json({ error: 'Upstream unreachable' });
+  }
 
   if (!upstream.ok || !upstream.body) {
     return res.status(upstream.status).json({ error: `Upstream error: ${upstream.status}` });
