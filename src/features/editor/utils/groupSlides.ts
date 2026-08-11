@@ -11,18 +11,11 @@ export type SlideGroup = {
   order: number;
 };
 
-function extractTitle(contentFile: ProjectFile): string {
-  if (!contentFile.content) return '';
-  try {
-    const parsed = JSON.parse(contentFile.content);
-    return typeof parsed.title === 'string' ? parsed.title : '';
-  } catch {
-    return '';
-  }
-}
-
 export function groupSlides(files: ProjectFile[]): SlideGroup[] {
-  const slideLayers = new Set(['slide', 'style', 'content']);
+  // Only `slide` layer files are slides. Shared project files (style.css,
+  // data.json, etc.) live on their own layers and must not appear in the
+  // slide library.
+  const slideLayers = new Set(['slide']);
   const relevant = files.filter((f) => slideLayers.has(f.layer));
   const grouped = new Map<string, SlideGroup>();
 
@@ -45,11 +38,7 @@ export function groupSlides(files: ProjectFile[]): SlideGroup[] {
   const groups = Array.from(grouped.values());
 
   for (const g of groups) {
-    if (g.files.content) {
-      g.title = extractTitle(g.files.content) || g.stem;
-    } else {
-      g.title = g.stem;
-    }
+    g.title = g.stem;
   }
 
   return groups.sort((a, b) => a.order - b.order);
