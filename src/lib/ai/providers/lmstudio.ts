@@ -3,17 +3,36 @@ import { getEffectiveBaseUrl } from '../baseUrl';
 
 /**
  * LM Studio local OpenAI-compatible provider.
- * No auth. Direct mode: POST {baseUrl} with `{model, messages, stream: true}`.
+ * No auth. Direct mode: POST {baseUrl}/v1/chat/completions with `{model, messages, stream: true}`.
  * Proxy mode (`useProxy: true`): POST `/api/lmstudio` with `{baseUrl, model, messages}` — the Vercel proxy handles streaming.
  * Streams `data: {json}\n\n` chunks; `[DONE]` terminates.
+ *
+ * The base URL is liberal: the user can enter any of
+ *   - http://localhost:1234
+ *   - http://localhost:1234/v1
+ *   - http://localhost:1234/v1/chat/completions
+ * and `ensureChatCompletionsPath` will resolve it to the third form.
  */
+function ensureChatCompletionsPath(rawUrl: string): string {
+  const trimmed = rawUrl.replace(/\/+$/, '');
+  if (trimmed.endsWith('/chat/completions')) return trimmed;
+  if (trimmed.endsWith('/v1')) return `${trimmed}/chat/completions`;
+  return `${trimmed}/v1/chat/completions`;
+}
+
+function ensureModelsPath(rawUrl: string): string {
+  const trimmed = rawUrl.replace(/\/chat\/completions\/?$/, '').replace(/\/+$/, '');
+  if (trimmed.endsWith('/v1')) return `${trimmed}/models`;
+  return `${trimmed}/v1/models`;
+}
+
 export const lmstudioService: AIService = {
   provider: 'lmstudio',
   suggestedModels: [], // user types whatever LM Studio has loaded
 
   async streamChat(params: StreamChatParams, handlers: StreamChatHandlers): Promise<void> {
     const baseUrl = params.baseUrl ?? getEffectiveBaseUrl('lmstudio');
-    const url = params.useProxy ? '/api/lmstudio' : baseUrl;
+    const url = params.useProxy ? '/api/lmstudio' : ensureChatCompletionsPath(baseUrl);
     const messages = params.system
       ? [{ role: 'system', content: params.system }, ...params.messages]
       : params.messages;
@@ -37,7 +56,7 @@ export const lmstudioService: AIService = {
 
     if (!response.ok || !response.body) {
       const detail = response.status === 404
-        ? ' (check that LM Studio is running with the OpenAI-compatible server enabled and that the Base URL in Advanced settings points to its endpoint)'
+        ? ' (LM Studio is not reachable at the configured Base URL — verify it is running with the OpenAI-compatible server enabled, or uncheck "Use proxy" if you want direct browser-to-LM Studio calls)'
         : '';
       handlers.onError(
         new Error(`LM Studio request failed: HTTP ${response.status} at ${url}${detail}`),
@@ -49,13 +68,7 @@ export const lmstudioService: AIService = {
   },
 
   async testConnection(baseUrl?: string, signal?: AbortSignal): Promise<boolean> {
-    // The chat base URL defaults to `<root>/v1/chat/completions`; the
-    // models endpoint lives at `<root>/v1/models`. Strip the chat suffix
-    // so we hit the right path regardless of whether the override
-    // includes the chat path or just the `/v1` root.
-    const url = (baseUrl ?? getEffectiveBaseUrl('lmstudio'))
-      .replace(/\/chat\/completions\/?$/, '')
-      .replace(/\/$/, '') + '/models';
+    const url = ensureModelsPath(baseUrl ?? getEffectiveBaseUrl('lmstudio'));
     try {
       const r = await fetch(url, { method: 'GET', signal });
       return r.ok;

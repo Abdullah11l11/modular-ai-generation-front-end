@@ -4,6 +4,7 @@ import {
   DEFAULT_MINIMAX_BASE_URL,
   DEFAULT_LMSTUDIO_BASE_URL,
   getEffectiveBaseUrl,
+  isLocalBaseUrl,
   setBaseUrlOverride,
 } from '../baseUrl';
 import { clearBaseUrl } from '../apiKeys';
@@ -19,7 +20,7 @@ describe('baseUrl helpers', () => {
 
   it('returns the LM Studio default when no override is set', () => {
     expect(getEffectiveBaseUrl('lmstudio')).toBe(DEFAULT_LMSTUDIO_BASE_URL);
-    expect(DEFAULT_LMSTUDIO_BASE_URL).toMatch(/^http:\/\/localhost:1234\/v1\/chat\/completions$/);
+    expect(DEFAULT_LMSTUDIO_BASE_URL).toMatch(/^http:\/\/localhost:1234$/);
   });
 
   it('user override wins over the default for minimax', () => {
@@ -43,4 +44,14 @@ describe('baseUrl helpers', () => {
     clearBaseUrl('lmstudio');
     expect(getEffectiveBaseUrl('lmstudio')).toBe(DEFAULT_LMSTUDIO_BASE_URL);
   });
+
+  it('isLocalBaseUrl detects loopback hosts', () => {
+    expect(isLocalBaseUrl('http://localhost:1234')).toBe(true);
+    expect(isLocalBaseUrl('http://127.0.0.1:1234')).toBe(true);
+    expect(isLocalBaseUrl('http://127.0.0.1:1234/v1')).toBe(true);
+    expect(isLocalBaseUrl('http://localhost')).toBe(true);
+    expect(isLocalBaseUrl('http://192.168.1.10:1234')).toBe(false);
+    expect(isLocalBaseUrl('http://example.com')).toBe(false);
+  });
 });
+

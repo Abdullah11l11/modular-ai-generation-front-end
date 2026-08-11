@@ -19,6 +19,7 @@ import {
   getEffectiveBaseUrl,
   setBaseUrlOverride,
   clearBaseUrlOverride,
+  isLocalBaseUrl,
 } from '@/lib/ai/baseUrl';
 import { buildSystemPrompt } from '@/lib/ai/prompts';
 import type { AIProvider, AIService, ChatMessage } from '@/lib/ai/AIService';
@@ -67,6 +68,18 @@ export function ChatView({ onInsertIntoEditor }: Props) {
     setBaseUrlState(getEffectiveBaseUrl(provider));
   }, [provider]);
 
+  // On mount, if the stored state has a localhost URL but the proxy is
+  // still enabled, uncheck the proxy. (Loopback endpoints don't need
+  // the serverless proxy — the browser can call them directly, and the
+  // proxy only exists on Vercel, so locally it returns 404.)
+  useEffect(() => {
+    if (getUseProxy() && isLocalBaseUrl(getEffectiveBaseUrl(getProvider()))) {
+      persistUseProxy(false);
+    }
+    // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const persistBaseUrl = (url: string) => {
     setBaseUrlState(url);
     const defaultUrl = provider === 'minimax' ? DEFAULT_MINIMAX_BASE_URL : DEFAULT_LMSTUDIO_BASE_URL;
@@ -74,6 +87,12 @@ export function ChatView({ onInsertIntoEditor }: Props) {
       setBaseUrlOverride(provider, url);
     } else {
       clearBaseUrlOverride(provider);
+    }
+    // Loopback endpoints don't need the proxy — the browser can hit
+    // localhost directly. Auto-uncheck so the user doesn't get a 404
+    // from `/api/lmstudio` (which only exists when deployed on Vercel).
+    if (isLocalBaseUrl(url) && useProxy) {
+      persistUseProxy(false);
     }
   };
 
@@ -274,7 +293,10 @@ export function ChatView({ onInsertIntoEditor }: Props) {
               checked={useProxy}
               onChange={(e) => persistUseProxy(e.target.checked)}
             />
-            <span>Route through serverless proxy (recommended for MiniMax)</span>
+            <span>
+              Route through serverless proxy (recommended for MiniMax; not needed for local
+              LM Studio)
+            </span>
           </label>
           <div className="flex items-center gap-2">
             <Button
