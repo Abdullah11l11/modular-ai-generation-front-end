@@ -8,12 +8,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { minimaxService } from '@/lib/ai/providers/minimax';
+import {
+  minimaxService,
+} from '@/lib/ai/providers/minimax';
 import { lmstudioService } from '@/lib/ai/providers/lmstudio';
-import { getProvider, setProvider, clearKey, getUseProxy } from '@/lib/ai/apiKeys';
-import { getEffectiveBaseUrl } from '@/lib/ai/baseUrl';
+import { getProvider, setProvider, clearKey, getUseProxy, setUseProxy } from '@/lib/ai/apiKeys';
+import {
+  DEFAULT_LMSTUDIO_BASE_URL,
+  DEFAULT_MINIMAX_BASE_URL,
+  getEffectiveBaseUrl,
+  setBaseUrlOverride,
+  clearBaseUrlOverride,
+} from '@/lib/ai/baseUrl';
 import { buildSystemPrompt } from '@/lib/ai/prompts';
-import type { AIProvider, ChatMessage } from '@/lib/ai/AIService';
+import type { AIProvider, AIService, ChatMessage } from '@/lib/ai/AIService';
 
 type Props = {
   onInsertIntoEditor: (text: string) => void;
@@ -31,6 +39,14 @@ export function ChatView({ onInsertIntoEditor }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streaming, setStreaming] = useState(false);
 
+  // Advanced settings — always editable from the chat view so the user
+  // can swap the LM Studio base URL / proxy choice without first
+  // resetting their key. Synced from storage on mount, written back on
+  // each edit.
+  const [baseUrl, setBaseUrlState] = useState(() => getEffectiveBaseUrl(getProvider()));
+  const [useProxy, setUseProxyState] = useState(() => getUseProxy());
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -45,10 +61,40 @@ export function ChatView({ onInsertIntoEditor }: Props) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages.length]);
 
+  // When the provider changes, refresh the local advanced-state mirrors
+  // so the user sees the correct base URL for the active provider.
+  useEffect(() => {
+    setBaseUrlState(getEffectiveBaseUrl(provider));
+  }, [provider]);
+
+  const persistBaseUrl = (url: string) => {
+    setBaseUrlState(url);
+    const defaultUrl = provider === 'minimax' ? DEFAULT_MINIMAX_BASE_URL : DEFAULT_LMSTUDIO_BASE_URL;
+    if (url && url !== defaultUrl) {
+      setBaseUrlOverride(provider, url);
+    } else {
+      clearBaseUrlOverride(provider);
+    }
+  };
+
+  const persistUseProxy = (checked: boolean) => {
+    setUseProxyState(checked);
+    setUseProxy(checked);
+  };
+
   const switchProvider = (next: AIProvider) => {
     setLocalProvider(next);
     setProvider(next);
     setModel(next === 'minimax' ? minimaxService.suggestedModels[0] : '');
+    setTestStatus('idle');
+  };
+
+  const svcFor = (p: AIProvider): AIService => (p === 'minimax' ? minimaxService : lmstudioService);
+
+  const onTest = async () => {
+    setTestStatus('testing');
+    const ok = await svcFor(provider).testConnection(baseUrl);
+    setTestStatus(ok ? 'ok' : 'fail');
   };
 
   const send = async () => {
@@ -59,21 +105,20 @@ export function ChatView({ onInsertIntoEditor }: Props) {
     setStreaming(true);
 
     let assistantText = '';
-    const svc = provider === 'minimax' ? minimaxService : lmstudioService;
-    const baseUrl = getEffectiveBaseUrl(provider);
+    const baseUrlEffective = getEffectiveBaseUrl(provider);
 
     const controller = new AbortController();
     abortRef.current = controller;
 
     setMessages((m) => [...m, { role: 'assistant', content: '' }]);
     try {
-      await svc.streamChat(
+      await svcFor(provider).streamChat(
         {
           model,
           system: buildSystemPrompt(),
           messages: [...messages, { role: 'user', content: userContent }],
-          baseUrl,
-          useProxy: getUseProxy(),
+          baseUrl: baseUrlEffective,
+          useProxy,
           signal: controller.signal,
         },
         {
@@ -206,6 +251,48 @@ export function ChatView({ onInsertIntoEditor }: Props) {
           {streaming ? '…' : 'Send'}
         </Button>
       </div>
+
+      <details className="rounded-md border border-(--bor2) p-2">
+        <summary className="cursor-pointer text-(--t3) text-[11px] select-none">
+          Advanced settings
+        </summary>
+        <div className="mt-2 flex flex-col gap-2">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="chat-baseurl" className="text-[11px] text-(--t3)">
+              Base URL
+            </label>
+            <Input
+              id="chat-baseurl"
+              value={baseUrl}
+              onChange={(e) => persistBaseUrl(e.target.value)}
+              className="h-7 font-mono text-[11px]"
+            />
+          </div>
+          <label className="flex items-center gap-2 text-[11px]">
+            <input
+              type="checkbox"
+              checked={useProxy}
+              onChange={(e) => persistUseProxy(e.target.checked)}
+            />
+            <span>Route through serverless proxy (recommended for MiniMax)</span>
+          </label>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onTest}
+              disabled={testStatus === 'testing'}
+            >
+              {testStatus === 'testing' ? 'Testing…' : 'Test connection'}
+            </Button>
+            {testStatus === 'ok' && <span className="text-accent text-[11px]">Reachable ✓</span>}
+            {testStatus === 'fail' && (
+              <span className="text-destructive text-[11px]">CORS or unreachable</span>
+            )}
+          </div>
+        </div>
+      </details>
 
       <div className="flex items-center justify-between">
         <button

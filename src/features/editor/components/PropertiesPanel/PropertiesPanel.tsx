@@ -25,11 +25,18 @@ export function PropertiesPanel({
   const { state, dispatch } = useEditorContext();
   const { scheduleUpdate } = useCssPropertyUpdates(projectId);
 
+  const isPerSlide = state.editorMode === 'per-slide';
+
   const styleContent = styleCssFile?.content ?? '';
   const slideContent = selectedSlideHtmlFile?.content ?? '';
   const layoutContent = layoutCssFile?.content ?? '';
-
-  const isPerSlide = state.editorMode === 'per-slide';
+  // Style tab needs a writable CSS target. UVCP per-slide projects have
+  // no layout.css, so fall back to the project-level style.css. The
+  // STYLE_PROPERTIES use independent variable names (--font-size,
+  // --line-height, …) so they don't collide with the Theme tab's
+  // existing tokens.
+  const styleTabFile = isPerSlide ? styleCssFile : layoutCssFile;
+  const styleTabContent = styleTabFile?.content ?? styleContent;
 
   if (filesLoading) {
     return (
@@ -93,25 +100,21 @@ export function PropertiesPanel({
         </TabsContent>
 
         <TabsContent value="content">
-          {state.selectedElement ? (
-            <ContentTab
-              fileContent={slideContent}
-              fileId={selectedSlideHtmlFile?.id ?? ''}
-              onUpdate={(_, c) => {
-                if (selectedSlideHtmlFile) scheduleUpdate(selectedSlideHtmlFile.id, c);
-              }}
-            />
-          ) : (
-            <p className="text-xs text-(--t3) px-1">Select an element to edit</p>
-          )}
+          <ContentTab
+            fileContent={slideContent}
+            fileId={selectedSlideHtmlFile?.id ?? ''}
+            onUpdate={(_, c) => {
+              if (selectedSlideHtmlFile) scheduleUpdate(selectedSlideHtmlFile.id, c);
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="style">
           <StyleTab
-            fileContent={layoutContent}
-            fileId={layoutCssFile?.id ?? ''}
+            fileContent={styleTabContent}
+            fileId={styleTabFile?.id ?? ''}
             onUpdate={(_, c) => {
-              if (layoutCssFile) scheduleUpdate(layoutCssFile.id, c);
+              if (styleTabFile) scheduleUpdate(styleTabFile.id, c);
             }}
           />
         </TabsContent>

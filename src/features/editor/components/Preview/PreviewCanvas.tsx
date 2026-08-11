@@ -18,7 +18,7 @@ export function PreviewCanvas() {
   const slides = groupSlides(files);
 
   const selectedGroup = isPerSlide
-    ? slides.find((s) => s.files.slide?.id === state.selectedSlideId) ?? null
+    ? (slides.find((s) => s.files.slide?.id === state.selectedSlideId) ?? null)
     : null;
 
   const slideHtml = isPerSlide
@@ -34,22 +34,18 @@ export function PreviewCanvas() {
   const slideCss = isPerSlide ? styleCss : '';
 
   const contentJson = isPerSlide
-    ? (findFile(files, 'content', 'data.json')?.content
-      ?? findFile(files, 'content', 'content.json')?.content
-      ?? null)
+    ? (findFile(files, 'content', 'data.json')?.content ??
+      findFile(files, 'content', 'content.json')?.content ??
+      null)
     : (findFile(files, 'content', 'content.json')?.content ?? null);
 
   // Per-slide UVCP projects use `layout.html` as a body wrapper template
   // (with `{{slides}}` substituted with the rendered slide HTML). Single-
   // page mode keeps the original `layout.css` convention.
-  const layoutHtml = isPerSlide
-    ? (findFile(files, 'layout', 'layout.html')?.content ?? '')
-    : '';
-  const layoutCss = isPerSlide
-    ? ''
-    : (findFile(files, 'layout', 'layout.css')?.content ?? '');
+  const layoutHtml = isPerSlide ? (findFile(files, 'layout', 'layout.html')?.content ?? '') : '';
+  const layoutCss = isPerSlide ? '' : (findFile(files, 'layout', 'layout.css')?.content ?? '');
 
-  const empty = isPerSlide ? !selectedGroup : (!slideHtml && !layoutCss && !styleCss);
+  const empty = isPerSlide ? !selectedGroup : !slideHtml && !layoutCss && !styleCss;
 
   const srcDoc = useAssemblePreview({
     slideHtml,
