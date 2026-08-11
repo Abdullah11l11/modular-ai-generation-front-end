@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -48,11 +48,17 @@ export function KeySetupView({ provider, onProviderChange, onSaved }: Props) {
 
   const showKeyField = provider === 'minimax';
 
+  useEffect(() => {
+    setKeyState(getKey(provider) ?? '');
+    setBaseUrlOverrideState(getEffectiveBaseUrl(provider));
+    setTestStatus('idle');
+  }, [provider]);
+
   const onSave = () => {
     setProvider(provider);
     setStorageMode(mode);
     setUseProxy(useProxy);
-    if (showKeyField && key) setKey(provider, key, mode);
+    if (showKeyField) setKey(provider, key, mode);
     if (
       baseUrlOverride &&
       baseUrlOverride !==
@@ -81,7 +87,6 @@ export function KeySetupView({ provider, onProviderChange, onSaved }: Props) {
           onValueChange={(v) => {
             const next = v as AIProvider;
             onProviderChange(next);
-            setBaseUrlOverrideState(getEffectiveBaseUrl(next));
           }}
         >
           <SelectTrigger className="h-7">
