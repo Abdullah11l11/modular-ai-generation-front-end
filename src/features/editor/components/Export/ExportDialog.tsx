@@ -6,7 +6,8 @@ import { isScrollableType } from '@/features/editor/utils/editorMode';
 import { assemblePreviewHtml } from '@/features/editor/hooks/useAssemblePreview';
 import { groupSlides } from '@/features/editor/utils/groupSlides';
 import { buildZip, downloadBytes } from '@/lib/zip';
-import { DownloadIcon, FileArchiveIcon, FileCodeIcon, CheckCircleIcon } from 'lucide-react';
+import { buildPptxPresentation } from '@/features/editor/utils/mgfPptx';
+import { DownloadIcon, FileArchiveIcon, FileCodeIcon, PresentationIcon, CheckCircleIcon } from 'lucide-react';
 import type { ProjectFile } from '@/types/api';
 
 const DECK_EXPORT_CSS = `
@@ -158,7 +159,7 @@ type ExportDialogProps = {
   projectName: string;
 };
 
-type ExportFormat = 'zip' | 'html';
+type ExportFormat = 'zip' | 'html' | 'pptx';
 
 function findFile(files: ProjectFile[], layer: string, name: string): ProjectFile | undefined {
   return files.find((f) => f.layer === layer && f.name === name);
@@ -268,6 +269,22 @@ export function ExportDialog({ open, onOpenChange, files, projectName }: ExportD
       const zipBytes = buildZip(entries);
       downloadBytes(zipBytes, `${baseName}.zip`, 'application/zip');
       setLastDownload(`${baseName}.zip`);
+    } else if (format === 'pptx') {
+      setLastDownload('Generating PowerPoint…');
+      buildPptxPresentation({ files, projectName }).then(
+        (bytes) => {
+          downloadBytes(
+            bytes,
+            `${baseName}.pptx`,
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          );
+          setLastDownload(`${baseName}.pptx`);
+        },
+        (err) => {
+          console.error('PPTX export failed', err);
+          setLastDownload(`PowerPoint export failed: ${(err as Error).message ?? 'unknown error'}`);
+        },
+      );
     } else {
       const html = buildHtmlBundle();
       const encoder = new TextEncoder();
@@ -285,7 +302,7 @@ export function ExportDialog({ open, onOpenChange, files, projectName }: ExportD
 
         <div className="flex flex-col gap-5">
           {/* Format picker */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <FormatCard
               icon={<FileArchiveIcon className="size-5" />}
               title="ZIP archive"
@@ -304,6 +321,13 @@ export function ExportDialog({ open, onOpenChange, files, projectName }: ExportD
               selected={format === 'html'}
               onClick={() => setFormat('html')}
             />
+            <FormatCard
+              icon={<PresentationIcon className="size-5" />}
+              title="PowerPoint"
+              description="Native .pptx. Editable in PowerPoint, Keynote, and Google Slides. Layout is approximated."
+              selected={format === 'pptx'}
+              onClick={() => setFormat('pptx')}
+            />
           </div>
 
           {/* File list */}
@@ -311,7 +335,7 @@ export function ExportDialog({ open, onOpenChange, files, projectName }: ExportD
             <div className="flex items-center justify-between border-b border-(--bor2) bg-(--sur-2) px-3 py-2 text-xs font-medium text-(--t2)">
               <span>{fileRows.length} files · {humanBytes(totalBytes)}</span>
               <span className="text-(--t3)">
-                {format === 'zip' ? 'will be archived as-is' : 'merged into one HTML'}
+                {format === 'zip' ? 'will be archived as-is' : format === 'pptx' ? 'rendered into native PPTX' : 'merged into one HTML'}
               </span>
             </div>
             <ul className="max-h-48 overflow-y-auto divide-y divide-(--bor2) text-sm">
@@ -346,7 +370,7 @@ export function ExportDialog({ open, onOpenChange, files, projectName }: ExportD
             </Button>
             <Button variant="accent" size="sm" onClick={handleDownload} disabled={fileRows.length === 0}>
               <DownloadIcon className="size-3.5" />
-              Download {format === 'zip' ? '.zip' : '.html'}
+              Download {format === 'zip' ? '.zip' : format === 'pptx' ? '.pptx' : '.html'}
             </Button>
           </div>
         </div>
