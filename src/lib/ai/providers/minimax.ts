@@ -4,7 +4,7 @@ import { getKey } from '../apiKeys';
 
 /**
  * MiniMax / Anthropic-compatible provider.
- * Sends POST {baseUrl}/v1/messages with Authorization: Bearer ${apiKey}.
+ * Sends POST {baseUrl}/v1/messages with `x-api-key: ${apiKey}` and `anthropic-version: 2023-06-01` headers.
  * Streams SSE events; only `content_block_delta` text deltas are surfaced.
  */
 export const minimaxService: AIService = {
