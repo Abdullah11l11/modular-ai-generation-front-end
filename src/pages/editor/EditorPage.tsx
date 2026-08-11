@@ -16,6 +16,8 @@ import { PropertiesPanel } from '@/features/editor/components/PropertiesPanel/Pr
 import { SinglePageEditorShell } from '@/features/editor/components/SinglePageEditor/SinglePageEditorShell';
 import { EditorToolbar } from '@/features/editor/components/EditorToolbar';
 import { EditorStatusBar } from '@/features/editor/components/EditorStatusBar';
+import { FullScreenPreview } from '@/features/editor/components/FullScreen/FullScreenPreview';
+import { ExportDialog } from '@/features/editor/components/Export/ExportDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ProjectSettingsPanel } from '@/features/projects/components/ProjectSettingsPanel';
 import { ErrorFallback } from '@/components/error-fallback';
@@ -40,6 +42,8 @@ type EditorShellProps = {
 function EditorShell({ project }: EditorShellProps) {
   const { state, dispatch } = useEditorContext();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: filesResponse, isLoading: filesLoading } = useProjectFiles(state.projectId);
@@ -154,7 +158,12 @@ function EditorShell({ project }: EditorShellProps) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <EditorToolbar projectName={project.name} onOpenSettings={() => setIsSettingsOpen(true)} />
+      <EditorToolbar
+        projectName={project.name}
+        onPreview={() => setIsPreviewOpen(true)}
+        onExport={() => setIsExportOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
 
       {isPerSlide ? (
         <div className="flex flex-1 overflow-hidden">
@@ -209,6 +218,17 @@ function EditorShell({ project }: EditorShellProps) {
           <ProjectSettingsPanel project={project} onSaved={() => setIsSettingsOpen(false)} />
         </DialogContent>
       </Dialog>
+
+      {isPreviewOpen && (
+        <FullScreenPreview files={files} onClose={() => setIsPreviewOpen(false)} />
+      )}
+
+      <ExportDialog
+        open={isExportOpen}
+        onOpenChange={setIsExportOpen}
+        files={files}
+        projectName={project.name}
+      />
     </div>
   );
 }
@@ -239,7 +259,12 @@ export default function EditorPage() {
   const editorMode = getEditorMode(project.type?.name);
 
   return (
-    <EditorProvider projectId={projectId} editorMode={editorMode} direction={project.direction}>
+    <EditorProvider
+      projectId={projectId}
+      projectType={project.type?.name ?? ''}
+      editorMode={editorMode}
+      direction={project.direction}
+    >
       <EditorShell project={project} />
     </EditorProvider>
   );

@@ -16,6 +16,7 @@ export type LayerVisibility = Record<ProjectFileKind, boolean>;
 
 export type EditorState = {
   projectId: string;
+  projectType: string;
   editorMode: EditorMode;
   direction: Direction;
   selectedSlideId: string | null;
@@ -27,6 +28,7 @@ export type EditorState = {
 
 export type EditorAction =
   | { type: 'SET_PROJECT_ID'; payload: string }
+  | { type: 'SET_PROJECT_TYPE'; payload: string }
   | { type: 'SET_EDITOR_MODE'; payload: EditorMode }
   | { type: 'SET_DIRECTION'; payload: Direction }
   | { type: 'SET_SELECTED_SLIDE_ID'; payload: string | null }
@@ -39,6 +41,8 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
   switch (action.type) {
     case 'SET_PROJECT_ID':
       return { ...state, projectId: action.payload };
+    case 'SET_PROJECT_TYPE':
+      return { ...state, projectType: action.payload };
     case 'SET_EDITOR_MODE':
       return { ...state, editorMode: action.payload };
     case 'SET_DIRECTION':
@@ -66,6 +70,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
 
 export const initialEditorState: EditorState = {
   projectId: '',
+  projectType: '',
   editorMode: 'per-slide',
   direction: 'ltr',
   selectedSlideId: null,
