@@ -3,7 +3,8 @@ import { getEffectiveBaseUrl } from '../baseUrl';
 
 /**
  * LM Studio local OpenAI-compatible provider.
- * No auth. POST {baseUrl} with `{model, messages, stream: true}`.
+ * No auth. Direct mode: POST {baseUrl} with `{model, messages, stream: true}`.
+ * Proxy mode (`useProxy: true`): POST `/api/lmstudio` with `{baseUrl, model, messages}` — the Vercel proxy handles streaming.
  * Streams `data: {json}\n\n` chunks; `[DONE]` terminates.
  */
 export const lmstudioService: AIService = {
