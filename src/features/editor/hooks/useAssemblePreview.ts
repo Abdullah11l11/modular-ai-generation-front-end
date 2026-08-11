@@ -31,6 +31,72 @@ document.addEventListener('click',function(e){e.preventDefault();var el=e.target
 <\/script>`;
 
 /**
+ * Editor-side base CSS. The project's own `style.css` may only define
+ * `:root` variables (UVCP convention), with no class rules. Inject a
+ * fallback layer that gives standard UVCP/MGF slide classes visible
+ * styling using whatever variables are defined. Variable lookups fall
+ * back to sane defaults if the project CSS doesn't define them.
+ *
+ * `section[class*="-slide"]` and friends match any `-slide` suffix
+ * (uvcp-slide, mgf-slide, etc.) so this works across naming conventions.
+ */
+const BASE_CSS = `
+:root { color-scheme: dark; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--uvcp-color-bg, var(--mgf-bg, #0b0f17));
+  color: var(--uvcp-color-text-primary, var(--mgf-fg, #f4f6fa));
+  font-family: var(--uvcp-font-body, var(--mgf-font, system-ui, sans-serif));
+  line-height: 1.5;
+}
+[class*="-deck"], .uvcp-deck, .mgf-deck {
+  max-width: 960px;
+  margin: 0 auto;
+}
+section[class*="-slide"], section.uvcp-slide, section.mgf-slide {
+  padding: 2.5rem;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+[class*="-label"], .uvcp-label, .mgf-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+  margin: 0 0 0.5rem;
+}
+[class*="-accent-bar"], .uvcp-accent-bar, .mgf-accent-bar {
+  width: 3rem;
+  height: 0.25rem;
+  background: var(--uvcp-color-accent, var(--mgf-accent, #2f80ff));
+  margin: 0.5rem 0 1rem;
+}
+[class*="-title"], h2.uvcp-title, h2.mgf-title {
+  font-family: var(--uvcp-font-display, var(--mgf-font, system-ui, sans-serif));
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  line-height: 1.15;
+}
+[class*="-body"], .uvcp-body, .mgf-body {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin: 0;
+  opacity: 0.85;
+}
+[class*="-slide-number"], .uvcp-slide-number, .mgf-slide-number {
+  margin-top: auto;
+  padding-top: 2rem;
+  font-size: 0.875rem;
+  opacity: 0.4;
+  font-variant-numeric: tabular-nums;
+}
+`;
+
+/**
  * Resolve a dotted path like `slides.0.data.title` against a parsed JSON
  * object. Returns the value as a string, or null if the path doesn't
  * resolve to a scalar.
@@ -108,6 +174,7 @@ export function assemblePreviewHtml({
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
+${BASE_CSS}
 ${contentVars}
 ${layoutCss}
 ${styleCss}
@@ -120,13 +187,16 @@ ${CLICK_HANDLER}
 }
 
 export function useAssemblePreview(input: AssemblePreviewInput): string {
-  return useMemo(() => assemblePreviewHtml(input), [
-    input.slideHtml,
-    input.slideCss,
-    input.layoutCss,
-    input.layoutHtml,
-    input.styleCss,
-    input.contentJson,
-    input.direction,
-  ]);
+  return useMemo(
+    () => assemblePreviewHtml(input),
+    [
+      input.slideHtml,
+      input.slideCss,
+      input.layoutCss,
+      input.layoutHtml,
+      input.styleCss,
+      input.contentJson,
+      input.direction,
+    ],
+  );
 }

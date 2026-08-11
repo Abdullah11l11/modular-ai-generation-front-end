@@ -44,7 +44,13 @@ export const lmstudioService: AIService = {
   },
 
   async testConnection(baseUrl?: string, signal?: AbortSignal): Promise<boolean> {
-    const url = (baseUrl ?? getEffectiveBaseUrl('lmstudio')).replace(/\/$/, '') + '/models';
+    // The chat base URL defaults to `<root>/v1/chat/completions`; the
+    // models endpoint lives at `<root>/v1/models`. Strip the chat suffix
+    // so we hit the right path regardless of whether the override
+    // includes the chat path or just the `/v1` root.
+    const url = (baseUrl ?? getEffectiveBaseUrl('lmstudio'))
+      .replace(/\/chat\/completions\/?$/, '')
+      .replace(/\/$/, '') + '/models';
     try {
       const r = await fetch(url, { method: 'GET', signal });
       return r.ok;
