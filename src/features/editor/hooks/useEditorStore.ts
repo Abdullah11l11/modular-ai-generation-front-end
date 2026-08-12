@@ -15,6 +15,27 @@ const defaultLayerVisibility = Object.fromEntries(
 export type LayerVisibility = Record<ProjectFileKind, boolean>;
 
 /**
+ * A single file change inside an AI proposal. The Apply handler
+ * looks up `name + layer` in the live project files; if it finds
+ * a match it PUTs the new content, otherwise it POSTs a new file.
+ *
+ * `name` is optional — when omitted, the parent (EditorPage) falls
+ * back to the currently selected slide's name. This is the common
+ * case for AI suggestions that just rewrite "the current slide".
+ */
+export type ProposalFile = {
+  layer: ProjectFileKind;
+  content: string;
+  /** Omit to apply to the currently selected slide (per-slide mode)
+   *  or the project's content.html (single-page mode). */
+  name?: string;
+  /** File extension without the dot, used when creating a new
+   *  file. Defaults to `html` for the `slide` layer, `css` for
+   *  `style`/`layout`, `json` for `content`. */
+  extension?: string;
+};
+
+/**
  * Shadow preview state for an AI-suggested change. While `proposal`
  * is non-null the editor canvas renders against this HTML instead
  * of the live files. The user can Apply (commit to backend) or
@@ -25,10 +46,19 @@ export type Proposal = {
    *  used by ChatView to render the ✓ preview badge on the right
    *  message. */
   messageId: number;
-  /** Full HTML block to render in the preview canvas. */
-  html: string;
+  /** The set of file changes to commit on Apply. For Task 3.3
+   *  this is always exactly one entry (the extracted slide HTML)
+   *  but the array is multi-file-aware so future prompts that
+   *  return a full slide bundle can flow through unchanged. */
+  files: ProposalFile[];
   /** Short label for the banner ("Proposal: Hero Section"). */
   label: string;
+  /** Optional pre-rendered HTML for the banner. When set the
+   *  PreviewCanvas renders this directly; otherwise it falls
+   *  back to `files[0].content`. Kept separate from `files` so
+   *  the rendered preview can include BASE_CSS / style.css even
+   *  when the proposal itself is a raw block. */
+  previewHtml?: string;
 };
 
 export type EditorState = {

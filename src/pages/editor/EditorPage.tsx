@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { useProject } from '@/features/projects/hooks/useProject';
 import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
 import { useCreateProjectFile } from '@/features/files/hooks/useCreateProjectFile';
@@ -34,6 +35,33 @@ function getNextStem(slides: { stem: string }[]): string {
     .filter((n) => !Number.isNaN(n));
   const next = nums.length > 0 ? Math.max(...nums) + 1 : 1;
   return `slide-${String(next).padStart(2, '0')}`;
+}
+
+/** Plan entry — one resolved file mutation produced by Apply. */
+type Plan = {
+  fileId?: string;
+  layer: ProjectFileKind;
+  name: string;
+  extension: string;
+  content: string;
+};
+
+/** Best-guess extension for a layer + name when the caller didn't
+ *  supply one. Falls back to the layer's canonical extension. */
+function inferExtension(layer: ProjectFileKind, name: string): string {
+  const fromName = name.match(/\.([^.]+)$/);
+  if (fromName) return fromName[1];
+  switch (layer) {
+    case 'slide':
+      return 'html';
+    case 'style':
+    case 'layout':
+      return 'css';
+    case 'content':
+      return 'json';
+    default:
+      return 'txt';
+  }
 }
 
 type EditorShellProps = {
@@ -93,48 +121,119 @@ function EditorShell({ project }: EditorShellProps) {
     queryClient.invalidateQueries({ queryKey: ['projects', state.projectId, 'files'] });
   }, [queryClient, state.projectId]);
 
-  // Commit the current AI proposal to the selected slide's HTML file.
-  // Optimistic: the cache is updated synchronously so the preview
-  // flips to the new content before the PUT round-trip resolves.
-  // Falls back to a no-op (with a clear proposal state) if there is
-  // no selected slide — the user can still re-target by selecting a
-  // slide and clicking Apply again. (Task 3.3 will add backend
-  // persistence for multi-file proposals.)
-  const handleApplyProposal = useCallback(() => {
+  // Commit the current AI proposal to the backend.
+  //
+  // Each `ProposalFile` is resolved against the live project file
+  // list by `(layer, name)`. When `name` is omitted (the common
+  // case for a single-slide rewrite) we fall back to the currently
+  // selected slide's file in per-slide mode. Found files are PUT
+  // (via updateMutation), missing ones are POSTed (via
+  // createMutation). All operations run in parallel via
+  // Promise.all so a multi-file apply completes in one round-trip.
+  //
+  // On success we toast the count and clear the proposal state;
+  // on failure we keep the proposal visible so the user can retry.
+  const handleApplyProposal = useCallback(async () => {
     const proposal = state.proposal;
     if (!proposal) return;
-    if (!selectedSlideHtmlFile) return;
-    // Optimistic cache update so the preview reflects the change
-    // immediately.
+
+    const plans: Plan[] = [];
+    for (const f of proposal.files) {
+      // Resolve target name — fall back to the selected slide.
+      let targetName = f.name;
+      if (!targetName) {
+        if (!selectedSlideHtmlFile) continue;
+        targetName = selectedSlideHtmlFile.name;
+      }
+      // Look up the file in the live cache. If found, PUT; else POST.
+      const existing = files.find(
+        (x) => x.layer === f.layer && x.name === targetName,
+      );
+      const extension =
+        f.extension ?? existing?.extension ?? inferExtension(f.layer, targetName);
+      if (existing) {
+        plans.push({
+          fileId: existing.id,
+          layer: f.layer,
+          name: targetName,
+          extension,
+          content: f.content,
+        });
+      } else {
+        plans.push({
+          layer: f.layer,
+          name: targetName,
+          extension,
+          content: f.content,
+        });
+      }
+    }
+
+    if (plans.length === 0) {
+      // Nothing to do — still clear so the banner goes away.
+      dispatch({ type: 'APPLY_PROPOSAL' });
+      toast.info('Nothing to apply — select a slide first.');
+      return;
+    }
+
+    // Optimistic cache update so the preview flips immediately.
     queryClient.setQueryData(
       ['projects', state.projectId, 'files'],
       (old: { data: ProjectFile[] } | undefined) => {
         if (!old) return old;
         return {
           ...old,
-          data: old.data.map((f) =>
-            f.id === selectedSlideHtmlFile.id ? { ...f, content: proposal.html } : f,
-          ),
+          data: old.data.map((f) => {
+            const update = plans.find((p) => p.fileId === f.id);
+            return update ? { ...f, content: update.content } : f;
+          }),
         };
       },
     );
-    updateMutation.mutate(
-      {
-        projectId: state.projectId,
-        fileId: selectedSlideHtmlFile.id,
-        payload: { content: proposal.html },
-      },
-      {
-        onSettled: () => invalidateFiles(),
-      },
-    );
+
+    try {
+      await Promise.all(
+        plans.map((p) =>
+          p.fileId
+            ? updateMutation.mutateAsync({
+                projectId: state.projectId,
+                fileId: p.fileId,
+                payload: { content: p.content },
+              })
+            : createMutation.mutateAsync({
+                projectId: state.projectId,
+                payload: {
+                  layer: p.layer,
+                  name: p.name,
+                  extension: p.extension,
+                  content: p.content,
+                },
+              }),
+        ),
+      );
+      await invalidateFiles();
+      dispatch({ type: 'APPLY_PROPOSAL' });
+      toast.success(
+        plans.length === 1 ? 'Applied 1 change' : `Applied ${plans.length} changes`,
+      );
+    } catch (err) {
+      // Roll back the optimistic update on failure so the editor
+      // doesn't show stale applied state.
+      await invalidateFiles();
+      toast.error(
+        `Apply failed: ${err instanceof Error ? err.message : 'unknown error'}`,
+      );
+    }
   }, [
     state.proposal,
     state.projectId,
     selectedSlideHtmlFile,
+    files,
     queryClient,
     updateMutation,
+    createMutation,
     invalidateFiles,
+    dispatch,
   ]);
 
   // Populate the editor's preview-with-apply proposal state from
@@ -142,7 +241,15 @@ function EditorShell({ project }: EditorShellProps) {
   // when the user clicks Apply (handled by `handleApplyProposal`).
   const handlePreviewProposal = useCallback(
     (html: string, messageId: number, label: string) => {
-      dispatch({ type: 'SET_PROPOSAL', payload: { html, messageId, label } });
+      dispatch({
+        type: 'SET_PROPOSAL',
+        payload: {
+          messageId,
+          label,
+          previewHtml: html,
+          files: [{ layer: 'slide', content: html }],
+        },
+      });
     },
     [dispatch],
   );
@@ -174,6 +281,7 @@ function EditorShell({ project }: EditorShellProps) {
         },
         {
           onSettled: () => invalidateFiles(),
+          onSuccess: () => toast.success('Applied 1 change'),
         },
       );
     },

@@ -78,7 +78,10 @@ export function PreviewCanvas({
   // AI output is a slide block, not a full document.
   const proposalSrcDoc = state.proposal
     ? assemblePreviewHtml({
-        slideHtml: state.proposal.html,
+        slideHtml:
+          state.proposal.previewHtml ??
+          state.proposal.files[0]?.content ??
+          '',
         slideCss: '',
         layoutCss,
         layoutHtml: '',
