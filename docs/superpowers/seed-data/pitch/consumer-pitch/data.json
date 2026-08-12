@@ -1,0 +1,67 @@
+{
+  "_meta": {
+    "project": "Marask — direct-to-consumer hair care, MENA",
+    "audience": "Consumer growth investors",
+    "brand_voice": "warm, confident, lifestyle-forward",
+    "output_target": "presentation-deck",
+    "total_slides": 6,
+    "language": "en",
+    "direction": "ltr"
+  },
+  "slides": [
+    {
+      "stem": "slide-01-cover",
+      "data": {
+        "title": "Marask",
+        "subtitle": "Care for textured hair, made in the region",
+        "author": "Marask team",
+        "date": "Series A — 2026"
+      }
+    },
+    {
+      "stem": "slide-02-problem",
+      "data": {
+        "eyebrow": "Problem",
+        "title": "The category is dominated by imports",
+        "body": "Textured-hair shoppers in the Gulf and North Africa spend 70% of their category budget on imported brands, with a 6-month average product lead time."
+      }
+    },
+    {
+      "stem": "slide-03-product",
+      "data": {
+        "eyebrow": "Product",
+        "title": "Made locally, formulated for the climate",
+        "body": "Marask ships 12 SKUs, all formulated for humidity, hard water, and sun exposure — and manufactured in a single Riyadh facility."
+      }
+    },
+    {
+      "stem": "slide-04-traction",
+      "data": {
+        "eyebrow": "Traction",
+        "title": "What 18 months have shown us",
+        "stats": [
+          { "value": "$3.1M", "label": "ARR, end of Q4 2025" },
+          { "value": "26%", "label": "MoM growth, last 6 months" },
+          { "value": "4.8★", "label": "average rating, 9k reviews" },
+          { "value": "61%", "label": "subscription retention at month 6" }
+        ]
+      }
+    },
+    {
+      "stem": "slide-05-ask",
+      "data": {
+        "eyebrow": "Ask",
+        "title": "Raising $8M Series A",
+        "body": "To expand the SKU line to body care, and to open our first owned retail concept in Riyadh."
+      }
+    },
+    {
+      "stem": "slide-06-closing",
+      "data": {
+        "eyebrow": "Contact",
+        "title": "Let's talk",
+        "cta": "partners@marask.care"
+      }
+    }
+  ]
+}

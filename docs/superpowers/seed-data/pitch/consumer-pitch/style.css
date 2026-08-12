@@ -1,0 +1,34 @@
+/* style.css — Consumer (DTC) pitch (English, LTR).
+   Warm cream background with magenta accent — the most divergent
+   palette in the seed set. Tests that --mgf-color-text-inverse
+   flips correctly (cream on dark buttons vs dark on cream). */
+
+:root {
+  --mgf-color-bg: #fff7f1;
+  --mgf-color-surface: #ffffff;
+  --mgf-color-surface-2: #f4e7dc;
+  --mgf-color-text-primary: #2c0d1a;
+  --mgf-color-text-secondary: #6a4a55;
+  --mgf-color-text-inverse: #ffffff;
+  --mgf-color-accent: #d6336c;
+  --mgf-color-accent-soft: rgba(214, 51, 108, 0.10);
+  --mgf-color-border: rgba(44, 13, 26, 0.10);
+  --mgf-color-border-strong: #d6336c;
+  --mgf-radius-md: 12px;
+  --mgf-radius-lg: 22px;
+  --mgf-space-2: 0.5rem;
+  --mgf-space-4: 1rem;
+  --mgf-space-6: 1.5rem;
+  --mgf-space-8: 2rem;
+  --mgf-text-sm: 0.9375rem;
+  --mgf-text-base: 1.0625rem;
+  --mgf-text-lg: 1.25rem;
+  --mgf-text-2xl: 2.5rem;
+  --mgf-text-3xl: 3.5rem;
+  --mgf-weight-medium: 500;
+  --mgf-weight-bold: 700;
+  --mgf-leading-tight: 1.15;
+  --mgf-leading-normal: 1.5;
+  --mgf-tracking-tight: -0.02em;
+  --mgf-tracking-wide: 0.06em;
+}

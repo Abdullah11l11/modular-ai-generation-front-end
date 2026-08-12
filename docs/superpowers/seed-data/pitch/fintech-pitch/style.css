@@ -1,0 +1,34 @@
+/* style.css — Fintech Series A pitch (English, LTR).
+   Distinct from the existing 'tech-pitch' seeder by being narrower
+   in scope (one product, one market) and brighter in accent. */
+
+:root {
+  --mgf-color-bg: #0a1020;
+  --mgf-color-surface: #0f1730;
+  --mgf-color-surface-2: #18214a;
+  --mgf-color-text-primary: #f4f6fa;
+  --mgf-color-text-secondary: #9aa6c4;
+  --mgf-color-text-inverse: #0a1020;
+  --mgf-color-accent: #2f80ff;
+  --mgf-color-accent-soft: rgba(47, 128, 255, 0.12);
+  --mgf-color-border: rgba(255, 255, 255, 0.08);
+  --mgf-color-border-strong: #1f2a55;
+  --mgf-radius-md: 10px;
+  --mgf-radius-lg: 18px;
+  --mgf-space-2: 0.5rem;
+  --mgf-space-4: 1rem;
+  --mgf-space-6: 1.5rem;
+  --mgf-space-8: 2rem;
+  --mgf-space-12: 3rem;
+  --mgf-text-sm: 0.9375rem;
+  --mgf-text-base: 1.0625rem;
+  --mgf-text-lg: 1.25rem;
+  --mgf-text-2xl: 2.5rem;
+  --mgf-text-3xl: 3.5rem;
+  --mgf-weight-medium: 500;
+  --mgf-weight-bold: 700;
+  --mgf-leading-tight: 1.15;
+  --mgf-leading-normal: 1.5;
+  --mgf-tracking-tight: -0.03em;
+  --mgf-tracking-wide: 0.08em;
+}
