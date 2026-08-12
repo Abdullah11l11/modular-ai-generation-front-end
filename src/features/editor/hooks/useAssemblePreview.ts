@@ -655,8 +655,13 @@ export function assemblePreviewHtml({
   //   `<div>` — the body's outer element already satisfies the
   //   "inside it" condition from `mathRender.ts`'s docstring.
   const bodyClass = hasMath ? 'mgf-math-enabled mgf-math-root' : '';
+  // `lang` mirrors the project's `direction` so the browser picks
+  // the right hyphenation, font-fallback, and spell-check rules per
+  // paragraph. RTL → `ar` is the only seeded case today; if the
+  // project metadata ever grows a `language` field, prefer that.
+  const lang = direction === 'rtl' ? 'ar' : 'en';
   return `<!DOCTYPE html>
-<html dir="${direction}">
+<html dir="${direction}" lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
