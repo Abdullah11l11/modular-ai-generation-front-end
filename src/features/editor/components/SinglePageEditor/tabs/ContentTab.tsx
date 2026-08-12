@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useUpdateProjectFile } from '@/features/files/hooks/useUpdateProjectFile';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { PlusIcon, XIcon } from 'lucide-react';
+import { fixRTLText } from '@/features/editor/utils/rtlText';
 import type { ProjectFile } from '@/types/api';
 
 type ContentTabProps = {
@@ -118,26 +119,23 @@ export function ContentTab({ projectId, contentFile }: ContentTabProps) {
   return (
     <div className="flex flex-col gap-4">
       {KNOWN_KEYS.map((key) => (
-        <div key={key} className="flex flex-col gap-1">
-          <label className="text-xs text-(--t3) capitalize">{key}</label>
-          <input
-            type="text"
-            value={fields[key] ?? ''}
-            onChange={(e) => updateField(key, e.target.value)}
-            className="h-7 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
-          />
-        </div>
+        <BidiFieldInput
+          key={key}
+          label={key}
+          displayLabel={key}
+          value={fields[key] ?? ''}
+          onChange={(v) => updateField(key, v)}
+        />
       ))}
 
       {customKeys.map((key) => (
         <div key={key} className="flex items-center gap-1">
           <div className="flex flex-1 flex-col gap-1">
-            <label className="text-xs text-(--t3)">{key}</label>
-            <input
-              type="text"
+            <BidiFieldInput
+              label={key}
+              displayLabel={key}
               value={fields[key] ?? ''}
-              onChange={(e) => updateField(key, e.target.value)}
-              className="h-7 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
+              onChange={(v) => updateField(key, v)}
             />
           </div>
           <Button
@@ -155,6 +153,36 @@ export function ContentTab({ projectId, contentFile }: ContentTabProps) {
         <PlusIcon className="size-3" />
         Add field
       </Button>
+    </div>
+  );
+}
+
+function BidiFieldInput({
+  label,
+  displayLabel,
+  value,
+  onChange,
+}: {
+  label: string;
+  displayLabel: string;
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  // Per-field dir decided by the first strong character of the value.
+  // This matches the per-slide ContentTab behaviour so Arabic / English
+  // input flows feel consistent across the editor.
+  const dir = useMemo(() => fixRTLText(value), [value]);
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs text-(--t3)">{displayLabel}</label>
+      <input
+        type="text"
+        aria-label={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        dir={dir}
+        className="h-7 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
+      />
     </div>
   );
 }

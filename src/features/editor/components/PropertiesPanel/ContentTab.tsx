@@ -6,6 +6,7 @@ import {
   isLongTextField,
   type DataField,
 } from '@/features/editor/utils/dataFields';
+import { fixRTLText } from '@/features/editor/utils/rtlText';
 
 type ContentTabProps = {
   fileContent: string;
@@ -125,6 +126,13 @@ function FieldInput({
 }) {
   const long = isLongTextField(field.tagName);
   const label = labelForField(field.key);
+  // Bidi-tolerant: the input controls their own direction based on
+  // the text content's first strong character. A Saudi phone number
+  // embedded in an English paragraph stays LTR; an Arabic title in
+  // an otherwise-English project becomes RTL without the user having
+  // to flip a switch. Spelling it out (rather than `dir="auto"`)
+  // avoids the historical caret-misplacement bugs on Safari.
+  const dir = useMemo(() => fixRTLText(field.value), [field.value]);
   return (
     <label className="flex flex-col gap-1">
       <span className="flex items-center justify-between">
@@ -137,6 +145,7 @@ function FieldInput({
           onChange={(e) => onChange(e.target.value)}
           rows={3}
           spellCheck={false}
+          dir={dir}
           className="w-full resize-y rounded-md border border-(--bor2) bg-(--sur) p-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
         />
       ) : (
@@ -144,6 +153,7 @@ function FieldInput({
           type="text"
           value={field.value}
           onChange={(e) => onChange(e.target.value)}
+          dir={dir}
           className="h-7 w-full rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
         />
       )}
