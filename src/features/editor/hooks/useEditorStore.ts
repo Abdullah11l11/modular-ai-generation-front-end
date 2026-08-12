@@ -14,6 +14,23 @@ const defaultLayerVisibility = Object.fromEntries(
 
 export type LayerVisibility = Record<ProjectFileKind, boolean>;
 
+/**
+ * Shadow preview state for an AI-suggested change. While `proposal`
+ * is non-null the editor canvas renders against this HTML instead
+ * of the live files. The user can Apply (commit to backend) or
+ * Discard (drop it). No file system side effects fire until Apply.
+ */
+export type Proposal = {
+  /** Index of the assistant message that produced this proposal —
+   *  used by ChatView to render the ✓ preview badge on the right
+   *  message. */
+  messageId: number;
+  /** Full HTML block to render in the preview canvas. */
+  html: string;
+  /** Short label for the banner ("Proposal: Hero Section"). */
+  label: string;
+};
+
 export type EditorState = {
   projectId: string;
   projectType: string;
@@ -24,6 +41,7 @@ export type EditorState = {
   layerVisibility: LayerVisibility;
   activeTab: ActiveTab;
   isGenerating: boolean;
+  proposal: Proposal | null;
 };
 
 export type EditorAction =
@@ -35,7 +53,10 @@ export type EditorAction =
   | { type: 'SET_SELECTED_ELEMENT'; payload: string | null }
   | { type: 'TOGGLE_LAYER'; payload: ProjectFileKind }
   | { type: 'SET_ACTIVE_TAB'; payload: ActiveTab }
-  | { type: 'SET_IS_GENERATING'; payload: boolean };
+  | { type: 'SET_IS_GENERATING'; payload: boolean }
+  | { type: 'SET_PROPOSAL'; payload: Proposal }
+  | { type: 'CLEAR_PROPOSAL' }
+  | { type: 'APPLY_PROPOSAL' };
 
 export function editorReducer(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
@@ -63,6 +84,16 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return { ...state, activeTab: action.payload };
     case 'SET_IS_GENERATING':
       return { ...state, isGenerating: action.payload };
+    case 'SET_PROPOSAL':
+      return { ...state, proposal: action.payload };
+    case 'CLEAR_PROPOSAL':
+      return { ...state, proposal: null };
+    case 'APPLY_PROPOSAL':
+      // The store only clears the shadow state here. The actual
+      // file-system mutation (PUT to the backend) lives in the
+      // component that owns the apply handler (EditorPage) so it
+      // has access to TanStack Query + the selected slide ID.
+      return { ...state, proposal: null };
     default:
       return state;
   }
@@ -78,6 +109,7 @@ export const initialEditorState: EditorState = {
   layerVisibility: defaultLayerVisibility,
   activeTab: 'theme',
   isGenerating: false,
+  proposal: null,
 };
 
 type EditorContextValue = {

@@ -6,6 +6,7 @@ import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
 import { useCreateProjectFile } from '@/features/files/hooks/useCreateProjectFile';
 import { useDeleteProjectFile } from '@/features/files/hooks/useDeleteProjectFile';
 import { useReorderProjectFiles } from '@/features/files/hooks/useReorderProjectFiles';
+import { useUpdateProjectFile } from '@/features/files/hooks/useUpdateProjectFile';
 import { EditorProvider } from '@/features/editor/components/EditorProvider';
 import { useEditorContext } from '@/features/editor/hooks/useEditorStore';
 import { getEditorMode } from '@/features/editor/utils/editorMode';
@@ -22,7 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ProjectSettingsPanel } from '@/features/projects/components/ProjectSettingsPanel';
 import { ErrorFallback } from '@/components/error-fallback';
 import { FullPageLoader } from '@/components/full-page-loader';
-import type { Project, ProjectFileKind, Id } from '@/types/api';
+import type { Project, ProjectFileKind, Id, ProjectFile } from '@/types/api';
 
 function getNextStem(slides: { stem: string }[]): string {
   const nums = slides
@@ -86,10 +87,55 @@ function EditorShell({ project }: EditorShellProps) {
   const createMutation = useCreateProjectFile();
   const deleteMutation = useDeleteProjectFile();
   const reorderMutation = useReorderProjectFiles();
+  const updateMutation = useUpdateProjectFile();
 
   const invalidateFiles = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['projects', state.projectId, 'files'] });
   }, [queryClient, state.projectId]);
+
+  // Commit the current AI proposal to the selected slide's HTML file.
+  // Optimistic: the cache is updated synchronously so the preview
+  // flips to the new content before the PUT round-trip resolves.
+  // Falls back to a no-op (with a clear proposal state) if there is
+  // no selected slide — the user can still re-target by selecting a
+  // slide and clicking Apply again. (Task 3.3 will add backend
+  // persistence for multi-file proposals.)
+  const handleApplyProposal = useCallback(() => {
+    const proposal = state.proposal;
+    if (!proposal) return;
+    if (!selectedSlideHtmlFile) return;
+    // Optimistic cache update so the preview reflects the change
+    // immediately.
+    queryClient.setQueryData(
+      ['projects', state.projectId, 'files'],
+      (old: { data: ProjectFile[] } | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.map((f) =>
+            f.id === selectedSlideHtmlFile.id ? { ...f, content: proposal.html } : f,
+          ),
+        };
+      },
+    );
+    updateMutation.mutate(
+      {
+        projectId: state.projectId,
+        fileId: selectedSlideHtmlFile.id,
+        payload: { content: proposal.html },
+      },
+      {
+        onSettled: () => invalidateFiles(),
+      },
+    );
+  }, [
+    state.proposal,
+    state.projectId,
+    selectedSlideHtmlFile,
+    queryClient,
+    updateMutation,
+    invalidateFiles,
+  ]);
 
   const handleAddSlide = useCallback(
     (sourceStem: string | null = null) => {
@@ -207,7 +253,7 @@ function EditorShell({ project }: EditorShellProps) {
           </aside>
 
           <main className="flex flex-1 overflow-hidden">
-            <PreviewCanvas />
+            <PreviewCanvas onApplyProposal={handleApplyProposal} />
           </main>
 
           <aside className="flex w-72 shrink-0 flex-col border-l border-(--bor2) bg-(--sur) p-3">
