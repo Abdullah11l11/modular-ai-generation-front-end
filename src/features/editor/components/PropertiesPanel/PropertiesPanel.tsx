@@ -118,6 +118,11 @@ export function PropertiesPanel({
           <StyleTab
             fileContent={styleTabContent}
             fileId={styleTabFile?.id ?? ''}
+            fileLabel={
+              isPerSlide
+                ? 'style/style.css'
+                : 'layout/layout.css'
+            }
             onUpdate={(_, c) => {
               if (styleTabFile) scheduleUpdate(styleTabFile.id, c);
             }}

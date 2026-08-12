@@ -29,11 +29,17 @@ function updateVar(content: string, key: string, value: string): string {
 type StyleTabProps = {
   fileContent: string;
   fileId: string;
+  /** Human-readable identifier for the file the panel is editing, e.g.
+   *  `"style/style.css"`. Shown in the panel header so the user always
+   *  knows whether they're touching the project theme or a per-slide
+   *  override (per-slide projects have no separate file; both tabs
+   *  edit the project-level `style.css`). */
+  fileLabel: string;
   onUpdate: (fileId: string, content: string) => void;
 };
 
-export function StyleTab({ fileContent, fileId, onUpdate }: StyleTabProps) {
-  const { groups } = useCssProperties(fileContent, STYLE_PROPERTIES);
+export function StyleTab({ fileContent, fileId, fileLabel, onUpdate }: StyleTabProps) {
+  const { groups, hasVariables } = useCssProperties(fileContent, STYLE_PROPERTIES);
 
   function handleUpdate(key: string, value: string) {
     onUpdate(fileId, updateVar(fileContent, key, value));
@@ -41,6 +47,15 @@ export function StyleTab({ fileContent, fileId, onUpdate }: StyleTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="rounded-md border border-(--bor2) bg-(--sur) px-2 py-1.5">
+        <div className="text-[10px] uppercase tracking-wider text-(--t3)">Editing</div>
+        <div className="font-mono text-xs text-(--t2)">{fileLabel}</div>
+      </div>
+      {!hasVariables && (
+        <div className="rounded-md border border-dashed border-(--bor2) bg-(--sur)/50 px-3 py-2 text-xs text-(--t3)">
+          Empty file — start with a <code className="font-mono text-(--t2)">:root { '{ … }' }</code> block. Changes you make here will create it automatically.
+        </div>
+      )}
       {groups.map((group) => (
         <div key={group.name} className="flex flex-col gap-2">
           <span className="text-xs font-semibold text-(--t2) uppercase tracking-wider">{group.label}</span>
