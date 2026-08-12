@@ -138,7 +138,170 @@ section.mgf-slide {
   font-weight: 700;
   margin: 0;
   line-height: 1.1;
-}`;
+}
+
+/* ── Website archetype (scrollable single-page sites) ───────────────
+   The website builder emits layout.html (the page chrome — nav +
+   footer + {{slides}} slot) but no layout.css. The classes below
+   therefore live in the editor-side BASE_CSS so every assembled
+   preview has rules for them. The full vocabulary is documented in
+   src/lib/ai/prompts/standards/website.md.
+   ────────────────────────────────────────────────────────────────── */
+
+.mgf-website {
+  background: var(--mgf-color-bg, #0b0f17);
+  color: var(--mgf-color-text-primary, #f4f6fa);
+  min-height: 100vh;
+  font-family: var(--mgf-font-body, system-ui, sans-serif);
+  line-height: var(--mgf-leading-normal, 1.5);
+}
+.mgf-website-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--mgf-space-4, 1rem) var(--mgf-space-8, 2rem);
+  background: rgba(11, 15, 23, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--mgf-color-border, rgba(255,255,255,0.08));
+}
+.mgf-website-brand {
+  font-family: var(--mgf-font-display, system-ui, sans-serif);
+  font-weight: var(--mgf-weight-bold, 700);
+  font-size: var(--mgf-text-lg, 1.25rem);
+  color: var(--mgf-color-text-primary, #f4f6fa);
+  text-decoration: none;
+}
+.mgf-website-links {
+  display: flex;
+  align-items: center;
+  gap: var(--mgf-space-6, 1.5rem);
+}
+.mgf-website-links a {
+  color: var(--mgf-color-text-secondary, #94a3b8);
+  text-decoration: none;
+  font-size: var(--mgf-text-sm, 0.875rem);
+  font-weight: var(--mgf-weight-medium, 500);
+  transition: color 150ms ease;
+}
+.mgf-website-links a:hover { color: var(--mgf-color-text-primary, #f4f6fa); }
+.mgf-website-footer {
+  padding: var(--mgf-space-12, 3rem) var(--mgf-space-8, 2rem);
+  border-top: 1px solid var(--mgf-color-border, rgba(255,255,255,0.08));
+  text-align: center;
+}
+
+.mgf-website-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--mgf-space-24, 6rem) var(--mgf-space-8, 2rem);
+  max-width: 960px;
+  margin: 0 auto;
+}
+.mgf-website-hero-title {
+  font-family: var(--mgf-font-display, system-ui, sans-serif);
+  font-size: clamp(2.5rem, 5vw, var(--mgf-text-4xl, 5rem));
+  font-weight: var(--mgf-weight-bold, 700);
+  line-height: var(--mgf-leading-tight, 1.15);
+  letter-spacing: var(--mgf-tracking-tight, -0.03em);
+  margin: var(--mgf-space-4, 1rem) 0;
+  color: var(--mgf-color-text-primary, #f4f6fa);
+}
+.mgf-website-hero-sub {
+  font-size: var(--mgf-text-lg, 1.25rem);
+  line-height: var(--mgf-leading-normal, 1.5);
+  color: var(--mgf-color-text-secondary, #94a3b8);
+  max-width: 640px;
+  margin: 0 0 var(--mgf-space-8, 2rem);
+}
+.mgf-website-hero-ctas {
+  display: flex;
+  align-items: center;
+  gap: var(--mgf-space-6, 1.5rem);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mgf-website-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--mgf-space-24, 6rem) var(--mgf-space-8, 2rem);
+}
+.mgf-website-section-header {
+  text-align: center;
+  margin-bottom: var(--mgf-space-12, 3rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mgf-space-3, 0.75rem);
+  align-items: center;
+}
+.mgf-website-section-title {
+  font-family: var(--mgf-font-display, system-ui, sans-serif);
+  font-size: var(--mgf-text-3xl, 3.5rem);
+  font-weight: var(--mgf-weight-bold, 700);
+  line-height: var(--mgf-leading-tight, 1.15);
+  letter-spacing: var(--mgf-tracking-tight, -0.03em);
+  margin: 0;
+  color: var(--mgf-color-text-primary, #f4f6fa);
+}
+.mgf-website-section-sub {
+  font-size: var(--mgf-text-lg, 1.25rem);
+  color: var(--mgf-color-text-secondary, #94a3b8);
+  margin: 0;
+  max-width: 640px;
+}
+.mgf-website-testimonial {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--mgf-space-6, 1.5rem);
+}
+.mgf-website-faq {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.mgf-website-cta {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--mgf-space-3, 0.75rem);
+}
+.mgf-website-cta-title {
+  font-family: var(--mgf-font-display, system-ui, sans-serif);
+  font-size: var(--mgf-text-3xl, 3.5rem);
+  font-weight: var(--mgf-weight-bold, 700);
+  line-height: var(--mgf-leading-tight, 1.15);
+  margin: 0;
+  color: var(--mgf-color-text-primary, #f4f6fa);
+}
+.mgf-website-cta-body {
+  font-size: var(--mgf-text-lg, 1.25rem);
+  color: var(--mgf-color-text-secondary, #94a3b8);
+  margin: 0;
+  max-width: 540px;
+}
+
+.mgf-cta-lg {
+  padding: var(--mgf-space-4, 1rem) var(--mgf-space-8, 2rem);
+  font-size: var(--mgf-text-base, 1rem);
+}
+
+/* Make sure the section-level stats/pricing grids sit nicely inside
+   the wide 1200px section container. */
+.mgf-website-section .mgf-stat-group { gap: var(--mgf-space-8, 2rem); }
+.mgf-website-section .mgf-grid-4 { gap: var(--mgf-space-6, 1.5rem); }
+.mgf-website-section .mgf-grid-3 { gap: var(--mgf-space-6, 1.5rem); }`;
 
 /**
  * Theme-aware overrides for KaTeX-rendered math. KaTeX's own CSS sets

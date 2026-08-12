@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useProject } from '@/features/projects/hooks/useProject';
@@ -49,6 +49,19 @@ function EditorShell({ project }: EditorShellProps) {
   const { data: filesResponse, isLoading: filesLoading } = useProjectFiles(state.projectId);
   const files = filesResponse?.data ?? [];
   const slides = groupSlides(files);
+
+  // Auto-select the first slide on mount so the canvas isn't empty.
+  // Without this the user lands on "Select a slide to preview" with
+  // nothing visible — particularly confusing for website projects
+  // where users expect to see *something* immediately. Subsequent
+  // renders do not re-fire the dispatch because `selectedSlideId` is
+  // already non-null.
+  useEffect(() => {
+    if (state.selectedSlideId) return;
+    const first = slides[0]?.files.slide?.id;
+    if (first) dispatch({ type: 'SET_SELECTED_SLIDE_ID', payload: first });
+  }, [slides, state.selectedSlideId, dispatch]);
+
   const selectedIdx = state.selectedSlideId
     ? slides.findIndex((s) => s.files.slide?.id === state.selectedSlideId)
     : -1;

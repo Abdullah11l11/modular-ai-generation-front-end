@@ -201,11 +201,18 @@ export function FullScreenPreview({ files, onClose }: FullScreenPreviewProps) {
         }
       >
         {scrollable ? (
+          // Scrollable types render at their natural full-page height.
+          // The parent div is `overflow-auto`, so the user scrolls the
+          // iframe externally — same as scrolling a real website. We
+          // use `h-full w-full` (not `min-h-full`) so the iframe fully
+          // fills the flex column container; otherwise the iframe
+          // collapses to 0px in a flex layout and nothing renders.
           <iframe
             title="Full-screen preview"
             srcDoc={html}
             sandbox="allow-same-origin allow-popups"
-            className="min-h-full w-full border-0"
+            className="h-full w-full border-0 bg-(--sur)"
+            style={{ minHeight: '100vh' }}
           />
         ) : (
           <div className="flex max-h-full max-w-6xl items-center justify-center">
