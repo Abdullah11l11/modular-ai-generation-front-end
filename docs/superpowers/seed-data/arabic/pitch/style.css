@@ -1,0 +1,38 @@
+/* style.css — Arabic pitch deck (Series A template, RTL).
+   Drop into MgfFileBuilders::pitchArabicFiles(). The frontend
+   BASE_CSS already injects the Cairo + Noto Naskh Arabic stack
+   when the project's direction is 'rtl' (see Task 4.2), so the
+   project tokens below can stick to the Arabic-friendly values
+   that match the seeded dark theme. */
+
+:root {
+  --mgf-color-bg: #0b0f17;
+  --mgf-color-surface: #0f1218;
+  --mgf-color-surface-2: #1a2238;
+  --mgf-color-text-primary: #f4f6fa;
+  --mgf-color-text-secondary: #94a3b8;
+  --mgf-color-text-inverse: #0a0e1a;
+  --mgf-color-accent: #22d3ee;
+  --mgf-color-accent-soft: rgba(34, 211, 238, 0.12);
+  --mgf-color-border: rgba(255, 255, 255, 0.08);
+  --mgf-color-border-strong: #1f2940;
+  --mgf-radius-md: 10px;
+  --mgf-radius-lg: 18px;
+  --mgf-space-2: 0.5rem;
+  --mgf-space-4: 1rem;
+  --mgf-space-6: 1.5rem;
+  --mgf-space-8: 2rem;
+  --mgf-space-12: 3rem;
+  --mgf-text-sm: 0.9375rem;
+  --mgf-text-base: 1.0625rem;
+  --mgf-text-lg: 1.25rem;
+  --mgf-text-2xl: 2.5rem;
+  --mgf-text-3xl: 3.5rem;
+  --mgf-text-4xl: 5rem;
+  --mgf-weight-medium: 500;
+  --mgf-weight-bold: 700;
+  --mgf-leading-tight: 1.15;
+  --mgf-leading-normal: 1.5;
+  --mgf-tracking-tight: -0.03em;
+  --mgf-tracking-wide: 0.08em;
+}
