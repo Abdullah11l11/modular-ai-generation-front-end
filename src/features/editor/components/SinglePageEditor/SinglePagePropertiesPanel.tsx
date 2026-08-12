@@ -5,7 +5,6 @@ import { LayoutTab } from '@/features/editor/components/SinglePageEditor/tabs/La
 import { HtmlTab } from '@/features/editor/components/SinglePageEditor/tabs/HtmlTab';
 import { CssTab } from '@/features/editor/components/SinglePageEditor/tabs/CssTab';
 import { ContentTab } from '@/features/editor/components/SinglePageEditor/tabs/ContentTab';
-import { useCssPropertyUpdates } from '@/features/editor/hooks/useCssPropertyUpdates';
 import type { ProjectFile } from '@/types/api';
 
 type SinglePagePropertiesPanelProps = {
@@ -15,6 +14,8 @@ type SinglePagePropertiesPanelProps = {
   contentFile: ProjectFile | null;
   layoutFile: ProjectFile | null;
   filesLoading: boolean;
+  onPreviewProposal: (html: string, messageId: number, label: string) => void;
+  onInsertProposal: (html: string) => void;
 };
 
 const TABS = [
@@ -32,9 +33,10 @@ export function SinglePagePropertiesPanel({
   contentFile,
   layoutFile,
   filesLoading,
+  onPreviewProposal,
+  onInsertProposal,
 }: SinglePagePropertiesPanelProps) {
   const [activeTab, setActiveTab] = useState('layout');
-  const { scheduleUpdate } = useCssPropertyUpdates(projectId);
 
   if (filesLoading) {
     return (
@@ -80,12 +82,8 @@ export function SinglePagePropertiesPanel({
             selectedSlideHtmlFile={htmlFile}
             styleCssFile={styleFile}
             layoutCssFile={layoutFile}
-            onInsertIntoEditor={(text) => {
-              const match = text.match(/<(\w+)[^>]*\bmgf-slide\b[^>]*>[\s\S]*?<\/\1>/);
-              if (match && htmlFile) {
-                scheduleUpdate(htmlFile.id, match[0]);
-              }
-            }}
+            onPreview={onPreviewProposal}
+            onInsert={onInsertProposal}
           />
         </TabsContent>
       </div>

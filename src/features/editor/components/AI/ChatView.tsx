@@ -22,16 +22,51 @@ import {
   isLocalBaseUrl,
 } from '@/lib/ai/baseUrl';
 import { buildSystemPrompt } from '@/lib/ai/prompts';
+import { useEditorContext } from '@/features/editor/hooks/useEditorStore';
 import type { AIProvider, AIService, ChatMessage } from '@/lib/ai/AIService';
 
 type Props = {
-  onInsertIntoEditor: (text: string) => void;
+  /** Populate the editor's preview-with-apply proposal state. The
+   *  parent is responsible for extracting the proposal HTML from
+   *  the raw AI text and dispatching SET_PROPOSAL. */
+  onPreview: (html: string, messageId: number, label: string) => void;
+  /** Bypass preview and commit the extracted HTML straight to the
+   *  selected slide. Kept for users who already know what they
+   *  want and don't need the preview-then-apply dance. */
+  onInsert: (html: string) => void;
 };
 
 const SLIDE_INSERT_REGEX = /^---\n[\s\S]*?\n---\n[\s\S]*mgf-slide/;
 
-export function ChatView({ onInsertIntoEditor }: Props) {
+/** Pull the first `<mgf-slide>...</mgf-slide>` block out of an AI
+ *  response. Matches the same pattern the legacy `Insert into
+ *  editor` path used so existing prompts keep working. */
+const SLIDE_BLOCK_REGEX = /<(\w+)[^>]*\bmgf-slide\b[^>]*>[\s\S]*?<\/\1>/;
+
+/** Pull the first `<h1|h2|h3>` text inside the proposal block —
+ *  used as the banner label so the user sees something more
+ *  meaningful than "AI Suggestion". */
+const HEADING_TEXT_REGEX = /<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/i;
+
+function extractProposalHtml(rawText: string): string | null {
+  const m = rawText.match(SLIDE_BLOCK_REGEX);
+  return m ? m[0] : null;
+}
+
+function extractProposalLabel(rawText: string): string {
+  const block = extractProposalHtml(rawText) ?? rawText;
+  const m = block.match(HEADING_TEXT_REGEX);
+  if (m) return m[1].replace(/<[^>]+>/g, '').trim();
+  return 'AI Suggestion';
+}
+
+export function ChatView({ onPreview, onInsert }: Props) {
   const [provider, setLocalProvider] = useState<AIProvider>(() => getProvider());
+  // Read the active proposal directly from the editor store so the
+  // chat can render a ✓ badge on the message currently being
+  // previewed (and a '✓ Applied' style on the inserted one — see
+  // Task 3.3 for that bit).
+  const { state } = useEditorContext();
   const [model, setModel] = useState(() => {
     const svc = getProvider() === 'minimax' ? minimaxService : lmstudioService;
     return svc.suggestedModels[0] ?? '';
@@ -221,29 +256,54 @@ export function ChatView({ onInsertIntoEditor }: Props) {
             Ask anything. AI responses that match the mgf-* slide grammar get an Insert button.
           </p>
         )}
-        {messages.map((m, i) => (
-          <div key={i} className={`mb-2 ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
-            <div
-              className={`inline-block max-w-[90%] whitespace-pre-wrap rounded-md px-2 py-1 ${
-                m.role === 'user' ? 'bg-(--sur2)' : 'bg-(--sur1)'
-              }`}
-            >
-              {m.content || (streaming && i === messages.length - 1 ? '▍' : '')}
-            </div>
-            {m.role === 'assistant' && SLIDE_INSERT_REGEX.test(m.content) && !streaming && (
-              <div className="mt-1 text-left">
-                <Button
-                  type="button"
-                  variant="accent"
-                  size="sm"
-                  onClick={() => onInsertIntoEditor(m.content)}
-                >
-                  Insert into editor
-                </Button>
+        {messages.map((m, i) => {
+          const isAssistant = m.role === 'assistant';
+          const matchesSlideGrammar = isAssistant && SLIDE_INSERT_REGEX.test(m.content);
+          const isPreviewing =
+            isAssistant && state.proposal !== null && state.proposal.messageId === i;
+          return (
+            <div key={i} className={`mb-2 ${isAssistant ? 'text-left' : 'text-right'}`}>
+              <div
+                className={`inline-block max-w-[90%] whitespace-pre-wrap rounded-md px-2 py-1 ${
+                  isAssistant ? 'bg-(--sur1)' : 'bg-(--sur2)'
+                }`}
+              >
+                {m.content || (streaming && i === messages.length - 1 ? '▍' : '')}
               </div>
-            )}
-          </div>
-        ))}
+              {matchesSlideGrammar && !streaming && (
+                <div className="mt-1 flex items-center gap-1.5 text-left">
+                  <Button
+                    type="button"
+                    variant={isPreviewing ? 'accent' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const html = extractProposalHtml(m.content);
+                      if (!html) return;
+                      onPreview(html, i, extractProposalLabel(m.content));
+                    }}
+                    data-testid="chat-preview-button"
+                  >
+                    {isPreviewing ? '✓ Previewing' : '👁 Preview'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const html = extractProposalHtml(m.content);
+                      if (!html) return;
+                      onInsert(html);
+                    }}
+                    data-testid="chat-insert-button"
+                    title="Apply directly without preview"
+                  >
+                    ⤴ Insert
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div className="flex gap-1">

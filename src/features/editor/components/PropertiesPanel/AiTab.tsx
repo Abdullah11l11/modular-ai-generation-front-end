@@ -5,10 +5,11 @@ type AiTabProps = {
   selectedSlideHtmlFile: ProjectFile | null;
   styleCssFile: ProjectFile | null;
   layoutCssFile: ProjectFile | null;
-  onInsertIntoEditor: (text: string) => void;
+  onPreview: (html: string, messageId: number, label: string) => void;
+  onInsert: (html: string) => void;
 };
 
-export function AiTab({ onInsertIntoEditor }: AiTabProps) {
+export function AiTab({ onPreview, onInsert }: AiTabProps) {
   // parent already wraps us in <TabsContent value="ai"> via PropertiesPanel
   // we render just the AI panel content
   return (
@@ -17,7 +18,7 @@ export function AiTab({ onInsertIntoEditor }: AiTabProps) {
         AI calls run in your browser. Your key stays in your session unless you opt into
         localStorage.
       </p>
-      <AiPanelRoot onInsertIntoEditor={onInsertIntoEditor} />
+      <AiPanelRoot onPreview={onPreview} onInsert={onInsert} />
     </div>
   );
 }

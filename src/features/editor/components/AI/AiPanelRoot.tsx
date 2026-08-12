@@ -5,10 +5,11 @@ import { getProvider, getKey } from '@/lib/ai/apiKeys';
 import type { AIProvider } from '@/lib/ai/AIService';
 
 type Props = {
-  onInsertIntoEditor: (text: string) => void;
+  onPreview: (html: string, messageId: number, label: string) => void;
+  onInsert: (html: string) => void;
 };
 
-export function AiPanelRoot({ onInsertIntoEditor }: Props) {
+export function AiPanelRoot({ onPreview, onInsert }: Props) {
   const [provider, setProvider] = useState<AIProvider>(getProvider());
   const [hasKey, setHasKey] = useState<boolean>(() => {
     if (provider === 'lmstudio') return true;
@@ -20,5 +21,5 @@ export function AiPanelRoot({ onInsertIntoEditor }: Props) {
   if (!hasKey) {
     return <KeySetupView provider={provider} onProviderChange={setProvider} onSaved={onSaved} />;
   }
-  return <ChatView onInsertIntoEditor={onInsertIntoEditor} />;
+  return <ChatView onPreview={onPreview} onInsert={onInsert} />;
 }

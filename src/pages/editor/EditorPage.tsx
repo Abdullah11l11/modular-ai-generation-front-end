@@ -137,6 +137,55 @@ function EditorShell({ project }: EditorShellProps) {
     invalidateFiles,
   ]);
 
+  // Populate the editor's preview-with-apply proposal state from
+  // ChatView's Preview button. The actual file mutation only happens
+  // when the user clicks Apply (handled by `handleApplyProposal`).
+  const handlePreviewProposal = useCallback(
+    (html: string, messageId: number, label: string) => {
+      dispatch({ type: 'SET_PROPOSAL', payload: { html, messageId, label } });
+    },
+    [dispatch],
+  );
+
+  // Bypass preview and commit the AI's extracted slide HTML directly
+  // to the selected slide's file. Mirrors the old "Insert into
+  // editor" behaviour — kept for power users who already know what
+  // they want.
+  const handleInsertProposal = useCallback(
+    (html: string) => {
+      if (!selectedSlideHtmlFile) return;
+      queryClient.setQueryData(
+        ['projects', state.projectId, 'files'],
+        (old: { data: ProjectFile[] } | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((f) =>
+              f.id === selectedSlideHtmlFile.id ? { ...f, content: html } : f,
+            ),
+          };
+        },
+      );
+      updateMutation.mutate(
+        {
+          projectId: state.projectId,
+          fileId: selectedSlideHtmlFile.id,
+          payload: { content: html },
+        },
+        {
+          onSettled: () => invalidateFiles(),
+        },
+      );
+    },
+    [
+      state.projectId,
+      selectedSlideHtmlFile,
+      queryClient,
+      updateMutation,
+      invalidateFiles,
+    ],
+  );
+
   const handleAddSlide = useCallback(
     (sourceStem: string | null = null) => {
       const sourceGroup = sourceStem ? (slides.find((s) => s.stem === sourceStem) ?? null) : null;
@@ -263,12 +312,20 @@ function EditorShell({ project }: EditorShellProps) {
               styleCssFile={styleCssFile}
               layoutCssFile={layoutCssFile}
               filesLoading={filesLoading}
+              onPreviewProposal={handlePreviewProposal}
+              onInsertProposal={handleInsertProposal}
             />
           </aside>
         </div>
       ) : (
         <div className="flex flex-1 overflow-hidden">
-          <SinglePageEditorShell project={project} files={files} filesLoading={filesLoading} />
+          <SinglePageEditorShell
+            project={project}
+            files={files}
+            filesLoading={filesLoading}
+            onPreviewProposal={handlePreviewProposal}
+            onInsertProposal={handleInsertProposal}
+          />
         </div>
       )}
 

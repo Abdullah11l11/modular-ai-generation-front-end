@@ -9,13 +9,21 @@ type SinglePageEditorShellProps = {
   project: Project;
   files: ProjectFile[];
   filesLoading: boolean;
+  onPreviewProposal: (html: string, messageId: number, label: string) => void;
+  onInsertProposal: (html: string) => void;
 };
 
 function findFile(files: ProjectFile[], layer: string, name: string): ProjectFile | undefined {
   return files.find((f) => f.layer === layer && f.name === name);
 }
 
-export function SinglePageEditorShell({ project, files, filesLoading }: SinglePageEditorShellProps) {
+export function SinglePageEditorShell({
+  project,
+  files,
+  filesLoading,
+  onPreviewProposal,
+  onInsertProposal,
+}: SinglePageEditorShellProps) {
   const { init, isInitializing } = useInitSinglePageProject(project.id, files, !!project.template_id);
 
   useEffect(() => {
@@ -45,6 +53,8 @@ export function SinglePageEditorShell({ project, files, filesLoading }: SinglePa
           contentFile={contentFile}
           layoutFile={layoutFile}
           filesLoading={filesLoading}
+          onPreviewProposal={onPreviewProposal}
+          onInsertProposal={onInsertProposal}
         />
       </aside>
     </>

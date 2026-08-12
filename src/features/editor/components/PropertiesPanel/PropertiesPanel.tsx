@@ -13,6 +13,13 @@ type PropertiesPanelProps = {
   styleCssFile: ProjectFile | null;
   layoutCssFile: ProjectFile | null;
   filesLoading: boolean;
+  /** Populate the editor's preview-before-apply proposal state with
+   *  the extracted slide HTML. Wired by EditorPage so the proposal
+   *  state lives in the editor store. */
+  onPreviewProposal: (html: string, messageId: number, label: string) => void;
+  /** Commit the extracted slide HTML directly to the selected
+   *  slide's file (bypasses preview). */
+  onInsertProposal: (html: string) => void;
 };
 
 export function PropertiesPanel({
@@ -21,6 +28,8 @@ export function PropertiesPanel({
   styleCssFile,
   layoutCssFile,
   filesLoading,
+  onPreviewProposal,
+  onInsertProposal,
 }: PropertiesPanelProps) {
   const { state, dispatch } = useEditorContext();
   const { scheduleUpdate, status } = useCssPropertyUpdates(projectId);
@@ -135,12 +144,8 @@ export function PropertiesPanel({
             selectedSlideHtmlFile={selectedSlideHtmlFile}
             styleCssFile={styleCssFile}
             layoutCssFile={layoutCssFile}
-            onInsertIntoEditor={(text) => {
-              const match = text.match(/<(\w+)[^>]*\bmgf-slide\b[^>]*>[\s\S]*?<\/\1>/);
-              if (match && selectedSlideHtmlFile) {
-                scheduleUpdate(selectedSlideHtmlFile.id, match[0]);
-              }
-            }}
+            onPreview={onPreviewProposal}
+            onInsert={onInsertProposal}
           />
         </TabsContent>
       </div>
