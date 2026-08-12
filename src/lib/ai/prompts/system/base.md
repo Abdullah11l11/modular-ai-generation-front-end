@@ -74,3 +74,49 @@ All text must pass WCAG AA contrast (4.5:1 for normal text, 3:1 for
 large text — defined as 18pt regular or 14pt bold and larger). Never
 use pure white (`#fff`) on pure black (`#000`) without an intermediate
 shade.
+
+## Chat Lane Output Contract (preview-before-apply)
+
+When the AI is invoked from the in-editor **chat panel** (no specific
+task prompt is attached — just the system base + vocabulary), the
+output schema above does **not** apply. The chat lane does not write
+files directly; instead the editor renders the AI's response as a
+*proposal* behind a banner so the user can see the change in their
+actual project before deciding to apply it.
+
+For chat-lane replies, emit a **single `<mgf-slide>...</mgf-slide>`
+block** wrapped in a YAML frontmatter:
+
+```markdown
+---
+label: <short human-readable title shown in the preview banner>
+files: 1
+---
+
+<mgf-slide class="mgf-...">
+  ...component HTML using only `mgf-*` classes from the vocabulary...
+</mgf-slide>
+```
+
+Rules for the chat lane:
+
+1. **One slide per reply.** The chat lane is for tweaking the
+   currently-selected slide. Multi-slide rewrites go through the
+   full-project task, not this lane.
+2. **Use only `mgf-*` classes.** The same vocabulary and layout rules
+   apply as for any other generation.
+3. **YAML frontmatter is required.** The `label` is shown in the
+   preview banner ("Previewing AI proposal — Hero Section"). Without
+   it the user sees a generic "AI Suggestion" label.
+4. **No JSON, no markdown fences, no commentary.** The
+   `<mgf-slide>` block must be the only structural content in the
+   reply. Brief prose is allowed before or after for explanation,
+   but the preview extractor only looks at the slide block.
+5. **Respect the existing project context.** The proposal is
+   rendered against the user's live `style.css`, `layout.css`, and
+   `data.json` (read from the chat context). Don't re-emit any of
+   those — emit only the slide HTML.
+6. **Stay in the user's language.** If the user writes in Arabic,
+   the visible text inside the slide should be in Arabic. The UI
+   assets handle RTL automatically; the AI just needs to produce
+   natural-language copy in the user's language.
