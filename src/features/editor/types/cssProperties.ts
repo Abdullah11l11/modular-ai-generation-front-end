@@ -11,6 +11,11 @@ export type CssPropertyDef = {
   default: string;
   options?: string[];
   group: string;
+  /** Optional CSS unit suffix rendered as a non-editable hint next to
+   *  the input (e.g. `'rem'`, `'px'`, `'em'`). The full token value is
+   *  still stored verbatim in the CSS — this field only annotates the
+   *  panel so the user knows which unit each field expects. */
+  unit?: string;
 };
 
 export type CssPropertyGroup = {
@@ -71,41 +76,47 @@ export const STYLE_PROPERTIES: CssPropertyDef[] = [
   // Typography tokens — keys match the actual `:root` variables in
   // `standards/tokens.md` so the panel mutates real CSS, not a parallel
   // vocabulary. The `type` maps the editor control onto the right
-  // input; the rendered value is the raw token value.
-  { key: 'mgf-text-base', label: 'Base Font Size', type: 'size', default: '1rem', group: 'typography' },
-  { key: 'mgf-text-lg', label: 'Large Font Size', type: 'size', default: '1.25rem', group: 'typography' },
-  { key: 'mgf-text-xl', label: 'XL Font Size', type: 'size', default: '1.75rem', group: 'typography' },
-  { key: 'mgf-text-2xl', label: '2XL Font Size', type: 'size', default: '2.5rem', group: 'typography' },
-  { key: 'mgf-text-3xl', label: '3XL Font Size', type: 'size', default: '3.5rem', group: 'typography' },
-  { key: 'mgf-text-4xl', label: '4XL Font Size', type: 'size', default: '5rem', group: 'typography' },
+  // input; the rendered value is the raw token value. The `unit`
+  // suffix is a non-editable hint shown beside each input so the user
+  // sees whether to type `1.5rem` or `1.5`.
+  { key: 'mgf-text-base', label: 'Base Font Size', type: 'size', default: '1rem', group: 'typography', unit: 'rem' },
+  { key: 'mgf-text-lg', label: 'Large Font Size', type: 'size', default: '1.25rem', group: 'typography', unit: 'rem' },
+  { key: 'mgf-text-xl', label: 'XL Font Size', type: 'size', default: '1.75rem', group: 'typography', unit: 'rem' },
+  { key: 'mgf-text-2xl', label: '2XL Font Size', type: 'size', default: '2.5rem', group: 'typography', unit: 'rem' },
+  { key: 'mgf-text-3xl', label: '3XL Font Size', type: 'size', default: '3.5rem', group: 'typography', unit: 'rem' },
+  { key: 'mgf-text-4xl', label: '4XL Font Size', type: 'size', default: '5rem', group: 'typography', unit: 'rem' },
   { key: 'mgf-leading-tight', label: 'Line Height (Tight)', type: 'line-height', default: '1.15', group: 'typography' },
   { key: 'mgf-leading-normal', label: 'Line Height (Normal)', type: 'line-height', default: '1.5', group: 'typography' },
   { key: 'mgf-leading-loose', label: 'Line Height (Loose)', type: 'line-height', default: '1.75', group: 'typography' },
-  { key: 'mgf-tracking-tight', label: 'Letter Spacing (Tight)', type: 'letter-spacing', default: '-0.03em', group: 'typography' },
-  { key: 'mgf-tracking-normal', label: 'Letter Spacing (Normal)', type: 'letter-spacing', default: '0em', group: 'typography' },
-  { key: 'mgf-tracking-wide', label: 'Letter Spacing (Wide)', type: 'letter-spacing', default: '0.08em', group: 'typography' },
+  { key: 'mgf-tracking-tight', label: 'Letter Spacing (Tight)', type: 'letter-spacing', default: '-0.03em', group: 'typography', unit: 'em' },
+  { key: 'mgf-tracking-normal', label: 'Letter Spacing (Normal)', type: 'letter-spacing', default: '0em', group: 'typography', unit: 'em' },
+  { key: 'mgf-tracking-wide', label: 'Letter Spacing (Wide)', type: 'letter-spacing', default: '0.08em', group: 'typography', unit: 'em' },
   { key: 'mgf-weight-normal', label: 'Weight Normal', type: 'weight', default: '400', group: 'typography' },
   { key: 'mgf-weight-medium', label: 'Weight Medium', type: 'weight', default: '500', group: 'typography' },
   { key: 'mgf-weight-bold', label: 'Weight Bold', type: 'weight', default: '700', group: 'typography' },
 
   // Spacing tokens — pad-y, pad-x, and the major spacing scale.
-  { key: 'mgf-space-1', label: 'Space 1', type: 'spacing', default: '0.25rem', group: 'spacing' },
-  { key: 'mgf-space-2', label: 'Space 2', type: 'spacing', default: '0.5rem', group: 'spacing' },
-  { key: 'mgf-space-3', label: 'Space 3', type: 'spacing', default: '0.75rem', group: 'spacing' },
-  { key: 'mgf-space-4', label: 'Space 4', type: 'spacing', default: '1rem', group: 'spacing' },
-  { key: 'mgf-space-6', label: 'Space 6', type: 'spacing', default: '1.5rem', group: 'spacing' },
-  { key: 'mgf-space-8', label: 'Space 8', type: 'spacing', default: '2rem', group: 'spacing' },
-  { key: 'mgf-space-12', label: 'Space 12', type: 'spacing', default: '3rem', group: 'spacing' },
-  { key: 'mgf-space-16', label: 'Space 16', type: 'spacing', default: '4rem', group: 'spacing' },
-  { key: 'mgf-space-24', label: 'Space 24', type: 'spacing', default: '6rem', group: 'spacing' },
+  // Existing seeded CSS already uses rem for the scale; the canvas
+  // padding tokens are intentionally px because they're literal
+  // canvas-frame values, not relative-to-root-size spacings.
+  { key: 'mgf-space-1', label: 'Space 1', type: 'spacing', default: '0.25rem', group: 'spacing', unit: 'rem' },
+  { key: 'mgf-space-2', label: 'Space 2', type: 'spacing', default: '0.5rem', group: 'spacing', unit: 'rem' },
+  { key: 'mgf-space-3', label: 'Space 3', type: 'spacing', default: '0.75rem', group: 'spacing', unit: 'rem' },
+  { key: 'mgf-space-4', label: 'Space 4', type: 'spacing', default: '1rem', group: 'spacing', unit: 'rem' },
+  { key: 'mgf-space-6', label: 'Space 6', type: 'spacing', default: '1.5rem', group: 'spacing', unit: 'rem' },
+  { key: 'mgf-space-8', label: 'Space 8', type: 'spacing', default: '2rem', group: 'spacing', unit: 'rem' },
+  { key: 'mgf-space-12', label: 'Space 12', type: 'spacing', default: '3rem', group: 'spacing', unit: 'rem' },
+  { key: 'mgf-space-16', label: 'Space 16', type: 'spacing', default: '4rem', group: 'spacing', unit: 'rem' },
+  { key: 'mgf-space-24', label: 'Space 24', type: 'spacing', default: '6rem', group: 'spacing', unit: 'rem' },
 
   // Slide canvas padding tokens.
-  { key: 'mgf-slide-pad-x', label: 'Slide Padding X', type: 'spacing', default: '80px', group: 'canvas' },
-  { key: 'mgf-slide-pad-y', label: 'Slide Padding Y', type: 'spacing', default: '60px', group: 'canvas' },
+  { key: 'mgf-slide-pad-x', label: 'Slide Padding X', type: 'spacing', default: '80px', group: 'canvas', unit: 'px' },
+  { key: 'mgf-slide-pad-y', label: 'Slide Padding Y', type: 'spacing', default: '60px', group: 'canvas', unit: 'px' },
 
-  // Shape tokens.
-  { key: 'mgf-radius-sm', label: 'Radius SM', type: 'border-radius', default: '4px', group: 'shape' },
-  { key: 'mgf-radius-md', label: 'Radius MD', type: 'border-radius', default: '8px', group: 'shape' },
-  { key: 'mgf-radius-lg', label: 'Radius LG', type: 'border-radius', default: '16px', group: 'shape' },
-  { key: 'mgf-radius-xl', label: 'Radius XL', type: 'border-radius', default: '24px', group: 'shape' },
+  // Shape tokens. Existing seeded CSS uses px for radii; the unit
+  // hint just confirms that to the user.
+  { key: 'mgf-radius-sm', label: 'Radius SM', type: 'border-radius', default: '4px', group: 'shape', unit: 'px' },
+  { key: 'mgf-radius-md', label: 'Radius MD', type: 'border-radius', default: '8px', group: 'shape', unit: 'px' },
+  { key: 'mgf-radius-lg', label: 'Radius LG', type: 'border-radius', default: '16px', group: 'shape', unit: 'px' },
+  { key: 'mgf-radius-xl', label: 'Radius XL', type: 'border-radius', default: '24px', group: 'shape', unit: 'px' },
 ];

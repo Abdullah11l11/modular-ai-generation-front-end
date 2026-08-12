@@ -87,6 +87,7 @@ type RenderInputProps = {
   group: string;
   value: string;
   options?: string[];
+  unit?: string;
 };
 
 function renderInput(prop: RenderInputProps, onUpdate: (key: string, value: string) => void) {
@@ -102,17 +103,21 @@ function renderInput(prop: RenderInputProps, onUpdate: (key: string, value: stri
             onChange={(e) => onUpdate(prop.key, e.target.value)}
             className="h-7 w-24 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
           />
+          {prop.unit && <UnitHint unit={prop.unit} />}
         </div>
       );
     case 'line-height':
     case 'letter-spacing':
       return (
-        <input
-          type="text"
-          value={prop.value}
-          onChange={(e) => onUpdate(prop.key, e.target.value)}
-          className="h-7 w-20 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
-        />
+        <div className="flex items-center gap-1">
+          <input
+            type="text"
+            value={prop.value}
+            onChange={(e) => onUpdate(prop.key, e.target.value)}
+            className="h-7 w-20 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
+          />
+          {prop.unit && <UnitHint unit={prop.unit} />}
+        </div>
       );
     case 'weight':
       return (
@@ -136,6 +141,21 @@ function renderInput(prop: RenderInputProps, onUpdate: (key: string, value: stri
         />
       );
   }
+}
+
+/** Small non-editable badge shown next to numeric inputs to remind
+ *  the user which CSS unit (rem, px, em, …) the token expects. The
+ *  actual value still includes the unit verbatim — the badge is a
+ *  hint, not part of the input. */
+function UnitHint({ unit }: { unit: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="font-mono text-[10px] text-(--t3) select-none"
+    >
+      {unit}
+    </span>
+  );
 }
 
 /** Small status pill that mirrors `useCssPropertyUpdates`'s save
