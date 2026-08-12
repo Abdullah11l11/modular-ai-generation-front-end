@@ -301,7 +301,203 @@ section.mgf-slide {
    the wide 1200px section container. */
 .mgf-website-section .mgf-stat-group { gap: var(--mgf-space-8, 2rem); }
 .mgf-website-section .mgf-grid-4 { gap: var(--mgf-space-6, 1.5rem); }
-.mgf-website-section .mgf-grid-3 { gap: var(--mgf-space-6, 1.5rem); }`;
+.mgf-website-section .mgf-grid-3 { gap: var(--mgf-space-6, 1.5rem); }
+
+/* Web archetype utility classes referenced from individual slide
+   bodies (Features, Stats, Pricing, FAQ, CTA slides). The seeded
+   slides use these tokens; without rules they fall back to plain
+   block layout and the 3-up / 4-up grids collapse to single column.
+   All values fall back to sane defaults if the project's style.css
+   does not define the token. */
+
+.mgf-eyebrow {
+  font-size: var(--mgf-text-xs, 0.8125rem);
+  text-transform: uppercase;
+  letter-spacing: var(--mgf-tracking-wide, 0.08em);
+  color: var(--mgf-color-accent, #22D3EE);
+  font-weight: var(--mgf-weight-medium, 500);
+  margin: 0 0 var(--mgf-space-2, 0.5rem);
+}
+
+.mgf-caption {
+  font-size: var(--mgf-text-sm, 0.9375rem);
+  color: var(--mgf-color-text-secondary, #94A3B8);
+  margin: 0;
+  line-height: var(--mgf-leading-normal, 1.5);
+}
+
+.mgf-text-center { text-align: center; }
+
+.mgf-mt-sm { margin-top: var(--mgf-space-2, 0.5rem); }
+.mgf-mt-md { margin-top: var(--mgf-space-4, 1rem); }
+.mgf-mt-lg { margin-top: var(--mgf-space-6, 1.5rem); }
+
+/* Background variants: a tinted band for hero / stats / CTA sections
+   that should feel different from a plain dark section. */
+.mgf-bg-accent-soft {
+  background: var(--mgf-color-accent-soft, rgba(34, 211, 238, 0.08));
+}
+
+/* Callout surface used for wrapping a math block (or other
+   standout element) on a slide. */
+.mgf-callout {
+  background: var(--mgf-color-surface, #111726);
+  border: 1px solid var(--mgf-color-border, #1F2940);
+  border-radius: var(--mgf-radius-md, 10px);
+  padding: var(--mgf-space-6, 1.5rem);
+  margin: var(--mgf-space-4, 1rem) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mgf-space-2, 0.5rem);
+}
+
+/* Card accent variant — same shape as .mgf-card but with an accent
+   border + soft fill to draw the eye (used by featured pricing
+   tier + the stats band). */
+.mgf-card-accent {
+  background: var(--mgf-color-surface-2, #1A2238);
+  border: 1px solid var(--mgf-color-accent, #22D3EE);
+  border-radius: var(--mgf-radius-lg, 18px);
+  padding: var(--mgf-space-6, 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mgf-space-2, 0.5rem);
+}
+
+/* Features grid card anatomy — icon on top, title, description. */
+.mgf-feature-icon {
+  font-size: 2rem;
+  line-height: 1;
+  margin: 0 0 var(--mgf-space-2, 0.5rem);
+}
+.mgf-feature-title {
+  font-family: var(--mgf-font-display, 'Inter', system-ui, sans-serif);
+  font-size: var(--mgf-text-base, 1.0625rem);
+  font-weight: var(--mgf-weight-bold, 700);
+  color: var(--mgf-color-text-primary, #F4F6FA);
+  margin: 0;
+}
+.mgf-feature-desc {
+  font-size: var(--mgf-text-sm, 0.9375rem);
+  color: var(--mgf-color-text-secondary, #94A3B8);
+  line-height: var(--mgf-leading-normal, 1.5);
+  margin: 0;
+}
+
+/* Stats: 4-up horizontal grid where each stat is a centered
+   .mgf-card-accent with a large value + small label. */
+.mgf-stat-group {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--mgf-space-4, 1rem);
+  text-align: center;
+}
+.mgf-stat-value {
+  font-family: var(--mgf-font-display, 'Inter', system-ui, sans-serif);
+  font-size: var(--mgf-text-2xl, 2.5rem);
+  font-weight: var(--mgf-weight-bold, 700);
+  line-height: var(--mgf-leading-tight, 1.15);
+  color: var(--mgf-color-text-primary, #F4F6FA);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.mgf-stat-label {
+  font-size: var(--mgf-text-sm, 0.9375rem);
+  color: var(--mgf-color-text-secondary, #94A3B8);
+  margin: 0;
+}
+
+/* Pricing slide: large price + tiny period suffix. */
+.mgf-price {
+  font-family: var(--mgf-font-display, 'Inter', system-ui, sans-serif);
+  font-size: var(--mgf-text-2xl, 2.5rem);
+  font-weight: var(--mgf-weight-bold, 700);
+  color: var(--mgf-color-text-primary, #F4F6FA);
+  margin: 0;
+  line-height: 1.1;
+}
+.mgf-price-period {
+  font-size: var(--mgf-text-sm, 0.9375rem);
+  color: var(--mgf-color-text-secondary, #94A3B8);
+  margin: 0;
+}
+
+.mgf-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mgf-space-2, 0.5rem);
+}
+.mgf-list li {
+  font-size: var(--mgf-text-sm, 0.9375rem);
+  color: var(--mgf-color-text-secondary, #94A3B8);
+  padding-left: var(--mgf-space-4, 1rem);
+  position: relative;
+}
+.mgf-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mgf-color-accent, #22D3EE);
+}
+
+/* FAQ items: vertical stack of question + answer rows. The wide
+   site layout already constrains the parent to 720px. */
+.mgf-faq-item {
+  padding: var(--mgf-space-4, 1rem) 0;
+  border-bottom: 1px solid var(--mgf-color-border, #1F2940);
+}
+.mgf-faq-item:last-child {
+  border-bottom: none;
+}
+.mgf-faq-q {
+  font-size: var(--mgf-text-base, 1.0625rem);
+  font-weight: var(--mgf-weight-bold, 700);
+  color: var(--mgf-color-text-primary, #F4F6FA);
+  margin: 0 0 var(--mgf-space-2, 0.5rem);
+}
+.mgf-faq-a {
+  font-size: var(--mgf-text-sm, 0.9375rem);
+  color: var(--mgf-color-text-secondary, #94A3B8);
+  line-height: var(--mgf-leading-normal, 1.5);
+  margin: 0;
+}
+
+/* CTA button — solid pill (no hover styles because the preview
+   is non-interactive). Used in the website nav and at the end of
+   pricing/CTA slides. */
+.mgf-cta-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mgf-space-3, 0.75rem) var(--mgf-space-6, 1.5rem);
+  background: var(--mgf-color-accent, #22D3EE);
+  color: var(--mgf-color-text-inverse, #0A0E1A);
+  font-family: var(--mgf-font-display, 'Inter', system-ui, sans-serif);
+  font-size: var(--mgf-text-sm, 0.9375rem);
+  font-weight: var(--mgf-weight-bold, 700);
+  border-radius: var(--mgf-radius-md, 10px);
+  text-decoration: none;
+  border: 0;
+  cursor: pointer;
+}
+
+/* At narrow widths the 3-up / 4-up grids collapse gracefully to
+   2-up; below 600px they fall back to single column. */
+@media (max-width: 900px) {
+  .mgf-stat-group { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .mgf-grid-3, .mgf-grid-4, .mgf-stat-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}`;
 
 /**
  * Theme-aware overrides for KaTeX-rendered math. KaTeX's own CSS sets
@@ -446,6 +642,19 @@ export function assemblePreviewHtml({
   const hasMath = hasMathContent(bodyHtml);
   const mathHead = hasMath ? MATH_HEAD_TAGS : '';
 
+  // The body gets two cooperating classes when math is on the page:
+  //
+  //   `mgf-math-enabled` — used by `MATH_THEMED_CSS` to scope the
+  //   theme-aware `.katex` recolor rules. Adding this also forces a
+  //   paint so the rules don't bleed into math-free pages.
+  //
+  //   `mgf-math-root` — the scope wrapper the KaTeX render script
+  //   queries against (`.mgf-math-root .math-inline` / `.math-block`).
+  //   Both classes on the same body element beat having to either
+  //   rewrite the renderer or wrap every math element in an extra
+  //   `<div>` — the body's outer element already satisfies the
+  //   "inside it" condition from `mathRender.ts`'s docstring.
+  const bodyClass = hasMath ? 'mgf-math-enabled mgf-math-root' : '';
   return `<!DOCTYPE html>
 <html dir="${direction}">
 <head>
@@ -462,7 +671,7 @@ ${MATH_THEMED_CSS}
 ${CLICK_HANDLER}
 ${mathHead}
 </head>
-<body class="${hasMath ? 'mgf-math-enabled' : ''}">${bodyHtml}${hasMath ? MATH_RENDER_SCRIPT : ''}</body>
+<body class="${bodyClass}">${bodyHtml}${hasMath ? MATH_RENDER_SCRIPT : ''}</body>
 </html>`;
 }
 
