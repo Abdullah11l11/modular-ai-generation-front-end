@@ -31,7 +31,7 @@ export function PreviewFrame({ srcDoc, onElementClick }: PreviewFrameProps) {
   return (
     <ScaledIframe
       srcDoc={srcDoc}
-      sandbox="allow-same-origin"
+      sandbox="allow-same-origin allow-scripts"
       title="Preview"
       className="rounded-lg border border-(--bor2) bg-white shadow-sm"
     />

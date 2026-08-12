@@ -210,7 +210,7 @@ export function FullScreenPreview({ files, onClose }: FullScreenPreviewProps) {
           <iframe
             title="Full-screen preview"
             srcDoc={html}
-            sandbox="allow-same-origin allow-popups"
+            sandbox="allow-same-origin allow-scripts allow-popups"
             className="h-full w-full border-0 bg-(--sur)"
             style={{ minHeight: '100vh' }}
           />
@@ -218,7 +218,7 @@ export function FullScreenPreview({ files, onClose }: FullScreenPreviewProps) {
           <div className="flex max-h-full max-w-6xl items-center justify-center">
             <ScaledIframe
               srcDoc={html}
-              sandbox="allow-same-origin allow-popups"
+              sandbox="allow-same-origin allow-scripts allow-popups"
               title="Full-screen preview"
               className="w-full rounded-lg bg-white shadow-2xl"
             />

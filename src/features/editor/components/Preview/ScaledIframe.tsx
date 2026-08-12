@@ -36,7 +36,7 @@ export function ScaledIframe({
   srcDoc,
   naturalWidth = DEFAULT_NATURAL_W,
   naturalHeight = DEFAULT_NATURAL_H,
-  sandbox = 'allow-same-origin',
+  sandbox = 'allow-same-origin allow-scripts',
   className,
   title = 'Preview',
 }: ScaledIframeProps) {

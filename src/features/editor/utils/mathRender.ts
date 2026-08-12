@@ -56,6 +56,7 @@ export const MATH_HEAD_TAGS = `
  * killing the whole slide.
  */
 export const MATH_RENDER_SCRIPT = `
+<script>
 (function () {
   function render(el, displayMode) {
     var tex = el.getAttribute('data-tex');
@@ -77,7 +78,12 @@ export const MATH_RENDER_SCRIPT = `
     }
   }
   function run() {
-    if (typeof window.katex !== 'function') {
+    // KaTeX is loaded as a UMD bundle that exposes an *object* on
+    // window.katex with methods like render/ParseError — NOT a function.
+    // An earlier draft checked typeof window.katex !== 'function',
+    // which is always true (katex is always an object once loaded) and
+    // made the poll loop spin forever. Gate on the render method instead.
+    if (!window.katex || typeof window.katex.render !== 'function') {
       // KaTeX script has not loaded yet (rare with defer). Retry
       // shortly so a slow network does not leave the math unrendered.
       return setTimeout(run, 50);
@@ -93,6 +99,7 @@ export const MATH_RENDER_SCRIPT = `
     run();
   }
 })();
+</script>
 `;
 
 /**
