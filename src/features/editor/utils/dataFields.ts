@@ -32,7 +32,10 @@ export type DataField = {
  * render code, which always runs in the browser.
  */
 export function extractDataFields(html: string): DataField[] {
-  if (!html.trim()) return [];
+  // Note: deliberately do NOT trim `html` here — whitespace-only bodies are
+  // still valid input and worth parsing in case the user is about to type
+  // their first character.
+  if (!html) return [];
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const elements = doc.querySelectorAll('[data-field]');
   const seen = new Set<string>();
@@ -43,7 +46,12 @@ export function extractDataFields(html: string): DataField[] {
     seen.add(key);
     fields.push({
       key,
-      value: (el.textContent ?? '').trim(),
+      // Note: deliberately do NOT trim textContent here. The previous `.trim()`
+      // silently ate trailing spaces the user typed, so "Hello " became "Hello"
+      // after every re-extract. updateDataField already round-trips via
+      // textContent assignment which preserves whitespace exactly, so we let
+      // it through verbatim.
+      value: el.textContent ?? '',
       tagName: el.tagName.toLowerCase(),
     });
   }

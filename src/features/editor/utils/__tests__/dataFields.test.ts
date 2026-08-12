@@ -51,6 +51,25 @@ describe('extractDataFields', () => {
   it('returns empty array for empty HTML', () => {
     expect(extractDataFields('')).toEqual([]);
   });
+
+  it('preserves trailing whitespace typed by the user across a round-trip', () => {
+    const html = `<p data-field="title">hello</p>`;
+    const after = updateDataField(html, 'title', 'hello world ');
+    const fields = extractDataFields(after);
+    expect(fields.find((f) => f.key === 'title')?.value).toBe('hello world ');
+  });
+
+  it('preserves leading whitespace inside a field', () => {
+    const html = `<span data-field="tag"> beta</span>`;
+    const fields = extractDataFields(html);
+    expect(fields.find((f) => f.key === 'tag')?.value).toBe(' beta');
+  });
+
+  it('parses HTML that is only whitespace instead of short-circuiting', () => {
+    // The old `if (!html.trim())` guard treated whitespace-only HTML as empty.
+    // That short-circuit used to mask edits the user typed; we now parse it.
+    expect(extractDataFields('   \n  ')).toEqual([]);
+  });
 });
 
 describe('updateDataField', () => {
