@@ -1,0 +1,34 @@
+/* style.css — Product explainer infographic (English, LTR).
+   Engineering-blueprint feel: near-black background with a
+   single cyan highlight for callouts. */
+
+:root {
+  --mgf-color-bg: #050a14;
+  --mgf-color-surface: #0c1424;
+  --mgf-color-surface-2: #142036;
+  --mgf-color-text-primary: #e6edf6;
+  --mgf-color-text-secondary: #7e8ca8;
+  --mgf-color-text-inverse: #050a14;
+  --mgf-color-accent: #38bdf8;
+  --mgf-color-accent-soft: rgba(56, 189, 248, 0.10);
+  --mgf-color-border: rgba(255, 255, 255, 0.08);
+  --mgf-color-border-strong: #1e3a5f;
+  --mgf-radius-md: 6px;
+  --mgf-radius-lg: 12px;
+  --mgf-space-2: 0.5rem;
+  --mgf-space-4: 1rem;
+  --mgf-space-6: 1.5rem;
+  --mgf-space-8: 2rem;
+  --mgf-text-sm: 0.875rem;
+  --mgf-text-base: 1rem;
+  --mgf-text-lg: 1.25rem;
+  --mgf-text-2xl: 2rem;
+  --mgf-text-3xl: 2.5rem;
+  --mgf-weight-medium: 500;
+  --mgf-weight-bold: 700;
+  --mgf-leading-tight: 1.2;
+  --mgf-leading-normal: 1.55;
+  --mgf-tracking-tight: -0.02em;
+  --mgf-tracking-wide: 0.06em;
+  --mgf-text-mono: 'JetBrains Mono', ui-monospace, monospace;
+}

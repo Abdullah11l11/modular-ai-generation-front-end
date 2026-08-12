@@ -209,3 +209,56 @@ describe('English website variations (Task 5.2)', () => {
     }
   });
 });
+
+describe('English infographic variations (Task 5.3)', () => {
+  const INFO = resolve(SEED_ROOT, 'infographic');
+  const VARIATIONS = ['annual-report', 'product-explainer'] as const;
+
+  it('ships both variations', () => {
+    for (const v of VARIATIONS) {
+      expect(existsSync(resolve(INFO, v)), `${v}/ directory missing`).toBe(true);
+    }
+  });
+
+  it('each variation has a non-empty slide list (>= 5 slides)', () => {
+    for (const v of VARIATIONS) {
+      const data = readJSON(resolve(INFO, v, 'data.json'));
+      const slides = (data.slides ?? []) as unknown[];
+      expect(slides.length, `${v}: should have at least 5 slides`).toBeGreaterThanOrEqual(5);
+    }
+  });
+
+  it('each variation has a distinct --mgf-color-accent (theme variety)', () => {
+    // Locked accents so the two infographics read as visibly different
+    // visual systems: warm/editorial vs cold/technical.
+    const expected = {
+      'annual-report': '#b46a3a',
+      'product-explainer': '#38bdf8',
+    } as const;
+    for (const [v, accent] of Object.entries(expected)) {
+      const css = readFileSync(resolve(INFO, v, 'style.css'), 'utf-8');
+      expect(css, `${v}/style.css should set --mgf-color-accent to ${accent}`).toMatch(
+        new RegExp(`--mgf-color-accent:\\s*${accent.replace('#', '#')}`, 'i'),
+      );
+    }
+  });
+
+  it('each variation data.json declares language=en and direction=ltr', () => {
+    for (const v of VARIATIONS) {
+      const data = readJSON(resolve(INFO, v, 'data.json'));
+      const meta = (data._meta ?? {}) as Record<string, unknown>;
+      expect(meta.language, `${v}: language should be 'en'`).toBe('en');
+      expect(meta.direction, `${v}: direction should be 'ltr'`).toBe('ltr');
+    }
+  });
+
+  it('each variation data.json carries _meta.output_target = "infographic-deck"', () => {
+    for (const v of VARIATIONS) {
+      const data = readJSON(resolve(INFO, v, 'data.json'));
+      const meta = (data._meta ?? {}) as Record<string, unknown>;
+      expect(meta.output_target, `${v}: _meta.output_target should be 'infographic-deck'`).toBe(
+        'infographic-deck',
+      );
+    }
+  });
+});

@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "project": "Heat Pump 101 — how an air-source heat pump actually works",
+    "audience": "Curious homeowners evaluating electrification",
+    "brand_voice": "clear, technical without being jargon-y, evidence-led",
+    "output_target": "infographic-deck",
+    "total_slides": 6,
+    "language": "en",
+    "direction": "ltr"
+  },
+  "slides": [
+    {
+      "stem": "slide-01-cover",
+      "data": {
+        "title": "Heat Pump 101",
+        "subtitle": "How a 2-kW box heats a whole house",
+        "footer": "Engineering explainer · 5 min read"
+      }
+    },
+    {
+      "stem": "slide-02-the-claim",
+      "data": {
+        "eyebrow": "The claim",
+        "title": "One unit of electricity in, three to four units of heat out",
+        "stats": [
+          { "value": "3.2", "label": "average COP, modern ASHP" },
+          { "value": "100%", "label": "of heat comes from outside air" },
+          { "value": "−15°C", "label": "still rated to deliver hot water" }
+        ]
+      }
+    },
+    {
+      "stem": "slide-03-the-loop",
+      "data": {
+        "eyebrow": "The loop",
+        "title": "Four stages, one closed refrigerant loop",
+        "body": "1. Outdoor coil absorbs latent heat from ambient air even at −15°C. 2. Compressor raises refrigerant pressure and temperature. 3. Indoor coil condenses the refrigerant, releasing heat into the home. 4. Expansion valve drops pressure; the cycle repeats."
+      }
+    },
+    {
+      "stem": "slide-04-efficiency",
+      "data": {
+        "eyebrow": "Efficiency",
+        "title": "Why COP beats nameplate efficiency",
+        "body": "A gas boiler is capped at ~0.9 useful heat units per unit of fuel (less, after losses). A heat pump's Coefficient of Performance (COP) measures useful heat over electricity consumed — typically 2.5 to 4.5 across a heating season."
+      }
+    },
+    {
+      "stem": "slide-05-tradeoffs",
+      "data": {
+        "eyebrow": "Trade-offs",
+        "title": "Honest list",
+        "stats": [
+          { "value": "$0", "label": "ongoing fuel cost vs gas, often negative" },
+          { "value": "Higher", "label": "up-front install vs a gas boiler" },
+          { "value": "Quieter", "label": "outdoor unit than most AC condensers" }
+        ]
+      }
+    },
+    {
+      "stem": "slide-06-further-reading",
+      "data": {
+        "eyebrow": "Further reading",
+        "title": "Want to dig deeper?",
+        "body": "NREL's residential cold-climate heat pump field trial, REIA's installer directory, and the IEA's Heat Pumping Technologies programme annual report are all good next stops."
+      }
+    }
+  ]
+}

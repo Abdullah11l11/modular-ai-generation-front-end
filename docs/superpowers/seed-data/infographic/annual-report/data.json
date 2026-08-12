@@ -1,0 +1,70 @@
+{
+  "_meta": {
+    "project": "Atlas Foundation — 2025 impact report",
+    "audience": "Donors, board members, and the wider civil-society community",
+    "brand_voice": "measured, transparent, evidence-led",
+    "output_target": "infographic-deck",
+    "total_slides": 6,
+    "language": "en",
+    "direction": "ltr"
+  },
+  "slides": [
+    {
+      "stem": "slide-01-cover",
+      "data": {
+        "title": "Atlas Foundation",
+        "subtitle": "2025 impact at a glance",
+        "footer": "Published April 2026"
+      }
+    },
+    {
+      "stem": "slide-02-by-the-numbers",
+      "data": {
+        "eyebrow": "By the numbers",
+        "title": "What 2025 looked like",
+        "stats": [
+          { "value": "1,240", "label": "scholarships funded" },
+          { "value": "37", "label": "partner schools" },
+          { "value": "$4.8M", "label": "disbursed in grants" },
+          { "value": "92%", "label": "of students still enrolled" }
+        ]
+      }
+    },
+    {
+      "stem": "slide-03-where",
+      "data": {
+        "eyebrow": "Where we work",
+        "title": "37 schools across 4 regions",
+        "body": "Atlas concentrates on the lowest-decile school districts in the Levant and North Africa, where one scholarship moves the needle for the entire cohort."
+      }
+    },
+    {
+      "stem": "slide-04-outcomes",
+      "data": {
+        "eyebrow": "Outcomes",
+        "title": "The numbers that matter most",
+        "stats": [
+          { "value": "78%", "label": "of scholars finish secondary school" },
+          { "value": "31%", "label": "go on to tertiary education" },
+          { "value": "1.4x", "label": "earnings uplift vs control" }
+        ]
+      }
+    },
+    {
+      "stem": "slide-05-finance",
+      "data": {
+        "eyebrow": "Finance",
+        "title": "Every dollar accounted for",
+        "body": "86¢ of every donated dollar went directly to scholars. 9¢ to program support, 5¢ to fundraising and overhead."
+      }
+    },
+    {
+      "stem": "slide-06-thanks",
+      "data": {
+        "eyebrow": "Thank you",
+        "title": "To our 1,800 donors",
+        "body": "The 2025 cohort exists because of you. Applications for 2026 open in May."
+      }
+    }
+  ]
+}
