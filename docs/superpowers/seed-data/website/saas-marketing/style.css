@@ -1,0 +1,35 @@
+/* style.css — B2B SaaS marketing site (English, LTR).
+   Calm slate + indigo accent; the canonical "trust me, I'm a
+   serious company" palette. */
+
+:root {
+  --mgf-color-bg: #0f172a;
+  --mgf-color-surface: #1e293b;
+  --mgf-color-surface-2: #273449;
+  --mgf-color-text-primary: #f1f5f9;
+  --mgf-color-text-secondary: #94a3b8;
+  --mgf-color-text-inverse: #ffffff;
+  --mgf-color-accent: #6366f1;
+  --mgf-color-accent-soft: rgba(99, 102, 241, 0.14);
+  --mgf-color-border: rgba(255, 255, 255, 0.08);
+  --mgf-color-border-strong: #334155;
+  --mgf-radius-md: 8px;
+  --mgf-radius-lg: 14px;
+  --mgf-space-2: 0.5rem;
+  --mgf-space-4: 1rem;
+  --mgf-space-6: 1.5rem;
+  --mgf-space-8: 2rem;
+  --mgf-space-12: 3rem;
+  --mgf-space-24: 6rem;
+  --mgf-text-sm: 0.875rem;
+  --mgf-text-base: 1rem;
+  --mgf-text-lg: 1.25rem;
+  --mgf-text-3xl: 3.5rem;
+  --mgf-text-4xl: 5rem;
+  --mgf-weight-medium: 500;
+  --mgf-weight-bold: 700;
+  --mgf-leading-tight: 1.15;
+  --mgf-leading-normal: 1.5;
+  --mgf-tracking-tight: -0.03em;
+  --mgf-tracking-wide: 0.08em;
+}

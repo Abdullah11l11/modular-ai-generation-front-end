@@ -1,0 +1,61 @@
+{
+  "_meta": {
+    "project": "Northwind — observability for distributed systems",
+    "audience": "Engineering leaders at mid-size SaaS companies",
+    "brand_voice": "calm, technical, peer-to-peer",
+    "output_target": "single-page-website",
+    "language": "en",
+    "direction": "ltr"
+  },
+  "site": {
+    "brand": "Northwind",
+    "nav": [
+      { "label": "Product", "href": "#product" },
+      { "label": "Pricing", "href": "#pricing" },
+      { "label": "Docs", "href": "#docs" },
+      { "label": "Sign in", "href": "#signin" }
+    ],
+    "hero": {
+      "title": "Observability that respects your budget",
+      "sub": "Northwind ingests your traces, metrics, and logs at ⅓ the cost of the legacy vendors — and ships with sane defaults so your team isn't drowning in dashboards.",
+      "primary_cta": "Start free",
+      "secondary_cta": "Read the docs"
+    },
+    "features": {
+      "eyebrow": "What you get",
+      "title": "Boring infrastructure, sharp answers",
+      "items": [
+        { "icon": "▣", "title": "OTel-native", "desc": "OpenTelemetry ingestion, no proprietary agents." },
+        { "icon": "◎", "title": "Cheap retention", "desc": "Hot for 7 days, warm for 30, cold for 365 — at $0.05/GB." },
+        { "icon": "✦", "title": "Anomaly detection", "desc": "Out-of-the-box alerts for latency, error, and saturation." }
+      ]
+    },
+    "pricing": {
+      "eyebrow": "Pricing",
+      "title": "Per-GB, not per-seat",
+      "tiers": [
+        { "name": "Hobby", "price": "$0", "period": "/mo", "bullets": ["5 GB / month", "7-day retention", "Community Slack"] },
+        { "name": "Team", "price": "$49", "period": "/mo + usage", "bullets": ["100 GB included", "30-day retention", "Email support"] },
+        { "name": "Enterprise", "price": "Custom", "period": "", "bullets": ["Unlimited", "365-day retention", "Dedicated SE"] }
+      ]
+    },
+    "testimonial": {
+      "quote": "We cut our observability bill by 70% in the first month, and our on-call got quieter.",
+      "author": "Priya Shah",
+      "role": "Staff SRE, Lumen Health"
+    },
+    "faq": {
+      "title": "Questions we hear a lot",
+      "items": [
+        { "q": "Do you support OpenTelemetry out of the box?", "a": "Yes — every signal type ships first-class, no proprietary agents needed." },
+        { "q": "Can I bring my existing Grafana dashboards?", "a": "Yes, we export Prometheus-compatible metrics and Loki-compatible logs." }
+      ]
+    },
+    "cta": {
+      "title": "Ready to spend less on observability?",
+      "body": "Free forever for the first 5 GB. No credit card.",
+      "primary": "Start free"
+    },
+    "footer": "© 2026 Northwind — boring infrastructure, sharp answers"
+  }
+}

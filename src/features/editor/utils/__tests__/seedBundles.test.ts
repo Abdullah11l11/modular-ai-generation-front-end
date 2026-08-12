@@ -161,3 +161,51 @@ describe('English pitch variations (Task 5.1)', () => {
     }
   });
 });
+
+describe('English website variations (Task 5.2)', () => {
+  const WEBSITE = resolve(SEED_ROOT, 'website');
+  const VARIATIONS = ['saas-marketing', 'agency-portfolio', 'ecommerce'] as const;
+
+  it('ships all three variations', () => {
+    for (const v of VARIATIONS) {
+      expect(existsSync(resolve(WEBSITE, v)), `${v}/ directory missing`).toBe(true);
+    }
+  });
+
+  it('each variation data.json has a top-level "site" object with the required sections', () => {
+    for (const v of VARIATIONS) {
+      const data = readJSON(resolve(WEBSITE, v, 'data.json'));
+      const site = (data.site ?? {}) as Record<string, unknown>;
+      expect(site.brand, `${v}: site.brand missing`).toBeTruthy();
+      expect(site.nav, `${v}: site.nav missing`).toBeInstanceOf(Array);
+      expect(site.hero, `${v}: site.hero missing`).toBeTruthy();
+      expect(site.features, `${v}: site.features missing`).toBeTruthy();
+      expect(site.testimonial, `${v}: site.testimonial missing`).toBeTruthy();
+      expect(site.cta, `${v}: site.cta missing`).toBeTruthy();
+      expect(site.footer, `${v}: site.footer missing`).toBeTruthy();
+    }
+  });
+
+  it('each variation has a distinct --mgf-color-accent (theme variety)', () => {
+    const expected = {
+      'saas-marketing': '#6366f1',
+      'agency-portfolio': '#ff5a1f',
+      ecommerce: '#d4a373',
+    } as const;
+    for (const [v, accent] of Object.entries(expected)) {
+      const css = readFileSync(resolve(WEBSITE, v, 'style.css'), 'utf-8');
+      expect(css, `${v}/style.css should set --mgf-color-accent to ${accent}`).toMatch(
+        new RegExp(`--mgf-color-accent:\\s*${accent.replace('#', '#')}`, 'i'),
+      );
+    }
+  });
+
+  it('each variation data.json declares language=en and direction=ltr', () => {
+    for (const v of VARIATIONS) {
+      const data = readJSON(resolve(WEBSITE, v, 'data.json'));
+      const meta = (data._meta ?? {}) as Record<string, unknown>;
+      expect(meta.language, `${v}: language should be 'en'`).toBe('en');
+      expect(meta.direction, `${v}: direction should be 'ltr'`).toBe('ltr');
+    }
+  });
+});

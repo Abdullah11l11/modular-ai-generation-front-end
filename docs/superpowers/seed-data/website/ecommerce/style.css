@@ -1,0 +1,34 @@
+/* style.css — E-commerce site for coffee gear (English, LTR).
+   Warm coffee tones — dark roast background with caramel accent. */
+
+:root {
+  --mgf-color-bg: #1c1108;
+  --mgf-color-surface: #2a1a0d;
+  --mgf-color-surface-2: #3a2516;
+  --mgf-color-text-primary: #f6efe6;
+  --mgf-color-text-secondary: #b89c80;
+  --mgf-color-text-inverse: #1c1108;
+  --mgf-color-accent: #d4a373;
+  --mgf-color-accent-soft: rgba(212, 163, 115, 0.12);
+  --mgf-color-border: rgba(255, 255, 255, 0.08);
+  --mgf-color-border-strong: #5a3a20;
+  --mgf-radius-md: 10px;
+  --mgf-radius-lg: 18px;
+  --mgf-space-2: 0.5rem;
+  --mgf-space-4: 1rem;
+  --mgf-space-6: 1.5rem;
+  --mgf-space-8: 2rem;
+  --mgf-space-12: 3rem;
+  --mgf-space-24: 6rem;
+  --mgf-text-sm: 0.9375rem;
+  --mgf-text-base: 1.0625rem;
+  --mgf-text-lg: 1.25rem;
+  --mgf-text-3xl: 3rem;
+  --mgf-text-4xl: 4.5rem;
+  --mgf-weight-medium: 500;
+  --mgf-weight-bold: 700;
+  --mgf-leading-tight: 1.15;
+  --mgf-leading-normal: 1.5;
+  --mgf-tracking-tight: -0.02em;
+  --mgf-tracking-wide: 0.08em;
+}

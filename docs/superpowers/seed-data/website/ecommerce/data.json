@@ -1,0 +1,52 @@
+{
+  "_meta": {
+    "project": "Kettler — specialty coffee gear, shipped direct",
+    "audience": "Home baristas and small cafés",
+    "brand_voice": "warm, knowledgeable, never snobby",
+    "output_target": "single-page-website",
+    "language": "en",
+    "direction": "ltr"
+  },
+  "site": {
+    "brand": "Kettler",
+    "nav": [
+      { "label": "Shop", "href": "#shop" },
+      { "label": "Brew guides", "href": "#guides" },
+      { "label": "Subscriptions", "href": "#subs" },
+      { "label": "Account", "href": "#account" }
+    ],
+    "hero": {
+      "title": "Gear for the patient pour",
+      "sub": "Kettler hand-picks kettles, grinders, and beans from small workshops and ships them with brew guides that don't assume you own a $4,000 machine.",
+      "primary_cta": "Shop the starter kit",
+      "secondary_cta": "Read a brew guide"
+    },
+    "features": {
+      "eyebrow": "Why Kettler",
+      "title": "Three things we won't compromise on",
+      "items": [
+        { "icon": "♨", "title": "Real heat", "desc": "Kettles and brewers that hold temperature to within ±1°C, not ±5°C." },
+        { "icon": "✿", "title": "Honest grind", "desc": "Flat-burr grinders with a single switch, not a 40-step dial." },
+        { "icon": "☕", "title": "Fresh beans", "desc": "Roasted to order, shipped within 48 hours, never stale." }
+      ]
+    },
+    "testimonial": {
+      "quote": "The starter kit replaced three things I had been over-paying for. My morning coffee got better, not harder.",
+      "author": "Tomás Herrera",
+      "role": "Subscriber since 2024"
+    },
+    "faq": {
+      "title": "Common questions",
+      "items": [
+        { "q": "Do you ship internationally?", "a": "Yes — to 32 countries. Shipping is calculated at checkout and free over $80." },
+        { "q": "Can I cancel my subscription anytime?", "a": "Yes, one click from your account, no retention email." }
+      ]
+    },
+    "cta": {
+      "title": "Get the starter kit",
+      "body": "One kettle, one grinder, 250g of beans. Free shipping over $80.",
+      "primary": "Shop now"
+    },
+    "footer": "© 2026 Kettler — specialty coffee gear, shipped direct"
+  }
+}
