@@ -55,3 +55,30 @@ describe('assemblePreviewHtml — Arabic font fallback', () => {
     expect(html).toContain('Segoe UI');
   });
 });
+
+describe('assemblePreviewHtml — RTL directional flips', () => {
+  it('includes [dir="rtl"] .mgf-list li override rules', () => {
+    const html = assemblePreviewHtml({ ...BASE_INPUT, direction: 'rtl' });
+    expect(html).toMatch(/\[dir=["']rtl["']\]\s*\.mgf-list\s*li\s*\{[^}]*padding-left:\s*0/);
+    expect(html).toMatch(/\[dir=["']rtl["']\]\s*\.mgf-list\s*li\s*\{[^}]*padding-right:/);
+  });
+
+  it('flips the .mgf-list li::before bullet to the right edge under RTL', () => {
+    const html = assemblePreviewHtml({ ...BASE_INPUT, direction: 'rtl' });
+    expect(html).toMatch(/\[dir=["']rtl["']\]\s*\.mgf-list\s*li::before\s*\{[^}]*right:\s*0/);
+  });
+
+  it('reverses the website nav row under RTL', () => {
+    const html = assemblePreviewHtml({ ...BASE_INPUT, direction: 'rtl' });
+    expect(html).toMatch(/\[dir=["']rtl["']\]\s*\.mgf-website-nav\s*\{[^}]*flex-direction:\s*row-reverse/);
+  });
+
+  it('RTL rules are present in BASE_CSS regardless of project direction', () => {
+    // The flips live in BASE_CSS so they survive into the iframe even
+    // if the project doesn't define its own style.css. Both LTR and
+    // RTL projects need the rules to be ready when the user toggles
+    // direction from the project settings.
+    const ltr = assemblePreviewHtml({ ...BASE_INPUT, direction: 'ltr' });
+    expect(ltr).toMatch(/\[dir=["']rtl["']\]\s*\.mgf-list\s*li\s*\{/);
+  });
+});

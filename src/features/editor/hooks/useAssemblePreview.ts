@@ -498,6 +498,33 @@ section.mgf-slide {
   .mgf-grid-3, .mgf-grid-4, .mgf-stat-group {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* ── RTL directional flips ───────────────────────────────────────
+   Modern CSS uses logical properties (margin-inline-start, padding-
+   block, etc.) so most layouts mirror for free. The handful of
+   rules below still use physical (left/right) properties and need
+   explicit overrides under [dir="rtl"] so Arabic / Hebrew projects
+   don't end up with bullets on the wrong side or clip-path arrows
+   pointing the wrong way. Add new rules here whenever a project
+   goes RTL and the visual layout breaks.
+   ───────────────────────────────────────────────────────────────── */
+
+[dir="rtl"] .mgf-list li {
+  padding-left: 0;
+  padding-right: var(--mgf-space-4, 1rem);
+}
+[dir="rtl"] .mgf-list li::before {
+  left: auto;
+  right: 0;
+}
+[dir="rtl"] .mgf-website-nav {
+  /* The seed expects navigation to start (brand) on the right and
+     links to trail leftward under RTL. Flex already mirrors via
+     'direction' on the parent, but the explicit 'space-between'
+     can collapse on Safari when the brand and link block widths
+     don't match — anchor the brand to the trailing edge. */
+  flex-direction: row-reverse;
 }`;
 
 /**
