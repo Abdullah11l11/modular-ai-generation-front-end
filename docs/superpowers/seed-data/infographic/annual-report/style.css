@@ -30,4 +30,6 @@
   --mgf-leading-normal: 1.6;
   --mgf-tracking-tight: -0.01em;
   --mgf-tracking-wide: 0.04em;
+  --mgf-font-display: 'Playfair Display', Georgia, serif;
+  --mgf-font-body: 'Source Serif 4', Georgia, serif;
 }

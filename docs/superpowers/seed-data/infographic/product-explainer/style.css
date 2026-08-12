@@ -31,4 +31,6 @@
   --mgf-tracking-tight: -0.02em;
   --mgf-tracking-wide: 0.06em;
   --mgf-text-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --mgf-font-display: 'Inter', system-ui, sans-serif;
+  --mgf-font-body: 'Inter', system-ui, sans-serif;
 }

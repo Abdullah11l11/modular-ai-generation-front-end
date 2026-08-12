@@ -262,3 +262,109 @@ describe('English infographic variations (Task 5.3)', () => {
     }
   });
 });
+
+describe('cross-archetype theme variety (Task 5.4)', () => {
+  // The seed catalog needs to actually exercise the editor's theme
+  // system: at minimum 4 distinct token palettes, with a healthy
+  // mix of light/dark backgrounds, a spread of accent hues, and
+  // font tokens across the board so the Style tab has real variety
+  // to switch between.
+
+  function allBundles(): Array<{ arch: string; name: string }> {
+    const result: Array<{ arch: string; name: string }> = [];
+    const topDirs = listSubdirs(SEED_ROOT).filter((d) => d !== 'README.md' && d !== 'README');
+    for (const arch of topDirs) {
+      const bundles = listSubdirs(resolve(SEED_ROOT, arch));
+      for (const b of bundles) {
+        result.push({ arch, name: b });
+      }
+    }
+    return result;
+  }
+
+  it('ships at least 4 distinct --mgf-color-accent values across the catalog', () => {
+    const bundles = allBundles();
+    const accents = new Set<string>();
+    for (const { arch, name } of bundles) {
+      const css = readFileSync(resolve(SEED_ROOT, arch, name, 'style.css'), 'utf-8');
+      const m = css.match(/--mgf-color-accent:\s*([#a-fA-F0-9]+);/);
+      expect(m, `${arch}/${name}: --mgf-color-accent not found`).toBeTruthy();
+      if (m) accents.add(m[1].toLowerCase());
+    }
+    expect(accents.size, `expected >= 4 distinct accent hues, got ${accents.size}`).toBeGreaterThanOrEqual(4);
+  });
+
+  it('has at least 3 light-bg and 3 dark-bg bundles', () => {
+    const bundles = allBundles();
+    let light = 0;
+    let dark = 0;
+    for (const { arch, name } of bundles) {
+      const css = readFileSync(resolve(SEED_ROOT, arch, name, 'style.css'), 'utf-8');
+      const m = css.match(/--mgf-color-bg:\s*(#[a-fA-F0-9]+);/);
+      if (!m) continue;
+      const hex = m[1].slice(1);
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      if (luminance > 0.6) light++;
+      else if (luminance < 0.25) dark++;
+    }
+    expect(light, `expected >= 3 light-bg bundles, got ${light}`).toBeGreaterThanOrEqual(3);
+    expect(dark, `expected >= 3 dark-bg bundles, got ${dark}`).toBeGreaterThanOrEqual(3);
+  });
+
+  it('every bundle declares both --mgf-font-display and --mgf-font-body', () => {
+    const bundles = allBundles();
+    for (const { arch, name } of bundles) {
+      const css = readFileSync(resolve(SEED_ROOT, arch, name, 'style.css'), 'utf-8');
+      expect(
+        css,
+        `${arch}/${name}/style.css missing --mgf-font-display`,
+      ).toMatch(/--mgf-font-display:/);
+      expect(
+        css,
+        `${arch}/${name}/style.css missing --mgf-font-body`,
+      ).toMatch(/--mgf-font-body:/);
+    }
+  });
+
+  it('catalog exposes at least 4 distinct font families', () => {
+    // Locks that the 4 token palettes include visibly different
+    // typography pairings (sans + serif + mono + Arabic).
+    const bundles = allBundles();
+    const families = new Set<string>();
+    for (const { arch, name } of bundles) {
+      const css = readFileSync(resolve(SEED_ROOT, arch, name, 'style.css'), 'utf-8');
+      const m = css.match(/--mgf-font-display:\s*([^;]+);/);
+      if (m) {
+        // Take the first family name (before the comma).
+        const first = m[1].split(',')[0].trim().replace(/^['"]|['"]$/g, '');
+        if (first) families.add(first);
+      }
+    }
+    expect(
+      families.size,
+      `expected >= 4 distinct display-font families, got ${families.size}: ${[...families].join(', ')}`,
+    ).toBeGreaterThanOrEqual(4);
+  });
+
+  it('locks the 4 designated token palettes (one per archetype family)', () => {
+    // These are the "flagship" palettes — one per archetype family.
+    // The catalog has more variations under each, but these four
+    // guarantee a visibly different demo at the theme-switcher level.
+    const expected = {
+      'pitch/fintech-pitch': '#2f80ff',
+      'website/saas-marketing': '#6366f1',
+      'infographic/annual-report': '#b46a3a',
+      'arabic/pitch': '#22d3ee',
+    } as const;
+    for (const [path, accent] of Object.entries(expected)) {
+      const [arch, name] = path.split('/');
+      const css = readFileSync(resolve(SEED_ROOT, arch, name, 'style.css'), 'utf-8');
+      expect(css, `${path} should set --mgf-color-accent to ${accent}`).toMatch(
+        new RegExp(`--mgf-color-accent:\\s*${accent.replace('#', '#')}`, 'i'),
+      );
+    }
+  });
+});

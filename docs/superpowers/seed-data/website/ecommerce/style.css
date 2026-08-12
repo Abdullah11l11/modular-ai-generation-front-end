@@ -31,4 +31,6 @@
   --mgf-leading-normal: 1.5;
   --mgf-tracking-tight: -0.02em;
   --mgf-tracking-wide: 0.08em;
+  --mgf-font-display: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mgf-font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }

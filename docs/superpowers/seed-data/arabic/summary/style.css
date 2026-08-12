@@ -30,4 +30,6 @@
   --mgf-leading-normal: 1.55;
   --mgf-tracking-tight: -0.02em;
   --mgf-tracking-wide: 0.08em;
+  --mgf-font-display: 'Cairo', 'Noto Naskh Arabic', Tahoma, sans-serif;
+  --mgf-font-body: 'Cairo', 'Noto Naskh Arabic', Tahoma, sans-serif;
 }

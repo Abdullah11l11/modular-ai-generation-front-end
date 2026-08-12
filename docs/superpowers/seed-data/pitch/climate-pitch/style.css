@@ -30,4 +30,6 @@
   --mgf-leading-normal: 1.5;
   --mgf-tracking-tight: -0.03em;
   --mgf-tracking-wide: 0.08em;
+  --mgf-font-display: 'Inter', system-ui, sans-serif;
+  --mgf-font-body: 'Inter', system-ui, sans-serif;
 }
