@@ -2,6 +2,59 @@ import { useCssProperties } from '@/features/editor/hooks/useCssProperties';
 import { STYLE_PROPERTIES } from '@/features/editor/types/cssProperties';
 import type { SaveStatus } from '@/features/editor/hooks/useCssPropertyUpdates';
 
+/** Font presets exposed in the Style tab's font-family `<select>`.
+ *  The labels are exactly the CSS `font-family` value's *first*
+ *  token (i.e. the font name), which is what `resolveFontPreset`
+ *  matches against when restoring the current selection from an
+ *  already-persisted value. Cairo + Noto Sans Arabic are included
+ *  for RTL / Arabic projects (see Tier 4). */
+const FONT_PRESETS = [
+  'Inter',
+  'DM Sans',
+  'Playfair Display',
+  'JetBrains Mono',
+  'Cairo',
+  'Noto Sans Arabic',
+] as const;
+
+/** Full CSS font-family stack for each preset. The chosen family is
+ *  always wrapped in single quotes (standard CSS practice for names
+ *  with spaces) and followed by a platform-appropriate fallback.
+ *  This is the literal value that ends up on the right-hand side
+ *  of `--mgf-font-body: ...;`. */
+const FONT_STACKS: Record<(typeof FONT_PRESETS)[number], string> = {
+  Inter: "'Inter', system-ui, sans-serif",
+  'DM Sans': "'DM Sans', system-ui, sans-serif",
+  'Playfair Display': "'Playfair Display', Georgia, serif",
+  'JetBrains Mono': "'JetBrains Mono', ui-monospace, monospace",
+  Cairo: "'Cairo', 'Noto Sans Arabic', system-ui, sans-serif",
+  'Noto Sans Arabic': "'Noto Sans Arabic', system-ui, sans-serif",
+};
+
+/** Pick the preset whose name appears at the start of a stored
+ *  font-family stack (handles values like `'Inter', system-ui, sans-serif`
+ *  by reading the first quoted token, then falls back to the bare
+ *  first word). If nothing matches, defaults to the first preset so
+ *  the `<select>` always shows a sensible selection. */
+function resolveFontPreset(value: string): (typeof FONT_PRESETS)[number] {
+  // First, try to capture the first quoted token as a whole — this
+  // is the only way to recover names that contain a space (e.g.
+  // 'Playfair Display', "DM Sans") without splitting on the
+  // interior whitespace.
+  const quoted = value.match(/^\s*['"]([^'"]+)['"]/);
+  if (quoted && (FONT_PRESETS as readonly string[]).includes(quoted[1])) {
+    return quoted[1] as (typeof FONT_PRESETS)[number];
+  }
+  // Fallback: bare first word, after stripping any trailing comma.
+  // Won't match names with spaces, but at least handles the common
+  // single-word case (e.g. "Inter").
+  const bare = value.trim().split(/[,\s]/)[0]?.replace(/^["']|["']$/g, '');
+  if (bare && (FONT_PRESETS as readonly string[]).includes(bare)) {
+    return bare as (typeof FONT_PRESETS)[number];
+  }
+  return FONT_PRESETS[0];
+}
+
 /**
  * Mutate a CSS variable in `:root`. If the variable already exists,
  * its value is replaced; otherwise a new declaration is inserted at
@@ -131,6 +184,25 @@ function renderInput(prop: RenderInputProps, onUpdate: (key: string, value: stri
           ))}
         </select>
       );
+    case 'font': {
+      // The dropdown shows preset NAMES but the value persisted to
+      // :root is the full font-family stack (with the chosen family
+      // wrapped in single quotes, the canonical CSS form). To survive
+      // a round-trip from a value that's already a full stack, we
+      // pick the preset whose name appears at the start of the stack.
+      const current = resolveFontPreset(prop.value);
+      return (
+        <select
+          value={current}
+          onChange={(e) => onUpdate(prop.key, FONT_STACKS[e.target.value as keyof typeof FONT_STACKS])}
+          className="h-7 w-36 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
+        >
+          {FONT_PRESETS.map((name) => (
+            <option key={name} value={name}>{name}</option>
+          ))}
+        </select>
+      );
+    }
     default:
       return (
         <input
@@ -184,3 +256,8 @@ function SaveStatusPill({ status }: { status: SaveStatus }) {
     </span>
   );
 }
+
+// Internal export so `__tests__/styleFontPreset.test.ts` can exercise
+// the resolver without rendering the whole panel. Not re-exported
+// from the module barrel — keep it panel-local.
+export { resolveFontPreset, FONT_PRESETS };

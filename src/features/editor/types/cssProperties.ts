@@ -95,6 +95,14 @@ export const STYLE_PROPERTIES: CssPropertyDef[] = [
   { key: 'mgf-weight-medium', label: 'Weight Medium', type: 'weight', default: '500', group: 'typography' },
   { key: 'mgf-weight-bold', label: 'Weight Bold', type: 'weight', default: '700', group: 'typography' },
 
+  // Font-family tokens — the dropdown stores preset NAMES, but the
+  // value persisted to :root is the full CSS font-family stack (with
+  // the chosen family wrapped in single quotes + a sensible fallback).
+  // See `FONT_STACKS` in StyleTab.tsx for the stack mapping.
+  { key: 'mgf-font-body', label: 'Body Font', type: 'font', default: 'Inter', group: 'typography' },
+  { key: 'mgf-font-display', label: 'Display Font', type: 'font', default: 'Inter', group: 'typography' },
+  { key: 'mgf-font-mono', label: 'Mono Font', type: 'font', default: 'JetBrains Mono', group: 'typography' },
+
   // Spacing tokens — pad-y, pad-x, and the major spacing scale.
   // Existing seeded CSS already uses rem for the scale; the canvas
   // padding tokens are intentionally px because they're literal
