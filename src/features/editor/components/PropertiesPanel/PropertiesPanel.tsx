@@ -23,7 +23,7 @@ export function PropertiesPanel({
   filesLoading,
 }: PropertiesPanelProps) {
   const { state, dispatch } = useEditorContext();
-  const { scheduleUpdate } = useCssPropertyUpdates(projectId);
+  const { scheduleUpdate, status } = useCssPropertyUpdates(projectId);
 
   const isPerSlide = state.editorMode === 'per-slide';
 
@@ -123,6 +123,7 @@ export function PropertiesPanel({
                 ? 'style/style.css'
                 : 'layout/layout.css'
             }
+            saveStatus={status}
             onUpdate={(_, c) => {
               if (styleTabFile) scheduleUpdate(styleTabFile.id, c);
             }}

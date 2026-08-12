@@ -1,5 +1,6 @@
 import { useCssProperties } from '@/features/editor/hooks/useCssProperties';
 import { STYLE_PROPERTIES } from '@/features/editor/types/cssProperties';
+import type { SaveStatus } from '@/features/editor/hooks/useCssPropertyUpdates';
 
 /**
  * Mutate a CSS variable in `:root`. If the variable already exists,
@@ -35,10 +36,12 @@ type StyleTabProps = {
    *  override (per-slide projects have no separate file; both tabs
    *  edit the project-level `style.css`). */
   fileLabel: string;
+  /** Save pipeline status — drives the "Saving…" / "Saved" pill. */
+  saveStatus?: SaveStatus;
   onUpdate: (fileId: string, content: string) => void;
 };
 
-export function StyleTab({ fileContent, fileId, fileLabel, onUpdate }: StyleTabProps) {
+export function StyleTab({ fileContent, fileId, fileLabel, saveStatus, onUpdate }: StyleTabProps) {
   const { groups, hasVariables } = useCssProperties(fileContent, STYLE_PROPERTIES);
 
   function handleUpdate(key: string, value: string) {
@@ -47,9 +50,14 @@ export function StyleTab({ fileContent, fileId, fileLabel, onUpdate }: StyleTabP
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-md border border-(--bor2) bg-(--sur) px-2 py-1.5">
-        <div className="text-[10px] uppercase tracking-wider text-(--t3)">Editing</div>
-        <div className="font-mono text-xs text-(--t2)">{fileLabel}</div>
+      <div className="flex items-start justify-between gap-2 rounded-md border border-(--bor2) bg-(--sur) px-2 py-1.5">
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-(--t3)">Editing</div>
+          <div className="font-mono text-xs text-(--t2)">{fileLabel}</div>
+        </div>
+        {saveStatus && saveStatus !== 'idle' && (
+          <SaveStatusPill status={saveStatus} />
+        )}
       </div>
       {!hasVariables && (
         <div className="rounded-md border border-dashed border-(--bor2) bg-(--sur)/50 px-3 py-2 text-xs text-(--t3)">
@@ -128,4 +136,31 @@ function renderInput(prop: RenderInputProps, onUpdate: (key: string, value: stri
         />
       );
   }
+}
+
+/** Small status pill that mirrors `useCssPropertyUpdates`'s save
+ *  state. Shown next to the file label so the user knows whether
+ *  their last keystroke has been persisted. */
+function SaveStatusPill({ status }: { status: SaveStatus }) {
+  if (status === 'pending') {
+    return (
+      <span
+        data-testid="style-save-status"
+        className="inline-flex items-center gap-1 rounded-full bg-(--cy)/10 px-2 py-0.5 text-[10px] font-medium text-(--cy)"
+      >
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-(--cy)" />
+        Saving…
+      </span>
+    );
+  }
+  // status === 'saved'
+  return (
+    <span
+      data-testid="style-save-status"
+      className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-500"
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      Saved
+    </span>
+  );
 }
