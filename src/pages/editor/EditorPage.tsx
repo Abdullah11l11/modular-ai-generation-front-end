@@ -9,7 +9,7 @@ import { useReorderProjectFiles } from '@/features/files/hooks/useReorderProject
 import { EditorProvider } from '@/features/editor/components/EditorProvider';
 import { useEditorContext } from '@/features/editor/hooks/useEditorStore';
 import { getEditorMode } from '@/features/editor/utils/editorMode';
-import { groupSlides } from '@/features/editor/utils/groupSlides';
+import { groupSlides, extractSlideTitle, titleToStemFragment } from '@/features/editor/utils/groupSlides';
 import { SlideLibraryPanel } from '@/features/editor/components/SlideLibrary/SlideLibraryPanel';
 import { PreviewCanvas } from '@/features/editor/components/Preview/PreviewCanvas';
 import { PropertiesPanel } from '@/features/editor/components/PropertiesPanel/PropertiesPanel';
@@ -93,8 +93,17 @@ function EditorShell({ project }: EditorShellProps) {
 
   const handleAddSlide = useCallback(
     (sourceStem: string | null = null) => {
-      const stem = getNextStem(slides);
       const sourceGroup = sourceStem ? (slides.find((s) => s.stem === sourceStem) ?? null) : null;
+      const baseStem = getNextStem(slides);
+      // If the source has a data-field title, embed a slugified
+      // fragment in the new stem so the file ends up named
+      // e.g. `slide-12-pricing` rather than just `slide-12`.
+      const titleFragment = sourceGroup
+        ? titleToStemFragment(
+            extractSlideTitle(sourceGroup.files.slide?.content, sourceGroup.stem),
+          )
+        : '';
+      const stem = titleFragment ? `${baseStem}-${titleFragment}` : baseStem;
 
       type FileSpec = { layer: ProjectFileKind; extension: string; content: string };
 
