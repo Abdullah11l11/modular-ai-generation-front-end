@@ -113,6 +113,8 @@ export function SlideLibraryPanel({
             onSelect={onSelectSlide}
             onDelete={handleDelete}
             onReorder={handleReorder}
+            projectFiles={files}
+            direction={direction}
           />
         )}
       </div>
