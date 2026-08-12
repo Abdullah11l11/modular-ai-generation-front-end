@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Direction } from '@/types/api';
 import { hasMathContent, MATH_HEAD_TAGS, MATH_RENDER_SCRIPT } from '@/features/editor/utils/mathRender';
+import { ARABIC_FONT_LINKS, ARABIC_FONT_STACK } from '@/features/editor/utils/arabicFont';
 
 export type AssemblePreviewInput = {
   slideHtml: string;
@@ -660,6 +661,15 @@ export function assemblePreviewHtml({
   // paragraph. RTL → `ar` is the only seeded case today; if the
   // project metadata ever grows a `language` field, prefer that.
   const lang = direction === 'rtl' ? 'ar' : 'en';
+  // For RTL projects, drop in the Google Fonts pair + a `:root `-scoped
+  // font-family override. The override only takes effect if the project
+  // CSS doesn't define `--mgf-font-body` / `--mgf-font-display` itself
+  // (which is the common case for seeded Arabic projects). Defining the
+  // fonts at `:root` rather than on `body` lets `inherit`-using
+  // descendants still pick them up.
+  const rtlFonts = direction === 'rtl'
+    ? `${ARABIC_FONT_LINKS}<style>:root { --mgf-font-body: ${ARABIC_FONT_STACK}; --mgf-font-display: ${ARABIC_FONT_STACK}; }</style>`
+    : '';
   return `<!DOCTYPE html>
 <html dir="${direction}" lang="${lang}">
 <head>
@@ -673,6 +683,7 @@ ${styleCss}
 ${slideCss}
 ${MATH_THEMED_CSS}
 </style>
+${rtlFonts}
 ${CLICK_HANDLER}
 ${mathHead}
 </head>

@@ -26,3 +26,32 @@ describe('assemblePreviewHtml — direction + lang', () => {
     expect(html).toMatch(/<meta charset="utf-8">/);
   });
 });
+
+describe('assemblePreviewHtml — Arabic font fallback', () => {
+  it('does NOT inject Google Fonts for LTR projects', () => {
+    const html = assemblePreviewHtml({ ...BASE_INPUT, direction: 'ltr' });
+    expect(html).not.toContain('fonts.googleapis.com');
+    expect(html).not.toContain('Cairo');
+  });
+
+  it('injects preconnect + the Cairo + Noto Naskh Arabic <link> for RTL projects', () => {
+    const html = assemblePreviewHtml({ ...BASE_INPUT, direction: 'rtl' });
+    expect(html).toContain('rel="preconnect" href="https://fonts.googleapis.com"');
+    expect(html).toContain('rel="preconnect" href="https://fonts.gstatic.com"');
+    expect(html).toContain('family=Cairo');
+    expect(html).toContain('family=Noto+Naskh+Arabic');
+  });
+
+  it('overrides --mgf-font-body and --mgf-font-display on :root for RTL projects', () => {
+    const html = assemblePreviewHtml({ ...BASE_INPUT, direction: 'rtl' });
+    expect(html).toMatch(/:root\s*\{[^}]*--mgf-font-body:[^}]*Cairo/);
+    expect(html).toMatch(/:root\s*\{[^}]*--mgf-font-display:[^}]*Cairo/);
+  });
+
+  it('includes system Arabic fallbacks (Tahoma, Geeza Pro, Segoe UI) in the stack', () => {
+    const html = assemblePreviewHtml({ ...BASE_INPUT, direction: 'rtl' });
+    expect(html).toContain('Tahoma');
+    expect(html).toContain('Geeza Pro');
+    expect(html).toContain('Segoe UI');
+  });
+});
