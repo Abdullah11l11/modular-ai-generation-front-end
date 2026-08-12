@@ -140,3 +140,41 @@ invent new class names.
 | `mgf-mb-sm` / `-md` / `-lg`    | Margin-bottom scale.                 |
 | `mgf-gap-sm` / `-md` / `-lg`   | Flex/grid gap scale.                 |
 | `mgf-flex` / `-col` / `-center` / `-between` / `-start` / `-wrap` | Flex utilities. |
+
+## Website (scrollable page archetype)
+
+Used in the `website` archetype only. Each `slide-NN.html` is a
+section in a long-scroll page (see `website.md` for full recipes).
+Decks (presentation / carousel) must not emit these.
+
+| Class                          | Purpose                              |
+| ------------------------------ | ------------------------------------ |
+| `mgf-website`                  | Root page wrapper.                   |
+| `mgf-website-nav`              | Top navigation bar.                  |
+| `mgf-website-brand`            | Brand link in the nav.               |
+| `mgf-website-links`            | Right-side nav links container.      |
+| `mgf-website-footer`           | Bottom-of-page footer band.          |
+| `mgf-website-hero`             | First section, full-width hero band. |
+| `mgf-website-hero-title`       | Hero headline (oversized type).      |
+| `mgf-website-hero-sub`         | Hero subheadline.                    |
+| `mgf-website-hero-ctas`        | Hero primary + secondary CTA row.    |
+| `mgf-website-section`          | Every section band after the hero.   |
+| `mgf-website-section-header`   | Section eyebrow + title + sub stack. |
+| `mgf-website-section-title`    | Section H2 (large but not hero-sized). |
+| `mgf-website-section-sub`      | Section subtitle / framing line.     |
+| `mgf-website-testimonial`      | Centered testimonial container.      |
+| `mgf-website-faq`              | Narrow centered FAQ column.          |
+| `mgf-website-cta`              | Closing CTA band container.          |
+| `mgf-website-cta-title`        | Closing CTA headline.                |
+| `mgf-website-cta-body`         | Closing CTA supporting body.         |
+| `mgf-cta-lg`                   | Larger CTA button (hero / closing CTA). |
+
+## Math (KaTeX)
+
+Both deck and website archetypes may include scientific formulas.
+See `math.md` for the full contract.
+
+| Class                          | Purpose                              |
+| ------------------------------ | ------------------------------------ |
+| `math-inline`                  | Inline math span; KaTeX renders `data-tex`. |
+| `math-block`                   | Block-level math div; KaTeX renders `data-tex` in display mode. |

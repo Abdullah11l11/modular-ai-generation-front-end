@@ -1,6 +1,30 @@
 import { useCssProperties } from '@/features/editor/hooks/useCssProperties';
 import { STYLE_PROPERTIES } from '@/features/editor/types/cssProperties';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+/**
+ * Mutate a CSS variable in `:root`. If the variable already exists,
+ * its value is replaced; otherwise a new declaration is inserted at
+ * the top of the `:root` block. If there is no `:root` block at all,
+ * one is created and prepended.
+ *
+ * Robust against common cases:
+ * - Missing `:root` block (single-line projects, MGF default).
+ * - Variable already declared (preserve source order).
+ * - Multiple `:root` blocks (only the first is touched — kept simple).
+ * - Comments inside `:root` (the regex is greedy enough that an
+ *   existing `--key: value;` is replaced even if the value contains
+ *   parentheses or commas).
+ */
+function updateVar(content: string, key: string, value: string): string {
+  const regex = new RegExp(`(--${key}\\s*:\\s*)[^;]+`);
+  if (regex.test(content)) {
+    return content.replace(regex, `$1${value}`);
+  }
+  if (content.includes(':root')) {
+    return content.replace(/(:root\s*\{)/, `$1\n  --${key}: ${value};`);
+  }
+  return `:root {\n  --${key}: ${value};\n}\n\n${content}`;
+}
 
 type StyleTabProps = {
   fileContent: string;
@@ -11,12 +35,8 @@ type StyleTabProps = {
 export function StyleTab({ fileContent, fileId, onUpdate }: StyleTabProps) {
   const { groups } = useCssProperties(fileContent, STYLE_PROPERTIES);
 
-  function updateValue(key: string, value: string) {
-    const regex = new RegExp(`(--${key}\\s*:\\s*)[^;]+`);
-    const newContent = regex.test(fileContent)
-      ? fileContent.replace(regex, `$1${value}`)
-      : fileContent.replace(/(:root\s*\{)/, `$1\n  --${key}: ${value};`);
-    onUpdate(fileId, newContent);
+  function handleUpdate(key: string, value: string) {
+    onUpdate(fileId, updateVar(fileContent, key, value));
   }
 
   return (
@@ -25,95 +45,72 @@ export function StyleTab({ fileContent, fileId, onUpdate }: StyleTabProps) {
         <div key={group.name} className="flex flex-col gap-2">
           <span className="text-xs font-semibold text-(--t2) uppercase tracking-wider">{group.label}</span>
           {group.properties.map((prop) => (
-            <div key={prop.key} className="flex flex-col gap-1">
+            <div key={prop.key} className="flex items-center justify-between gap-2">
               <label className="text-xs text-(--t3)">{prop.label}</label>
-              {prop.type === 'size' ? (
-                <input
-                  type="text"
-                  value={prop.value}
-                  onChange={(e) => updateValue(prop.key, e.target.value)}
-                  className="h-7 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
-                />
-              ) : prop.type === 'line-height' ? (
-                <input
-                  type="text"
-                  value={prop.value}
-                  onChange={(e) => updateValue(prop.key, e.target.value)}
-                  className="h-7 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
-                />
-              ) : prop.type === 'letter-spacing' ? (
-                <input
-                  type="text"
-                  value={prop.value}
-                  onChange={(e) => updateValue(prop.key, e.target.value)}
-                  className="h-7 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
-                />
-              ) : prop.type === 'weight' ? (
-                <select
-                  value={prop.value}
-                  onChange={(e) => updateValue(prop.key, e.target.value)}
-                  className="h-7 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
-                >
-                  {['100', '200', '300', '400', '500', '600', '700', '800', '900'].map((w) => (
-                    <option key={w} value={w}>{w}</option>
-                  ))}
-                </select>
-              ) : prop.type === 'align' ? (
-                <Select value={prop.value} onValueChange={(val) => updateValue(prop.key, val)}>
-                  <SelectTrigger className="h-7 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(prop.options ?? []).map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : prop.type === 'opacity' ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.1"
-                    value={prop.value}
-                    onChange={(e) => updateValue(prop.key, e.target.value)}
-                    className="flex-1"
-                  />
-                  <span className="w-8 text-xs text-(--t3) text-right">{prop.value}</span>
-                </div>
-              ) : prop.type === 'spacing' ? (
-                <div className="flex items-center gap-1">
-                  <input
-                    type="text"
-                    value={prop.value}
-                    onChange={(e) => updateValue(prop.key, e.target.value)}
-                    className="h-7 flex-1 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
-                  />
-                  <span className="text-xs text-(--t3)">px</span>
-                </div>
-              ) : prop.type === 'border-radius' ? (
-                <div className="flex items-center gap-1">
-                  <input
-                    type="text"
-                    value={prop.value}
-                    onChange={(e) => updateValue(prop.key, e.target.value)}
-                    className="h-7 flex-1 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
-                  />
-                  <span className="text-xs text-(--t3)">px</span>
-                </div>
-              ) : prop.type === 'z-index' ? (
-                <input
-                  type="number"
-                  value={prop.value}
-                  onChange={(e) => updateValue(prop.key, e.target.value)}
-                  className="h-7 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
-                />
-              ) : null}
+              {renderInput(prop, handleUpdate)}
             </div>
           ))}
         </div>
       ))}
     </div>
   );
+}
+
+type RenderInputProps = {
+  key: string;
+  label: string;
+  type: import('@/features/editor/types/cssProperties').CssPropertyType;
+  default: string;
+  group: string;
+  value: string;
+  options?: string[];
+};
+
+function renderInput(prop: RenderInputProps, onUpdate: (key: string, value: string) => void) {
+  switch (prop.type) {
+    case 'size':
+    case 'spacing':
+    case 'border-radius':
+      return (
+        <div className="flex items-center gap-1">
+          <input
+            type="text"
+            value={prop.value}
+            onChange={(e) => onUpdate(prop.key, e.target.value)}
+            className="h-7 w-24 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
+          />
+        </div>
+      );
+    case 'line-height':
+    case 'letter-spacing':
+      return (
+        <input
+          type="text"
+          value={prop.value}
+          onChange={(e) => onUpdate(prop.key, e.target.value)}
+          className="h-7 w-20 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
+        />
+      );
+    case 'weight':
+      return (
+        <select
+          value={prop.value}
+          onChange={(e) => onUpdate(prop.key, e.target.value)}
+          className="h-7 w-20 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
+        >
+          {['100', '200', '300', '400', '500', '600', '700', '800', '900'].map((w) => (
+            <option key={w} value={w}>{w}</option>
+          ))}
+        </select>
+      );
+    default:
+      return (
+        <input
+          type="text"
+          value={prop.value}
+          onChange={(e) => onUpdate(prop.key, e.target.value)}
+          className="h-7 w-24 rounded-md border border-(--bor2) bg-(--sur) px-2 text-xs text-(--t1) outline-none focus:border-(--cy)"
+        />
+      );
+  }
 }

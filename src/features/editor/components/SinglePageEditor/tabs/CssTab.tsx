@@ -79,17 +79,6 @@ export function CssTab({ projectId, styleFile }: CssTabProps) {
                   />
                   <span className="text-xs text-(--t3)">px</span>
                 </div>
-              ) : prop.type === 'align' ? (
-                <Select value={prop.value} onValueChange={(val) => updateValue(prop.key, val)}>
-                  <SelectTrigger className="h-7 w-24 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(prop.options ?? []).map((opt) => (
-                      <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               ) : null}
             </div>
           ))}

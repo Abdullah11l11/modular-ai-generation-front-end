@@ -1,8 +1,8 @@
 export type CssPropertyType =
   | 'color' | 'font' | 'size' | 'weight' | 'spacing'
   | 'text' | 'select' | 'range'
-  | 'color-text' | 'opacity' | 'line-height' | 'letter-spacing' | 'align'
-  | 'border-radius' | 'z-index';
+  | 'color-text' | 'line-height' | 'letter-spacing'
+  | 'border-radius';
 
 export type CssPropertyDef = {
   key: string;
@@ -68,16 +68,44 @@ export const CONTENT_PROPERTIES: CssPropertyDef[] = [
 ];
 
 export const STYLE_PROPERTIES: CssPropertyDef[] = [
-  { key: 'font-size', label: 'Font Size', type: 'size', default: '16px', group: 'typography' },
-  { key: 'line-height', label: 'Line Height', type: 'line-height', default: '1.5', group: 'typography' },
-  { key: 'letter-spacing', label: 'Letter Spacing', type: 'letter-spacing', default: '0', group: 'typography' },
-  { key: 'font-weight', label: 'Font Weight', type: 'weight', default: '400', group: 'typography' },
-  { key: 'text-align', label: 'Alignment', type: 'align', default: 'left', options: ['left', 'center', 'right', 'justify'], group: 'typography' },
-  { key: 'opacity', label: 'Opacity', type: 'opacity', default: '1', group: 'spacing' },
-  { key: 'padding-top', label: 'Padding Top', type: 'spacing', default: '0', group: 'spacing' },
-  { key: 'padding-right', label: 'Padding Right', type: 'spacing', default: '0', group: 'spacing' },
-  { key: 'padding-bottom', label: 'Padding Bottom', type: 'spacing', default: '0', group: 'spacing' },
-  { key: 'padding-left', label: 'Padding Left', type: 'spacing', default: '0', group: 'spacing' },
-  { key: 'border-radius', label: 'Border Radius', type: 'border-radius', default: '0', group: 'spacing' },
-  { key: 'z-index', label: 'Z-Index', type: 'z-index', default: '1', group: 'spacing' },
+  // Typography tokens — keys match the actual `:root` variables in
+  // `standards/tokens.md` so the panel mutates real CSS, not a parallel
+  // vocabulary. The `type` maps the editor control onto the right
+  // input; the rendered value is the raw token value.
+  { key: 'mgf-text-base', label: 'Base Font Size', type: 'size', default: '1rem', group: 'typography' },
+  { key: 'mgf-text-lg', label: 'Large Font Size', type: 'size', default: '1.25rem', group: 'typography' },
+  { key: 'mgf-text-xl', label: 'XL Font Size', type: 'size', default: '1.75rem', group: 'typography' },
+  { key: 'mgf-text-2xl', label: '2XL Font Size', type: 'size', default: '2.5rem', group: 'typography' },
+  { key: 'mgf-text-3xl', label: '3XL Font Size', type: 'size', default: '3.5rem', group: 'typography' },
+  { key: 'mgf-text-4xl', label: '4XL Font Size', type: 'size', default: '5rem', group: 'typography' },
+  { key: 'mgf-leading-tight', label: 'Line Height (Tight)', type: 'line-height', default: '1.15', group: 'typography' },
+  { key: 'mgf-leading-normal', label: 'Line Height (Normal)', type: 'line-height', default: '1.5', group: 'typography' },
+  { key: 'mgf-leading-loose', label: 'Line Height (Loose)', type: 'line-height', default: '1.75', group: 'typography' },
+  { key: 'mgf-tracking-tight', label: 'Letter Spacing (Tight)', type: 'letter-spacing', default: '-0.03em', group: 'typography' },
+  { key: 'mgf-tracking-normal', label: 'Letter Spacing (Normal)', type: 'letter-spacing', default: '0em', group: 'typography' },
+  { key: 'mgf-tracking-wide', label: 'Letter Spacing (Wide)', type: 'letter-spacing', default: '0.08em', group: 'typography' },
+  { key: 'mgf-weight-normal', label: 'Weight Normal', type: 'weight', default: '400', group: 'typography' },
+  { key: 'mgf-weight-medium', label: 'Weight Medium', type: 'weight', default: '500', group: 'typography' },
+  { key: 'mgf-weight-bold', label: 'Weight Bold', type: 'weight', default: '700', group: 'typography' },
+
+  // Spacing tokens — pad-y, pad-x, and the major spacing scale.
+  { key: 'mgf-space-1', label: 'Space 1', type: 'spacing', default: '0.25rem', group: 'spacing' },
+  { key: 'mgf-space-2', label: 'Space 2', type: 'spacing', default: '0.5rem', group: 'spacing' },
+  { key: 'mgf-space-3', label: 'Space 3', type: 'spacing', default: '0.75rem', group: 'spacing' },
+  { key: 'mgf-space-4', label: 'Space 4', type: 'spacing', default: '1rem', group: 'spacing' },
+  { key: 'mgf-space-6', label: 'Space 6', type: 'spacing', default: '1.5rem', group: 'spacing' },
+  { key: 'mgf-space-8', label: 'Space 8', type: 'spacing', default: '2rem', group: 'spacing' },
+  { key: 'mgf-space-12', label: 'Space 12', type: 'spacing', default: '3rem', group: 'spacing' },
+  { key: 'mgf-space-16', label: 'Space 16', type: 'spacing', default: '4rem', group: 'spacing' },
+  { key: 'mgf-space-24', label: 'Space 24', type: 'spacing', default: '6rem', group: 'spacing' },
+
+  // Slide canvas padding tokens.
+  { key: 'mgf-slide-pad-x', label: 'Slide Padding X', type: 'spacing', default: '80px', group: 'canvas' },
+  { key: 'mgf-slide-pad-y', label: 'Slide Padding Y', type: 'spacing', default: '60px', group: 'canvas' },
+
+  // Shape tokens.
+  { key: 'mgf-radius-sm', label: 'Radius SM', type: 'border-radius', default: '4px', group: 'shape' },
+  { key: 'mgf-radius-md', label: 'Radius MD', type: 'border-radius', default: '8px', group: 'shape' },
+  { key: 'mgf-radius-lg', label: 'Radius LG', type: 'border-radius', default: '16px', group: 'shape' },
+  { key: 'mgf-radius-xl', label: 'Radius XL', type: 'border-radius', default: '24px', group: 'shape' },
 ];

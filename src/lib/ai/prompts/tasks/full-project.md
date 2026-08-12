@@ -58,3 +58,36 @@ not pad the deck with filler slides.
 The response is the JSON object. No markdown fences. No preamble. No
 postamble. The single outer JSON parser is the only thing that should
 read this response.
+
+## Output targets
+
+The brief may specify one of these `output_target` values. Each has
+its own conventions on top of the shared rules above:
+
+| Target | Project type | Slide model | Notes |
+| ------ | ------------ | ----------- | ----- |
+| `presentation` | `presentation` / `carousel` | One viewport per slide | Keyboard nav (arrows / space), counter, deck export. |
+| `website` | `website` | Slides stack into one scrolling page | One continuous scroll — no per-slide viewport. Layout uses `mgf-deck` or `mgf-full` blocks; each slide is a section in the page. |
+| `poster` | `poster` | Single full-bleed slide | One slide only. Treat the whole canvas as a poster. |
+| `infographic` | `infographic` | Scrollable vertical | Long-form with `mgf-stat-group`, `mgf-timeline`, `mgf-comparison`. |
+| `document` | `document` | Scrollable | Reads top-to-bottom. Use `mgf-body` / `mgf-callout` for prose. |
+| `landing-page` | `landing-page` | Scrollable with CTA anchors | Cover → features → social proof → pricing → CTA. `mgf-cta-solid` for the conversion button. |
+
+When `output_target` is `website`, the renderer concatenates every
+`slide-NN.html` into a single scrollable page inside the layout
+wrapper (see `useAssemblePreview.ts`). The same `mgf-*` class
+vocabulary applies, but each slide's section is just a block in the
+page — there is no "advance to next slide" keyboard binding.
+
+When `output_target` is one of the deck modes (`presentation`,
+`carousel`), the renderer keeps one slide per viewport with keyboard
+navigation and a slide counter. Use `mgf-slide-number` on every
+slide.
+
+## Math support
+
+Slides may include KaTeX-rendered formulas. See `standards/math.md`
+for the `<span class="math-inline">` / `<div class="math-block">`
+conventions. The assembler only injects KaTeX assets when at least
+one such tag is present in the rendered body, so deck projects
+without math pay no asset cost.

@@ -90,6 +90,27 @@ keep titles under 8 words, body under 40 words, use `mgf-grid-*` for
 multi-element layouts, never nest a card inside a card, never use
 inline styles or hardcoded hex.
 
+## Math (KaTeX)
+
+Components may contain scientific formulas using KaTeX. See
+`standards/math.md` for the full contract. In summary:
+
+- Inline: `<span class="math-inline" data-tex="E=mc^2"></span>`
+- Block: `<div class="math-block" data-tex="\\frac{a}{b}"></div>`
+- Always double-escape backslashes inside `data-tex`.
+- `data-tex` is an HTML attribute — no `"`, `<`, `>`, or unescaped `&`.
+
+```html
+<p class="mgf-body">
+  The Pythagorean identity:
+  <span class="math-inline" data-tex="a^2 + b^2 = c^2"></span>
+</p>
+<div class="math-block" data-tex="\\int_a^b f(x)\\,dx = F(b) - F(a)"></div>
+```
+
+If a slide has no math, emit no tags — the assembler skips KaTeX
+loading entirely, keeping slides lean.
+
 ## Rules
 
 - The component filename must match the component name (e.g. `quote.html`).

@@ -30,11 +30,12 @@ export function PropertiesPanel({
   const styleContent = styleCssFile?.content ?? '';
   const slideContent = selectedSlideHtmlFile?.content ?? '';
   const layoutContent = layoutCssFile?.content ?? '';
-  // Style tab needs a writable CSS target. UVCP per-slide projects have
-  // no layout.css, so fall back to the project-level style.css. The
-  // STYLE_PROPERTIES use independent variable names (--font-size,
-  // --line-height, …) so they don't collide with the Theme tab's
-  // existing tokens.
+  // Style tab mutates real `--mgf-*` typography / spacing / shape
+  // tokens (see `STYLE_PROPERTIES` in cssProperties.ts). The Theme tab
+  // already covers colors + fonts. Style tab handles sizes, weights,
+  // line-height, letter-spacing, spacing scale, slide padding, and
+  // radius — everything else. UVCP per-slide projects have no
+  // layout.css, so fall back to the project-level style.css.
   const styleTabFile = isPerSlide ? styleCssFile : layoutCssFile;
   const styleTabContent = styleTabFile?.content ?? styleContent;
 

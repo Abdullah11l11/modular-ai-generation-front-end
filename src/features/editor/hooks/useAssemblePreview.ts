@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { Direction } from '@/types/api';
+import { hasMathContent, MATH_HEAD_TAGS, MATH_RENDER_SCRIPT } from '@/features/editor/utils/mathRender';
 
 export type AssemblePreviewInput = {
   slideHtml: string;
@@ -137,6 +138,70 @@ section.mgf-slide {
   font-weight: 700;
   margin: 0;
   line-height: 1.1;
+}`;
+
+/**
+ * Theme-aware overrides for KaTeX-rendered math. KaTeX's own CSS sets
+ * hard-coded colors that won't track the project's tokens. These rules
+ * (loaded alongside the project's `style.css`) recolor the math so it
+ * picks up `--mgf-color-text-primary` / `--mgf-color-accent`.
+ *
+ * Wrapped under `body.mgf-math-enabled .mgf-math-root` so it only
+ * takes effect on slides that opt into math. The render script adds
+ * the `mgf-math-root` class via `<span class="math-inline">`'s parent
+ * — we wrap them implicitly with `body.mgf-math-enabled`.
+ */
+const MATH_THEMED_CSS = `
+body.mgf-math-enabled .mgf-math-root .katex,
+body.mgf-math-enabled .mgf-math-root .katex .mord,
+body.mgf-math-enabled .mgf-math-root .katex .mopen,
+body.mgf-math-enabled .mgf-math-root .katex .mclose,
+body.mgf-math-enabled .mgf-math-root .katex .mpunct,
+body.mgf-math-enabled .mgf-math-root .katex .minner,
+body.mgf-math-enabled .mgf-math-root .katex .mbin,
+body.mgf-math-enabled .mgf-math-root .katex .mrel,
+body.mgf-math-enabled .mgf-math-root .katex .mathnormal {
+  color: var(--mgf-color-text-primary, inherit);
+}
+body.mgf-math-enabled .mgf-math-root .katex .accent,
+body.mgf-math-enabled .mgf-math-root .katex .mathbf,
+body.mgf-math-enabled .mgf-math-root .katex .mathit,
+body.mgf-math-enabled .mgf-math-root .katex .mathrm {
+  color: var(--mgf-color-text-primary, inherit);
+}
+body.mgf-math-enabled .mgf-math-root .katex .mathdefault,
+body.mgf-math-enabled .mgf-math-root .katex .mathit {
+  color: var(--mgf-color-text-primary, inherit);
+}
+body.mgf-math-enabled .mgf-math-root .katex .base,
+body.mgf-math-enabled .mgf-math-root .katex .strut,
+body.mgf-math-enabled .mgf-math-root .katex .mfrac .frac-line {
+  color: var(--mgf-color-text-primary, inherit);
+  border-color: var(--mgf-color-text-primary, inherit);
+}
+body.mgf-math-enabled .mgf-math-root .katex .mathnormal,
+body.mgf-math-enabled .mgf-math-root .katex .mathit {
+  color: var(--mgf-color-text-primary, inherit);
+  font-style: italic;
+}
+body.mgf-math-enabled .mgf-math-root .katex .frac-line {
+  border-bottom-color: var(--mgf-color-text-primary, inherit);
+}
+body.mgf-math-enabled .mgf-math-root .katex .overline,
+body.mgf-math-enabled .mgf-math-root .katex .underline {
+  border-color: var(--mgf-color-accent, currentColor);
+}
+body.mgf-math-enabled .mgf-math-root .katex .color,
+body.mgf-math-enabled .mgf-math-root .katex .textcolor {
+  color: var(--mgf-color-accent, currentColor);
+}
+body.mgf-math-enabled .mgf-math-root .math-block {
+  margin: var(--mgf-space-4, 1rem) 0;
+  text-align: center;
+  display: block;
+}
+body.mgf-math-enabled .mgf-math-root .math-inline {
+  display: inline-block;
 }
 `;
 
@@ -212,6 +277,12 @@ export function assemblePreviewHtml({
     ? replaceContentPlaceholders(layoutHtml, contentJson, innerHtml)
     : innerHtml;
 
+  // Detect math content (`.math-inline` / `.math-block`) anywhere in
+  // the rendered body. If present, inject KaTeX assets + render hook.
+  // Otherwise skip the ~270KB CSS / 120KB JS load entirely.
+  const hasMath = hasMathContent(bodyHtml);
+  const mathHead = hasMath ? MATH_HEAD_TAGS : '';
+
   return `<!DOCTYPE html>
 <html dir="${direction}">
 <head>
@@ -223,10 +294,12 @@ ${contentVars}
 ${layoutCss}
 ${styleCss}
 ${slideCss}
+${MATH_THEMED_CSS}
 </style>
 ${CLICK_HANDLER}
+${mathHead}
 </head>
-<body>${bodyHtml}</body>
+<body class="${hasMath ? 'mgf-math-enabled' : ''}">${bodyHtml}${hasMath ? MATH_RENDER_SCRIPT : ''}</body>
 </html>`;
 }
 
