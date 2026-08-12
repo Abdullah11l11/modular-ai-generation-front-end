@@ -193,6 +193,7 @@ function EditorShell({ project }: EditorShellProps) {
               onDeleteSlides={handleDeleteSlides}
               onReorderFiles={handleReorderFiles}
               projectId={state.projectId}
+              direction={project.direction}
             />
           </aside>
 

@@ -10,8 +10,9 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { SlideList } from '@/features/editor/components/SlideLibrary/SlideList';
+import { SlidePickerDialog } from '@/features/editor/components/SlideLibrary/SlidePickerDialog';
 import { groupSlides, type SlideGroup } from '@/features/editor/utils/groupSlides';
-import type { ProjectFile, ProjectFileKind } from '@/types/api';
+import type { Direction, ProjectFile, ProjectFileKind } from '@/types/api';
 
 type SlideLibraryPanelProps = {
   files: ProjectFile[];
@@ -23,6 +24,9 @@ type SlideLibraryPanelProps = {
   onDeleteSlides: (stems: string[]) => void;
   onReorderFiles: (projectId: string, order: string[]) => void;
   projectId: string;
+  /** Document direction — controls how thumbnails render when the
+   *  assembled preview is shown inside the picker. */
+  direction: Direction;
 };
 
 const LAYER_BUTTONS: { kind: ProjectFileKind; label: string }[] = [
@@ -41,6 +45,7 @@ export function SlideLibraryPanel({
   onDeleteSlides,
   onReorderFiles,
   projectId,
+  direction,
 }: SlideLibraryPanelProps) {
   const [deleteTarget, setDeleteTarget] = useState<SlideGroup | null>(null);
   const [clonePickerOpen, setClonePickerOpen] = useState(false);
@@ -84,6 +89,11 @@ export function SlideLibraryPanel({
   function handleCloneFrom(stem: string) {
     setClonePickerOpen(false);
     onAddSlide(stem);
+  }
+
+  function handlePickBlank() {
+    setClonePickerOpen(false);
+    onAddSlide(null);
   }
 
   return (
@@ -149,34 +159,15 @@ export function SlideLibraryPanel({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={clonePickerOpen} onOpenChange={setClonePickerOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add slide</DialogTitle>
-            <DialogDescription>
-              Clone an existing slide to use as the starting layout.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex max-h-72 flex-col gap-1 overflow-y-auto">
-            {slides.map((slide, i) => (
-              <button
-                key={slide.stem}
-                type="button"
-                onClick={() => handleCloneFrom(slide.stem)}
-                className="flex items-center justify-between rounded-md border border-(--bor2) bg-(--sur) px-3 py-2 text-left text-sm transition-colors hover:border-(--cy) hover:bg-(--cy-d)/20"
-              >
-                <span className="truncate font-medium">{slide.title}</span>
-                <span className="shrink-0 text-xs text-(--t3)">#{i + 1}</span>
-              </button>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setClonePickerOpen(false)}>
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SlidePickerDialog
+        open={clonePickerOpen}
+        onOpenChange={setClonePickerOpen}
+        slides={slides}
+        projectFiles={files}
+        direction={direction}
+        onPickBlank={handlePickBlank}
+        onPick={handleCloneFrom}
+      />
     </div>
   );
 }
