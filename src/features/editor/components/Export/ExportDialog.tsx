@@ -295,7 +295,7 @@ export function ExportDialog({ open, onOpenChange, files, projectName }: ExportD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-[99vw]! w-[99vw]! max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Export "{projectName}"</DialogTitle>
         </DialogHeader>
