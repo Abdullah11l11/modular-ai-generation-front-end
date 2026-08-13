@@ -1,15 +1,8 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery } from '@tanstack/react-query';
+import { listAdminTemplates } from '@/features/admin/api/listAdminTemplates';
 
-import { listTemplates } from "../api/listAdminTemplates"
-
-export function useAdminTemplates(params?: any) {
-
-    return useQuery({
-
-        queryKey: ["admin", "templates", params],
-
-        queryFn: () => listTemplates(params),
-
-    })
-
-}
+export const useAdminTemplates = () =>
+  useQuery({
+    queryKey: ['admin', 'templates'],
+    queryFn: listAdminTemplates,
+  });

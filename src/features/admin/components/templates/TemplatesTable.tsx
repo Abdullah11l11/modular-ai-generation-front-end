@@ -41,13 +41,7 @@ export function TemplatesTable() {
 
         isLoading,
 
-    } = useAdminTemplates({
-
-        page,
-
-        q: search,
-
-    })
+    } = useAdminTemplates()
 
     if (isLoading) {
 
@@ -55,10 +49,10 @@ export function TemplatesTable() {
 
     }
 
-    if (!data?.items.length) {
+    const items = (data as any)?.items ?? (data as any)?.data ?? []
 
+    if (!items.length) {
         return <EmptyState />
-
     }
 
     return (
@@ -105,47 +99,15 @@ export function TemplatesTable() {
 
                 <TableBody>
 
-                    {
-
-                        data.items.map(template=>(
-
-                            <TableRow key={template.id}>
-
-                                <TableCell>
-
-                                    {template.title}
-
-                                </TableCell>
-
-                                <TableCell>
-
-                                    {template.author_name}
-
-                                </TableCell>
-
-                                <TableCell>
-
-                                    {template.type}
-
-                                </TableCell>
-
-                                <TableCell>
-
-                                    {template.visibility}
-
-                                </TableCell>
-
-                                <TableCell>
-
-                                    {template.upvotes}
-
-                                </TableCell>
-
-                            </TableRow>
-
-                        ))
-
-                    }
+                    {items.map((template: any) => (
+                        <TableRow key={template.id}>
+                            <TableCell>{template.title}</TableCell>
+                            <TableCell>{template.author_name}</TableCell>
+                            <TableCell>{template.type}</TableCell>
+                            <TableCell>{template.visibility}</TableCell>
+                            <TableCell>{template.upvotes}</TableCell>
+                        </TableRow>
+                    ))}
 
                 </TableBody>
 
@@ -155,7 +117,7 @@ export function TemplatesTable() {
 
                 page={page}
 
-                totalPages={data.meta.last_page}
+                totalPages={(data as any)?.meta?.last_page ?? 1}
 
                 onChange={setPage}
 

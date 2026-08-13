@@ -1,6 +1,6 @@
-import type { User } from '@/types/api'
+import type { User } from '@/types/api';
 
 export type AuthResponse = {
-  token: string
-  user: User
-}
+  token: string;
+  user: User;
+};
