@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  clearBaseUrl,
   clearBaseUrlOverride,
   DEFAULT_MINIMAX_BASE_URL,
   DEFAULT_LMSTUDIO_BASE_URL,
   getEffectiveBaseUrl,
   isLocalBaseUrl,
+  setBaseUrl,
   setBaseUrlOverride,
 } from '../baseUrl';
-import { clearBaseUrl } from '../apiKeys';
 
 describe('baseUrl helpers', () => {
   beforeEach(() => localStorage.clear());
@@ -39,8 +40,8 @@ describe('baseUrl helpers', () => {
     expect(getEffectiveBaseUrl('minimax')).toBe(DEFAULT_MINIMAX_BASE_URL);
   });
 
-  it('clearBaseUrl from apiKeys also clears the override', () => {
-    setBaseUrlOverride('lmstudio', 'http://override.test');
+  it('clearBaseUrl also clears the override', () => {
+    setBaseUrl('lmstudio', 'http://override.test');
     clearBaseUrl('lmstudio');
     expect(getEffectiveBaseUrl('lmstudio')).toBe(DEFAULT_LMSTUDIO_BASE_URL);
   });
@@ -54,4 +55,5 @@ describe('baseUrl helpers', () => {
     expect(isLocalBaseUrl('http://example.com')).toBe(false);
   });
 });
+
 

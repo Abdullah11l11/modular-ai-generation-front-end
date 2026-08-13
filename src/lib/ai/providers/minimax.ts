@@ -1,38 +1,53 @@
 import type { AIService, StreamChatHandlers, StreamChatParams } from '../AIService';
-import { getEffectiveBaseUrl } from '../baseUrl';
 import { env } from '@/config/env';
+
+const AUTH_TOKEN_KEY = 'mgf.authToken';
+
+const readAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem(AUTH_TOKEN_KEY);
+};
 
 /**
  * MiniMax / Anthropic-compatible provider.
  *
- * All requests go through the Laravel backend endpoint `POST /api/v1/ai/chat`
- * (Task 2026-08-13 backend-ai-proxy). The Anthropic API key is server-held
- * and never reaches the browser. The backend forwards the Anthropic SSE
- * stream verbatim, so this client parses the same `content_block_delta` /
- * `message_stop` events as a direct call would.
+ * All requests go through the Laravel backend `POST /api/v1/ai/chat`
+ * (handoff doc: `01_MGF_BACKEND/docs/FRONTEND_AI_CHAT_HANDOFF.md`).
  *
- * The provider's `baseUrl` advanced-override is no longer used for the
- * network request (Laravel owns the upstream URL), but `getEffectiveBaseUrl`
- * is still called so the chat panel's base-URL field stays in sync with
- * the active provider.
+ * - The browser sends `provider_id` so the backend knows which
+ *   per-user encrypted key to use (each user has their own row in
+ *   `user_ai_providers`; the key never leaves the server).
+ * - Sanctum Bearer token from `localStorage['mgf.authToken']` is
+ *   attached manually because we use raw `fetch()` (axios doesn't
+ *   stream SSE well).
+ * - The backend forwards the Anthropic SSE stream verbatim, so this
+ *   client parses the same `content_block_delta` / `message_stop`
+ *   events as a direct call would.
  */
 export const minimaxService: AIService = {
   provider: 'minimax',
   suggestedModels: [
-    'MiniMax-M2.7',
-    'MiniMax-M2.5',
-    'MiniMax-M2.1',
-    'MiniMax-M2',
+    // MiniMax-M3 is the default model used by the MiniMax-compatible Anthropic
+    // proxy (matches ANTHROPIC_DEFAULT_*_MODEL in the user's env).
+    'MiniMax-M3',
     'claude-3-5-sonnet-latest',
     'claude-3-5-haiku-latest',
   ],
 
   async streamChat(params: StreamChatParams, handlers: StreamChatHandlers): Promise<void> {
-    // baseUrl is intentionally NOT used for the network request — the
-    // backend uses its own ANTHROPIC_BASE_URL. Still touch the getter so
-    // the chat panel's base-URL field stays in sync with the active
-    // provider.
-    getEffectiveBaseUrl('minimax');
+    const providerId = params.providerId;
+    if (!providerId) {
+      handlers.onError(
+        new Error('No provider selected. Open Settings → AI Providers to add one.'),
+      );
+      return;
+    }
+
+    const token = readAuthToken();
+    if (!token) {
+      handlers.onError(new Error('Not signed in. Sign in and try again.'));
+      return;
+    }
 
     const url = `${env.apiBaseUrl}/ai/chat`;
 
@@ -43,8 +58,10 @@ export const minimaxService: AIService = {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'text/event-stream',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          provider_id: providerId,
           model: params.model,
           system: params.system,
           messages: params.messages,
@@ -58,13 +75,7 @@ export const minimaxService: AIService = {
     }
 
     if (!response.ok) {
-      let detail = '';
-      try {
-        const body = (await response.json()) as { error?: string };
-        if (body?.error) detail = ` — ${body.error}`;
-      } catch {
-        // ignore non-JSON bodies
-      }
+      const detail = await readErrorDetail(response);
       handlers.onError(new Error(`MiniMax request failed: HTTP ${response.status}${detail}`));
       return;
     }
@@ -78,29 +89,51 @@ export const minimaxService: AIService = {
   },
 
   async testConnection(_baseUrl?: string, signal?: AbortSignal): Promise<boolean> {
-    // The browser can't reach the Anthropic API directly (no key); the
-    // "connection" we can verify is whether the backend endpoint responds
-    // at all. A 401 still means the route is reachable — we treat any
-    // non-network error as a pass.
+    // We can't actually probe the chat endpoint without sending a real
+    // prompt + provider_id — just confirm the backend route is wired
+    // and the auth header is accepted. A 4xx response means the route
+    // is reachable + authenticated; only a network failure or 5xx
+    // means "unreachable".
+    const token = readAuthToken();
+    if (!token) return false;
     const url = `${env.apiBaseUrl}/ai/chat`;
     try {
       const r = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
-          model: 'claude-3-5-haiku-latest',
+          provider_id: '00000000-0000-0000-0000-000000000000',
           messages: [{ role: 'user', content: 'ping' }],
         }),
         signal,
       });
-      // 422 (validation), 401 (unauthenticated), 502 (key missing) all
-      // prove the route is wired. 404 or a network error means broken.
-      return r.status !== 404 && r.status !== 0;
+      return r.status >= 400 && r.status < 500;
     } catch {
       return false;
     }
   },
 };
+
+async function readErrorDetail(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as {
+      message?: string;
+      code?: string;
+      error?: string;
+    };
+    if (body?.message) {
+      const code = body.code ? ` [${body.code}]` : '';
+      return ` — ${body.message}${code}`;
+    }
+    if (body?.error) return ` — ${body.error}`;
+  } catch {
+    // ignore non-JSON bodies
+  }
+  return '';
+}
 
 async function consumeAnthropicSse(
   body: ReadableStream<Uint8Array>,
@@ -118,9 +151,11 @@ async function consumeAnthropicSse(
       const events = buffer.split('\n\n');
       buffer = events.pop() ?? '';
       for (const event of events) {
-        const line = event.split('\n').find((l) => l.startsWith('data:'));
-        if (!line) continue;
-        const data = line.slice(5).trim();
+        const dataLine = event
+          .split('\n')
+          .find((l) => l.startsWith('data:'));
+        if (!dataLine) continue;
+        const data = dataLine.slice(5).trim();
         if (!data || data === '[DONE]') continue;
         try {
           const json = JSON.parse(data);
@@ -132,7 +167,9 @@ async function consumeAnthropicSse(
             handlers.onDone(full);
             return;
           } else if (json.type === 'error') {
-            handlers.onError(new Error(json.error?.message ?? 'MiniMax stream error'));
+            const msg =
+              json.error?.message ?? json.message ?? 'MiniMax stream error';
+            handlers.onError(new Error(msg));
             return;
           }
         } catch {

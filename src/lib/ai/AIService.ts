@@ -16,6 +16,10 @@ export type StreamChatParams = {
   system: string;
   messages: ChatMessage[];
   signal?: AbortSignal;
+  /** Required for the `minimax` family. Backend row id of the user's
+   *  MiniMax/Anthropic/OpenAI/etc. provider — the backend reads the
+   *  encrypted API key for this row. Ignored by `lmstudio`. */
+  providerId?: string;
   /** Optional override for the provider's base URL (Advanced UI). */
   baseUrl?: string;
   /** When true, route through the same-origin Vercel proxy (api/chat.ts or api/lmstudio.ts). */

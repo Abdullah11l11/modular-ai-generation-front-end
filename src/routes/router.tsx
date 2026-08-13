@@ -8,6 +8,7 @@ import { PublicProfilePage } from '@/pages/PublicProfilePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import EditorPage from '@/pages/editor/EditorPage';
+import AiProvidersPage from '@/pages/settings/AiProvidersPage';
 export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/settings', element: <></> },
+          { path: '/settings/ai-providers', element: <AiProvidersPage /> },
           { path: '/resources', element: <></> },
           { path: '/resources/new', element: <></> },
           { path: '/resources/:resourceId', element: <></> },
