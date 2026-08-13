@@ -1,3 +1,3 @@
 export type ForkTemplateRequest = {
-  name: string
-}
+  name: string;
+};

@@ -1,9 +1,9 @@
-import { useQuery } from '@tanstack/react-query'
-import { getUserTemplates } from '@/features/users/api/getUserTemplates'
-import type { Id } from '@/types/api'
+import { useQuery } from '@tanstack/react-query';
+import { getUserTemplates } from '@/features/users/api/getUserTemplates';
+import type { Id, PaginationParams } from '@/types/api';
 
-export const useUserTemplates = (userId: Id) =>
+export const useUserTemplates = (userId: Id, params?: PaginationParams) =>
   useQuery({
-    queryKey: ['users', userId, 'templates'],
-    queryFn: () => getUserTemplates(userId),
-  })
+    queryKey: ['users', userId, 'templates', params],
+    queryFn: () => getUserTemplates(userId, params),
+  });

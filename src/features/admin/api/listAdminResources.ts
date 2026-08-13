@@ -1,20 +1,5 @@
-import {apiClient} from '@/lib/api/client'
+import { apiClient } from '@/lib/api/client';
+import type { PaginatedResponse, Resource } from '@/types/api';
 
-import type { AdminResourcesParams } from "@/features/admin/types/adminResourcesParams"
-
-import type { AdminResource } from "@/features/admin/types/adminResource"
-
-export async function listResources(
-    params?: AdminResourcesParams,
-) {
-
-    const  data  = await apiClient.get<AdminResource[]>(
-        "/admin/resources",
-        {
-            params:params as any
-        },
-    )
-
-    return data
-
-}
+export const listAdminResources = () =>
+  apiClient.get<PaginatedResponse<Resource>>('admin/resources');

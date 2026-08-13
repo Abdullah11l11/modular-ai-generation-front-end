@@ -7,3 +7,13 @@ export const useProjectFiles = (projectId: Id) =>
     queryKey: ['projects', projectId, 'files'],
     queryFn: () => listProjectFiles(projectId),
   })
+// import { useQuery } from '@tanstack/react-query';
+// import { listProjectFiles } from '../api/listProjectFiles';
+
+// export function useProjectFiles(projectId: string) {
+//   return useQuery({
+//     queryKey: ['project-files', projectId],
+//     queryFn: () => listProjectFiles(projectId),
+//     enabled: Boolean(projectId),
+//   });
+// }

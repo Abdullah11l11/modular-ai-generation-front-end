@@ -10,3 +10,18 @@ export const createProjectFile = (
     `projects/${projectId}/files`,
     payload,
   )
+// import { apiClient } from '@/lib/api/client';
+// import type { CreateProjectFileRequest } from '@/features/files/types/createProjectFileRequest';
+// import type { ProjectFile } from '@/features/files/types/projectFile';
+
+// export async function createProjectFile(
+//   projectId: string,
+//   payload: CreateProjectFileRequest,
+// ): Promise<ProjectFile> {
+//   const response = await apiClient.post<ProjectFile>(
+//     `/projects/${projectId}/files`,
+//     payload,
+//   );
+
+//   return response;
+// }

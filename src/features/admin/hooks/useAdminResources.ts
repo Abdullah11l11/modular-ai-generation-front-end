@@ -1,15 +1,8 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery } from '@tanstack/react-query';
+import { listAdminResources } from '@/features/admin/api/listAdminResources';
 
-import { listResources } from "../api/listAdminResources"
-
-export function useAdminResources(params?: any) {
-
-    return useQuery({
-
-        queryKey: ["admin", "resources", params],
-
-        queryFn: () => listResources(params),
-
-    })
-
-}
+export const useAdminResources = () =>
+  useQuery({
+    queryKey: ['admin', 'resources'],
+    queryFn: listAdminResources,
+  });

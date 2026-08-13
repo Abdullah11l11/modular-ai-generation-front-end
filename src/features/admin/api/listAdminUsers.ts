@@ -1,20 +1,4 @@
-import { apiClient } from '@/lib/api/client'
+import { apiClient } from '@/lib/api/client';
+import type { PaginatedResponse, User } from '@/types/api';
 
-import type { AdminUsersParams } from "@/features/admin/types/adminUsersParams"
-
-import type { AdminUser } from "@/features/admin/types/adminUser"
-
-export async function listUsers(
-    params?: AdminUsersParams,
-) {
-
-    const  data  = await apiClient.get<AdminUser[]>(
-        "/admin/users",
-        {
-           params:params as any
-        },
-    )
-
-    return data
-
-}
+export const listAdminUsers = () => apiClient.get<PaginatedResponse<User>>('admin/users');

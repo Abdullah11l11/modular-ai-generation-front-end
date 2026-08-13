@@ -13,3 +13,22 @@ export const useCreateProjectFile = () =>
       payload: CreateFileRequest
     }) => createProjectFile(projectId, payload),
   })
+// import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+// import { createProjectFile } from '../api/createProjectFile';
+// import type { CreateProjectFileRequest } from '@/features/files/types/createProjectFileRequest';
+
+// export function useCreateProjectFile(projectId: string) {
+//   const queryClient = useQueryClient();
+
+//   return useMutation({
+//     mutationFn: (payload: CreateProjectFileRequest) =>
+//       createProjectFile(projectId, payload),
+
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({
+//         queryKey: ['project-files', projectId],
+//       });
+//     },
+//   });
+// }

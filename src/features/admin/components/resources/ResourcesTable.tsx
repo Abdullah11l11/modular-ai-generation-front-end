@@ -30,11 +30,7 @@ export function ResourcesTable(){
 
 const [page,setPage]=useState(1)
 
-const {data,isLoading}=useAdminResources({
-
-page,
-
-})
+const {data,isLoading}=useAdminResources()
 
 if(isLoading){
 
@@ -42,7 +38,7 @@ return <LoadingState/>
 
 }
 
-if(!data?.items.length){
+if(!data?.data?.length){
 
 return <EmptyState/>
 
@@ -58,7 +54,7 @@ return(
 
 <TableRow>
 
-<TableHead>Title</TableHead>
+<TableHead>Name</TableHead>
 
 <TableHead>Kind</TableHead>
 
@@ -74,15 +70,15 @@ return(
 
 {
 
-data.items.map(resource=>(
+data.data.map(resource=>(
 
 <TableRow key={resource.id}>
 
-<TableCell>{resource.title}</TableCell>
+<TableCell>{resource.name}</TableCell>
 
 <TableCell>{resource.kind}</TableCell>
 
-<TableCell>{resource.author_name}</TableCell>
+<TableCell>{(resource as any).author_name ?? (resource as any).authorName ?? (resource as any).author?.name ?? ""}</TableCell>
 
 <TableCell>{resource.created_at}</TableCell>
 

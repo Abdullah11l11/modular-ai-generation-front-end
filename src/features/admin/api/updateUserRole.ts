@@ -1,23 +1,7 @@
-import { apiClient } from '@/lib/api/client'
+import { apiClient } from '@/lib/api/client';
+import type { Id, User } from '@/types/api';
 
-import type { UpdateUserRoleRequest } from "@/features/admin/types/updateRoleRequest"
-
-export async function updateUserRole(
-
-    id: number,
-
-    body: UpdateUserRoleRequest,
-
-) {
-
-    const data = await apiClient.put(
-
-        `/admin/users/${id}/role`,
-
-        body,
-
-    )
-
-    return data
-
-}
+export const updateUserRole = (userId: Id, role: User['role']) =>
+  apiClient.put<User, { role: User['role'] }>(`admin/users/${userId}`, {
+    role,
+  });
