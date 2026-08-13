@@ -28,10 +28,12 @@ If they don't specify a count for an "add new" task, emit one block.
 
 ## Rules
 
-1. Use only `mgf-*` classes from the project's vocabulary. The
-   actual rules live in `layout.css` — the AI cannot invent new
-   classes. If a class isn't defined, the rendered output will be
-   unstyled.
+1. **Use ONLY `mgf-*` classes that appear inside the provided
+   `<layout-css>` block.** That block IS the project's class
+   vocabulary. If a class isn't defined there, the slide renders
+   unstyled — and the user will think the AI "forgot the CSS". When
+   in doubt, prefer a class you can see in `<layout-css>` over one
+   you can guess.
 2. Use `data-field="key"` for every piece of dynamic content.
    `data-field` values map to keys in `data.json`. The renderer
    substitutes them automatically — never hardcode user-facing text
@@ -46,7 +48,12 @@ If they don't specify a count for an "add new" task, emit one block.
 
 ## Input
 
-The user message includes the current slide HTML (if modifying) and
-optionally context from sibling slides inside
-`<current-file-content name="slide-XX.html" layer="slide">…</current-file-content>`
-tags, plus their direction.
+The user message includes:
+- the user's natural-language direction,
+- for **modify**: the current slide HTML inside
+  `<current-file-content name="slide-XX.html" layer="slide">…</current-file-content>`,
+- for **add**: a list of `<existing-slides>` so you can stay
+  consistent with the project's existing slide names + ordering,
+- the project's `<layout-css>` block — the canonical class vocabulary.
+  Read it BEFORE picking class names. Anything not listed there is
+  invalid.

@@ -70,6 +70,12 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
     );
   }, [slideFiles, state.selectedSlideId]);
 
+  // Read layout.css once per render so the prompt can include the real
+  // `mgf-*` class vocabulary — the AI must only emit classes that
+  // actually exist, otherwise the rendered slide is unstyled.
+  const layoutCss =
+    files.find((f: ProjectFile) => f.layer === 'layout' && f.name === 'layout.css')?.content ?? '';
+
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(() =>
     readPreferredProviderId(),
   );
@@ -126,6 +132,9 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
 
     // Build the context block. For modify, ship the current slide HTML.
     // For add, we ship a short sibling summary so the AI stays consistent.
+    // `layout.css` is always shipped so the AI can ONLY pick classes
+    // that actually exist in the project — without it the model
+    // invents class names that resolve to nothing on render.
     const contextLines: string[] = [direction.trim(), ''];
     if (modifyTarget) {
       contextLines.push(
@@ -141,6 +150,12 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
         '</existing-slides>',
       );
     }
+    contextLines.push(
+      '',
+      '<layout-css name="layout.css">',
+      layoutCss || '(no layout.css in this project)',
+      '</layout-css>',
+    );
     const userMessage = contextLines.join('\n');
 
     let assistant = '';
@@ -294,7 +309,7 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-[min(96rem,95vw)] max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Regenerate Structure</DialogTitle>
           <DialogDescription>
@@ -304,41 +319,50 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-1 text-xs">
-              <input
-                type="radio"
-                name="regen-structure-mode"
-                value="modify"
-                checked={mode === 'modify'}
-                onChange={() => setMode('modify')}
-                disabled={streaming}
-              />
-              <span>Modify current slide</span>
-            </label>
-            <label className="flex items-center gap-1 text-xs">
-              <input
-                type="radio"
-                name="regen-structure-mode"
-                value="add"
-                checked={mode === 'add'}
-                onChange={() => setMode('add')}
-                disabled={streaming}
-              />
-              <span>Add new slide(s)</span>
-            </label>
-          </div>
-
-          {mode === 'modify' && currentSlideFile && (
-            <div className="flex flex-col gap-1">
-              <Label>Current {currentSlideFile.name}</Label>
-              <pre className="max-h-32 overflow-auto rounded-md border border-(--bor2) bg-(--sur1) p-2 font-mono text-[11px] leading-snug">
-                {currentSlideFile.content || '(empty)'}
-              </pre>
-            </div>
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-1 text-xs">
+            <input
+              type="radio"
+              name="regen-structure-mode"
+              value="modify"
+              checked={mode === 'modify'}
+              onChange={() => setMode('modify')}
+              disabled={streaming}
+            />
+            <span>Modify current slide</span>
+          </label>
+          <label className="flex items-center gap-1 text-xs">
+            <input
+              type="radio"
+              name="regen-structure-mode"
+              value="add"
+              checked={mode === 'add'}
+              onChange={() => setMode('add')}
+              disabled={streaming}
+            />
+            <span>Add new slide(s)</span>
+          </label>
+          {layoutCss && (
+            <span className="text-[11px] text-(--t3)">
+              Sending <code className="font-mono">layout.css</code> ({layoutCss.length} chars)
+              so the AI uses real <code className="font-mono">mgf-*</code> classes.
+            </span>
           )}
+        </div>
 
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="flex flex-col gap-1">
+            <Label>
+              {mode === 'modify' && currentSlideFile
+                ? `Current ${currentSlideFile.name}`
+                : 'Existing slides'}
+            </Label>
+            <pre className="max-h-[60vh] min-h-48 overflow-auto rounded-md border border-(--bor2) bg-(--sur1) p-2 font-mono text-[11px] leading-snug">
+              {mode === 'modify' && currentSlideFile
+                ? (currentSlideFile.content || '(empty)')
+                : (slideFiles.map((s: ProjectFile) => s.name).join('\n') || '(none)')}
+            </pre>
+          </div>
           <div className="flex flex-col gap-1">
             <Label htmlFor="regen-structure-direction">Your direction</Label>
             <textarea
@@ -350,31 +374,30 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
                   ? 'e.g. Swap the hero copy for a stats component with three KPIs'
                   : 'e.g. Add three slides: a problem statement, a solution, and a closing CTA'
               }
-              className="min-h-28 rounded-md border border-(--bor2) bg-(--bg) p-2 text-xs"
+              className="min-h-48 rounded-md border border-(--bor2) bg-(--bg) p-2 text-xs"
               disabled={streaming}
             />
           </div>
-
           <div className="flex flex-col gap-1">
             <Label>AI response</Label>
-            <pre className="max-h-48 overflow-auto rounded-md border border-(--bor2) bg-(--sur1) p-2 font-mono text-[11px] leading-snug">
+            <pre className="max-h-[60vh] min-h-48 overflow-auto rounded-md border border-(--bor2) bg-(--sur1) p-2 font-mono text-[11px] leading-snug">
               {response || (streaming ? 'Streaming…' : '(click Generate)')}
             </pre>
           </div>
-
-          {parsedBlocks && parsedBlocks.length > 0 && (
-            <div className="flex flex-col gap-1">
-              <Label>Parsed blocks ({parsedBlocks.length})</Label>
-              <ol className="list-decimal pl-5 text-[11px]">
-                {parsedBlocks.map((b, i) => (
-                  <li key={i} className="truncate">
-                    <span className="font-mono text-[11px]">{b.slice(0, 80)}…</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
         </div>
+
+        {parsedBlocks && parsedBlocks.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <Label>Parsed blocks ({parsedBlocks.length})</Label>
+            <ol className="list-decimal pl-5 text-[11px]">
+              {parsedBlocks.map((b, i) => (
+                <li key={i} className="truncate">
+                  <span className="font-mono text-[11px]">{b.slice(0, 80)}…</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
 
         {error && <p className="mt-2 text-[12px] text-destructive">{error}</p>}
 

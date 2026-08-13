@@ -183,7 +183,7 @@ export function RegenerateStyleModal({ projectId, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-[min(96rem,95vw)] max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Regenerate CSS</DialogTitle>
           <DialogDescription>
@@ -192,10 +192,10 @@ export function RegenerateStyleModal({ projectId, open, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="flex flex-col gap-1">
             <Label>Current style.css</Label>
-            <pre className="max-h-48 overflow-auto rounded-md border border-(--bor2) bg-(--sur1) p-2 font-mono text-[11px] leading-snug">
+            <pre className="max-h-[60vh] min-h-48 overflow-auto rounded-md border border-(--bor2) bg-(--sur1) p-2 font-mono text-[11px] leading-snug">
               {currentContent || '(empty)'}
             </pre>
           </div>
@@ -206,17 +206,16 @@ export function RegenerateStyleModal({ projectId, open, onOpenChange }: Props) {
               value={direction}
               onChange={(e) => setDirection(e.target.value)}
               placeholder="e.g. Make the background pure black and the accent electric cyan"
-              className="min-h-32 rounded-md border border-(--bor2) bg-(--bg) p-2 text-xs"
+              className="min-h-48 rounded-md border border-(--bor2) bg-(--bg) p-2 text-xs"
               disabled={streaming}
             />
           </div>
-        </div>
-
-        <div className="mt-3 flex flex-col gap-1">
-          <Label>AI response</Label>
-          <pre className="max-h-48 overflow-auto rounded-md border border-(--bor2) bg-(--sur1) p-2 font-mono text-[11px] leading-snug">
-            {response || (streaming ? 'Streaming…' : '(click Generate)')}
-          </pre>
+          <div className="flex flex-col gap-1">
+            <Label>AI response</Label>
+            <pre className="max-h-[60vh] min-h-48 overflow-auto rounded-md border border-(--bor2) bg-(--sur1) p-2 font-mono text-[11px] leading-snug">
+              {response || (streaming ? 'Streaming…' : '(click Generate)')}
+            </pre>
+          </div>
         </div>
 
         {error && <p className="mt-2 text-[12px] text-destructive">{error}</p>}
