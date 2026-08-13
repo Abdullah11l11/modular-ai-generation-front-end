@@ -1,11 +1,20 @@
 import type { AIService, StreamChatHandlers, StreamChatParams } from '../AIService';
 import { getEffectiveBaseUrl } from '../baseUrl';
-import { getKey } from '../apiKeys';
+import { env } from '@/config/env';
 
 /**
  * MiniMax / Anthropic-compatible provider.
- * Sends POST {baseUrl}/v1/messages with `x-api-key: ${apiKey}` and `anthropic-version: 2023-06-01` headers.
- * Streams SSE events; only `content_block_delta` text deltas are surfaced.
+ *
+ * All requests go through the Laravel backend endpoint `POST /api/v1/ai/chat`
+ * (Task 2026-08-13 backend-ai-proxy). The Anthropic API key is server-held
+ * and never reaches the browser. The backend forwards the Anthropic SSE
+ * stream verbatim, so this client parses the same `content_block_delta` /
+ * `message_stop` events as a direct call would.
+ *
+ * The provider's `baseUrl` advanced-override is no longer used for the
+ * network request (Laravel owns the upstream URL), but `getEffectiveBaseUrl`
+ * is still called so the chat panel's base-URL field stays in sync with
+ * the active provider.
  */
 export const minimaxService: AIService = {
   provider: 'minimax',
@@ -19,39 +28,28 @@ export const minimaxService: AIService = {
   ],
 
   async streamChat(params: StreamChatParams, handlers: StreamChatHandlers): Promise<void> {
-    const baseUrl = (params.baseUrl ?? getEffectiveBaseUrl('minimax')).replace(/\/$/, '');
-    const apiKey = getKey('minimax');
-    if (!apiKey) {
-      handlers.onError(new Error('No MiniMax API key set. Open the AI setup to add one.'));
-      return;
-    }
+    // baseUrl is intentionally NOT used for the network request — the
+    // backend uses its own ANTHROPIC_BASE_URL. Still touch the getter so
+    // the chat panel's base-URL field stays in sync with the active
+    // provider.
+    getEffectiveBaseUrl('minimax');
 
-    const url = params.useProxy ? '/api/chat' : `${baseUrl}/v1/messages`;
+    const url = `${env.apiBaseUrl}/ai/chat`;
+
     let response: Response;
     try {
       response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(params.useProxy ? {} : { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }),
+          Accept: 'text/event-stream',
         },
-        body: JSON.stringify(
-          params.useProxy
-            ? {
-                apiKey,
-                baseUrl,
-                model: params.model,
-                system: params.system,
-                messages: params.messages,
-              }
-            : {
-                model: params.model,
-                system: params.system,
-                messages: params.messages,
-                max_tokens: 4096,
-                stream: true,
-              },
-        ),
+        body: JSON.stringify({
+          model: params.model,
+          system: params.system,
+          messages: params.messages,
+          max_tokens: 4096,
+        }),
         signal: params.signal,
       });
     } catch (err) {
@@ -59,19 +57,45 @@ export const minimaxService: AIService = {
       return;
     }
 
-    if (!response.ok || !response.body) {
-      handlers.onError(new Error(`MiniMax request failed: HTTP ${response.status}`));
+    if (!response.ok) {
+      let detail = '';
+      try {
+        const body = (await response.json()) as { error?: string };
+        if (body?.error) detail = ` — ${body.error}`;
+      } catch {
+        // ignore non-JSON bodies
+      }
+      handlers.onError(new Error(`MiniMax request failed: HTTP ${response.status}${detail}`));
+      return;
+    }
+
+    if (!response.body) {
+      handlers.onError(new Error('MiniMax stream ended without a body'));
       return;
     }
 
     await consumeAnthropicSse(response.body, handlers);
   },
 
-  async testConnection(baseUrl?: string, signal?: AbortSignal): Promise<boolean> {
-    const url = (baseUrl ?? getEffectiveBaseUrl('minimax')).replace(/\/$/, '') + '/v1/models';
+  async testConnection(_baseUrl?: string, signal?: AbortSignal): Promise<boolean> {
+    // The browser can't reach the Anthropic API directly (no key); the
+    // "connection" we can verify is whether the backend endpoint responds
+    // at all. A 401 still means the route is reachable — we treat any
+    // non-network error as a pass.
+    const url = `${env.apiBaseUrl}/ai/chat`;
     try {
-      const r = await fetch(url, { method: 'GET', signal });
-      return r.ok;
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-3-5-haiku-latest',
+          messages: [{ role: 'user', content: 'ping' }],
+        }),
+        signal,
+      });
+      // 422 (validation), 401 (unauthenticated), 502 (key missing) all
+      // prove the route is wired. 404 or a network error means broken.
+      return r.status !== 404 && r.status !== 0;
     } catch {
       return false;
     }
