@@ -33,7 +33,16 @@ import { useCreateProjectFile } from '@/features/files/hooks/useCreateProjectFil
 import { useUpdateProjectFile } from '@/features/files/hooks/useUpdateProjectFile';
 import { useEditorContext, type Proposal } from '@/features/editor/hooks/useEditorStore';
 import { TASK_REGENERATE_STRUCTURE_PROMPT } from '@/lib/ai/prompts';
+// Canonical fallback vocabulary used when the project has no
+// `layout.css`. We import it synchronously via Vite's `?raw` loader
+// so resolveVocabulary() can use it inline.
+import CANONICAL_CLASSES_MD from '@/lib/ai/prompts/standards/classes.md?raw';
 import { parseHtmlBlocks } from '@/lib/ai/responseParsers';
+import {
+  diffClasses,
+  extractUsedClassesFromHtml,
+  resolveVocabulary,
+} from '@/lib/ai/classVocabulary';
 import { minimaxService } from '@/lib/ai/providers/minimax';
 import type { ProjectFile } from '@/types/api';
 
@@ -90,7 +99,39 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [parsedBlocks, setParsedBlocks] = useState<string[] | null>(null);
+  // Set to true once the user has acknowledged the "invented classes"
+  // warning. Without this the Apply button is gated when unknown
+  // classes are detected, so users can't ship a slide with unstyled
+  // elements by accident.
+  const [unknownAcknowledged, setUnknownAcknowledged] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Resolve the project's vocabulary once per render: prefer the
+  // project's own layout.css, fall back to the canonical classes.md
+  // when the project has no layout rules. The modal needs this to
+  // tell the user which classes the model invented.
+  const vocabulary = useMemo(
+    () => resolveVocabulary(layoutCss, CANONICAL_CLASSES_MD),
+    [layoutCss],
+  );
+
+  // Diff used-vs-defined for every parsed block. We aggregate across
+  // all blocks because a class invented in slide 1 is the same problem
+  // as one invented in slide 3.
+  const classReport = useMemo(() => {
+    if (!parsedBlocks || parsedBlocks.length === 0) return null;
+    const used = new Set<string>();
+    for (const b of parsedBlocks) {
+      for (const c of extractUsedClassesFromHtml(b)) used.add(c);
+    }
+    const { known, unknown } = diffClasses(vocabulary.defined, used);
+    return {
+      source: vocabulary.source,
+      known,
+      unknown,
+      totalUsed: used.size,
+    };
+  }, [parsedBlocks, vocabulary]);
 
   // Derived once per render so both `handleGenerate` and `handleApply`
   // can use the same target file without re-deriving inside closures.
@@ -108,12 +149,20 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
       setStreaming(false);
       setError(null);
       setParsedBlocks(null);
+      setUnknownAcknowledged(false);
       setSelectedProviderId(readPreferredProviderId());
     } else {
       abortRef.current?.abort();
       abortRef.current = null;
     }
   }, [open]);
+
+  // A fresh response also needs a fresh acknowledgement — if the user
+  // re-generates, the new HTML may have a different set of invented
+  // classes and the previous ack no longer applies.
+  useEffect(() => {
+    setUnknownAcknowledged(false);
+  }, [parsedBlocks]);
 
   const handleGenerate = async () => {
     if (!direction.trim() || streaming) return;
@@ -399,6 +448,49 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
           </div>
         )}
 
+        {classReport && classReport.unknown.length > 0 && (
+          <div
+            className="flex flex-col gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-[12px]"
+            data-testid="regen-structure-class-warning"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-semibold text-destructive">
+                ⚠ {classReport.unknown.length} invented{' '}
+                {classReport.unknown.length === 1 ? 'class' : 'classes'}
+              </span>
+              <span className="text-(--t3)">
+                not defined in{' '}
+                {classReport.source === 'project' ? (
+                  <code className="font-mono">layout.css</code>
+                ) : (
+                  <>the canonical vocabulary (project has no layout.css)</>
+                )}
+                . These elements will render unstyled.
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {classReport.unknown.map((c) => (
+                <code
+                  key={c}
+                  className="rounded bg-destructive/20 px-1 py-0.5 font-mono text-[11px] text-destructive"
+                >
+                  {c}
+                </code>
+              ))}
+            </div>
+            <label className="mt-1 flex items-center gap-2 text-[12px]">
+              <input
+                type="checkbox"
+                checked={unknownAcknowledged}
+                onChange={(e) => setUnknownAcknowledged(e.target.checked)}
+              />
+              <span>
+                I understand these classes aren&apos;t defined. Apply anyway.
+              </span>
+            </label>
+          </div>
+        )}
+
         {error && <p className="mt-2 text-[12px] text-destructive">{error}</p>}
 
         <DialogFooter className="mt-2">
@@ -419,7 +511,12 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
             variant="accent"
             size="sm"
             onClick={handleApply}
-            disabled={!parsedBlocks || createMutation.isPending || updateMutation.isPending}
+            disabled={
+              !parsedBlocks ||
+              createMutation.isPending ||
+              updateMutation.isPending ||
+              (classReport?.unknown.length ?? 0) > 0 && !unknownAcknowledged
+            }
             data-testid="regen-structure-apply"
           >
             {createMutation.isPending || updateMutation.isPending

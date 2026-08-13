@@ -1,60 +1,50 @@
-# Task: Regenerate `data.json`
+# Task: Regenerate slide content
 
-Output ONLY the complete new content of `data.json` in a single
-fenced code block. The opening fence MUST use the language tag `json`.
-Do not write any prose before, between, or after the block.
+Output a single fenced ` ```json ` block containing a **flat map of
+`data-field` keys to their new values**. Do not write any prose
+before, between, or after the block.
 
-## Example output
+## Output shape
 
 ```json
 {
-  "_meta": {
-    "project": "Acme Pitch",
-    "version": "1.0",
-    "total_slides": 10
-  },
-  "slides": [
-    {
-      "id": "slide-01",
-      "component": "cover",
-      "data": {
-        "title": "Hello",
-        "subtitle": "World"
-      }
-    }
-  ]
+  "eyebrow": "New eyebrow text",
+  "title": "New title",
+  "body": "New body paragraph",
+  "point_0": "First bullet",
+  "point_1": "Second bullet"
 }
 ```
 
 ## Rules
 
-1. Valid JSON. No trailing commas. No comments. No `undefined`.
-2. Preserve the schema: same top-level keys (`_meta`, `slides`) and
-   the same component types per slide. Don't add or remove slides
-   unless the user explicitly asked for that.
-3. **Keep every key listed in `<required-data-keys>`.** The slide HTML
-   files reference those keys via `{{key}}` placeholders. If you drop
-   a key, the slide renders its fallback text and the user thinks the
-   change didn't apply. You may rename a key only if you also rewrite
-   every `{{key}}` reference in the slide HTML — but the rename path
-   is fragile, so prefer keeping the original keys.
-4. For per-slide edits, only modify the `data` object of the slide
-   the user named. Do NOT change the `id`, `component`, or sibling
-   slides.
-5. Keep slide titles under 8 words, body text under 40 words.
-6. If `_meta.total_slides` exists, keep it in sync with the actual
-   `slides.length`.
+1. **Emit ONLY keys the user asked you to change.** If the user said
+   "rewrite the title", your JSON should contain only `title`. Other
+   keys stay untouched in the file.
+2. **Match the key names exactly.** Keys are `data-field` attribute
+   values inside the slide HTML (`<h2 data-field="title">…</h2>`).
+   Spelling / casing matters — `Title` won't update `title`.
+3. **Respect scope.** When `<scope>current</scope>` is set, only emit
+   keys that belong to the slide listed in `<target-slide>`. Sibling
+   slide keys must not appear.
+4. Keep slide titles under 8 words, body text under 40 words.
+5. Don't add new keys the slide HTML doesn't already have — there is
+   no UI surface to enter them.
 
 ## Input
 
 The user message includes:
 - the user's natural-language direction,
-- a `<required-data-keys>` list — every `{{key}}` placeholder the
-  slide HTMLs reference (you MUST keep these keys),
+- a `<scope>` tag: `whole` (every slide) or `current` (only the
+  selected slide),
+- when `<scope>current</scope>`: a `<target-slide>` block listing the
+  slide filename and its current `data-field` keys,
+- a `<required-data-keys>` list — every `data-field` key that exists
+  in scope, so you don't accidentally rename them,
 - the current `data.json` content inside
-  `<current-file-content name="data.json" layer="content">…</current-file-content>`
-  tags, and
-- the slide HTML files inside `<slide-html-context>` tags so you can
-  see exactly which keys each `{{…}}` placeholder resolves to.
+  `<current-file-content name="data.json" layer="content">…</current-file-content>`,
+- the slide HTML files inside `<slide-html-context>` so you can see
+  exactly which keys each slide has.
 
-Rewrite according to the direction while keeping every required key.
+Rewrite according to the direction. Emit only the keys you actually
+want to change.

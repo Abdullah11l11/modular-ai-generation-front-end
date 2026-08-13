@@ -57,3 +57,6 @@ The user message includes:
 - the project's `<layout-css>` block — the canonical class vocabulary.
   Read it BEFORE picking class names. Anything not listed there is
   invalid.
+- if `<layout-css>` is `(no layout.css in this project)`, fall back to
+  the canonical `mgf-*` vocabulary — every class listed in
+  `standards/classes.md` is fair game. Still: don't invent new names.

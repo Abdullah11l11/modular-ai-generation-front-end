@@ -1,20 +1,22 @@
 /**
- * Regenerate Content — pop-out modal that asks the AI to rewrite `data.json`.
+ * Regenerate Content — pop-out modal that rewrites slide text.
  *
- * Self-contained module, mirrors the modular pattern from
- * `RegenerateStyleModal`. To keep the slide preview in sync after the
- * user applies the new content, the modal:
- *   1. Ships the current slide HTMLs + data.json + layout.css into the
- *      prompt so the AI can SEE which `{{key}}` placeholders exist and
- *      what classes / slots they target.
- *   2. Computes a key-level diff (added / removed / changed) between the
- *      old and new JSON and surfaces it in the response pane — without
- *      this check users think "nothing changed" because the slide still
- *      shows fallback text when a key was dropped.
- *   3. Builds a `Proposal` with `override.kind = 'content'` so the
- *      preview canvas re-renders the live slide with the new data.
- *   4. Writes the file on Apply + invalidates the React Query cache so
- *      the editor view picks up the new content immediately.
+ * Self-contained module that mirrors the Structure modal's pattern.
+ * Two scopes:
+ *   - **whole**: AI emits a flat `{key: newValue}` map covering any
+ *     `data-field` keys across every slide; the modal then walks each
+ *     affected slide and updates its `data-field` element text in
+ *     place, then writes `data.json` so PPTX export + content-var
+ *     injection see the same values.
+ *   - **current**: AI only sees keys that belong to the selected
+ *     slide; sibling slides are not modified. Same write path, but
+ *     `affectedSlides` is at most one file.
+ *
+ * Why this is needed: slides use `data-field="key"` with hardcoded
+ * text content. The previous version only updated `data.json`, so
+ * users thought "apply did nothing" because the on-screen slide
+ * still showed the old copy. Now we apply the change directly to the
+ * slide HTML via `updateDataField`.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -31,8 +33,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
 import { useUpdateProjectFile } from '@/features/files/hooks/useUpdateProjectFile';
-import { useEditorContext, type Proposal } from '@/features/editor/hooks/useEditorStore';
+import { useEditorContext } from '@/features/editor/hooks/useEditorStore';
 import { TASK_REGENERATE_CONTENT_PROMPT } from '@/lib/ai/prompts';
+import { extractDataFields, updateDataField } from '@/features/editor/utils/dataFields';
 import { parseJsonBlock } from '@/lib/ai/responseParsers';
 import { minimaxService } from '@/lib/ai/providers/minimax';
 import type { ProjectFile } from '@/types/api';
@@ -43,119 +46,107 @@ type Props = {
   onOpenChange: (open: boolean) => void;
 };
 
+type Scope = 'whole' | 'current';
+
 const FILE_NAME = 'data.json';
 const PREFERRED_PROVIDER_KEY = 'mgf.ai.preferredProviderId';
 const readPreferredProviderId = (): string | null =>
   typeof window === 'undefined' ? null : window.localStorage.getItem(PREFERRED_PROVIDER_KEY);
 
-/** Recursively gather every dotted JSON path so we can diff old vs new. */
-function collectPaths(value: unknown, prefix = ''): Set<string> {
-  const out = new Set<string>();
-  if (value === null || typeof value !== 'object') {
-    if (prefix) out.add(prefix);
-    return out;
-  }
-  if (Array.isArray(value)) {
-    value.forEach((item, i) => {
-      collectPaths(item, `${prefix}[${i}]`).forEach((p) => out.add(p));
-    });
-    if (!prefix) out.add('');
-    return out;
-  }
-  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-    const path = prefix ? `${prefix}.${k}` : k;
-    collectPaths(v, path).forEach((p) => out.add(p));
+type ParsedChanges = Record<string, string>;
+
+/**
+ * Walk every slide HTML in `files` and group their `data-field` keys.
+ * The result tells the modal which slide owns each key — required for
+ * the per-slide apply path and for the diff preview.
+ */
+function indexDataFieldsBySlide(
+  files: ProjectFile[],
+): Map<string, Map<string, string>> {
+  // map: slide fileId → (data-field key → current text value)
+  const out = new Map<string, Map<string, string>>();
+  for (const f of files) {
+    if (f.layer !== 'slide' || !f.name.endsWith('.html')) continue;
+    const fields = extractDataFields(f.content ?? '');
+    const inner = new Map<string, string>();
+    for (const fd of fields) inner.set(fd.key, fd.value);
+    out.set(f.id, inner);
   }
   return out;
 }
 
-/** Pull every `{{key}}` placeholder out of slide HTML so the prompt
- *  can tell the AI which keys MUST remain. */
-function collectPlaceholders(html: string): string[] {
-  const out = new Set<string>();
-  const re = /\{\{([\w.-]+)\}\}/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(html)) !== null) out.add(m[1]);
-  return [...out].sort();
-}
-
-function diffKeys(
-  oldText: string,
-  newText: string,
-): { added: string[]; removed: string[]; changed: number; unchanged: number } {
-  let oldData: unknown;
-  let newData: unknown;
-  try {
-    oldData = JSON.parse(oldText);
-  } catch {
-    oldData = null;
-  }
-  try {
-    newData = JSON.parse(newText);
-  } catch {
-    newData = null;
-  }
-  const oldPaths = oldData ? collectPaths(oldData) : new Set<string>();
-  const newPaths = newData ? collectPaths(newData) : new Set<string>();
-  const added: string[] = [];
-  const removed: string[] = [];
-  for (const p of newPaths) if (!oldPaths.has(p)) added.push(p);
-  for (const p of oldPaths) if (!newPaths.has(p)) removed.push(p);
-  // Crude value-level diff: count paths whose stringified value differs.
-  let changed = 0;
-  let unchanged = 0;
-  for (const p of oldPaths) {
-    if (!newPaths.has(p)) continue;
-    const a = JSON.stringify(getByPath(oldData, p));
-    const b = JSON.stringify(getByPath(newData, p));
-    if (a === b) unchanged++;
-    else changed++;
-  }
-  return { added, removed, changed, unchanged };
-}
-
-function getByPath(value: unknown, path: string): unknown {
-  const m = path.match(/^\[(\d+)\]$/);
-  if (m) return Array.isArray(value) ? value[parseInt(m[1], 10)] : undefined;
-  const parts = path.split('.');
-  let cur: unknown = value;
-  for (const p of parts) {
-    const arrMatch = p.match(/^(\w+)\[(\d+)\]$/);
-    if (arrMatch && cur && typeof cur === 'object') {
-      cur = (cur as Record<string, unknown>)[arrMatch[1]];
-      if (Array.isArray(cur)) cur = cur[parseInt(arrMatch[2], 10)];
-    } else if (cur && typeof cur === 'object') {
-      cur = (cur as Record<string, unknown>)[p];
-    } else {
-      return undefined;
+/**
+ * Apply a `{key: newValue}` map to the right slide HTMLs.
+ *
+ * For every key in `changes`, find the slide(s) that declare a
+ * `data-field="key"` attribute and rewrite its text content. Returns:
+ *   - `affectedFiles`: fileId → new HTML (one entry per slide that
+ *     had at least one key updated),
+ *   - `unmatchedKeys`: keys the model emitted but no slide claims —
+ *     surfaced to the user as a warning so they know the value went
+ *     nowhere.
+ */
+function applyChangesToSlides(
+  slideFiles: ProjectFile[],
+  fieldIndex: Map<string, Map<string, string>>,
+  changes: ParsedChanges,
+): { affectedFiles: Map<string, string>; unmatchedKeys: string[] } {
+  const affected = new Map<string, string>();
+  const unmatched: string[] = [];
+  // Reverse index: data-field key → slide fileIds that own it.
+  const ownersByKey = new Map<string, string[]>();
+  for (const [fileId, fields] of fieldIndex.entries()) {
+    for (const key of fields.keys()) {
+      const list = ownersByKey.get(key) ?? [];
+      list.push(fileId);
+      ownersByKey.set(key, list);
     }
   }
-  return cur;
+  for (const [key, value] of Object.entries(changes)) {
+    const owners = ownersByKey.get(key);
+    if (!owners || owners.length === 0) {
+      unmatched.push(key);
+      continue;
+    }
+    for (const fileId of owners) {
+      const file = slideFiles.find((s) => s.id === fileId);
+      if (!file) continue;
+      const current = affected.get(fileId) ?? file.content ?? '';
+      const next = updateDataField(current, key, value);
+      affected.set(fileId, next);
+    }
+  }
+  return { affectedFiles: affected, unmatchedKeys: unmatched };
 }
 
 export function RegenerateContentModal({ projectId, open, onOpenChange }: Props) {
-  const { state, dispatch } = useEditorContext();
+  const { state } = useEditorContext();
   const { data: filesResponse } = useProjectFiles(projectId);
   const files = filesResponse?.data ?? [];
-  const current = files.find((f) => f.layer === 'content' && f.name === FILE_NAME);
-  const currentContent = current?.content ?? '';
 
-  // Sibling files for the prompt context: slide HTMLs (so the AI can
-  // see which `{{key}}` placeholders the slide expects) and layout.css
-  // (so it knows the visual contract). These are read-only here — we
-  // don't write them in this modal.
-  const slideHtmls = useMemo(
+  const slideFiles = useMemo(
     () =>
       files
         .filter((f: ProjectFile) => f.layer === 'slide' && f.name.endsWith('.html'))
-        .map((f: ProjectFile) => ({ name: f.name, content: f.content ?? '' })),
+        .sort((a: ProjectFile, b: ProjectFile) => a.name.localeCompare(b.name)),
     [files],
   );
-  const placeholderKeys = useMemo(
-    () =>
-      [...new Set(slideHtmls.flatMap((s) => collectPlaceholders(s.content)))].sort(),
-    [slideHtmls],
-  );
+
+  // Selected slide = state.selectedSlideId, fallback to first.
+  const currentSlide = useMemo(() => {
+    if (!state.selectedSlideId) return slideFiles[0] ?? null;
+    return (
+      slideFiles.find((f: ProjectFile) => f.id === state.selectedSlideId) ?? slideFiles[0] ?? null
+    );
+  }, [slideFiles, state.selectedSlideId]);
+
+  // Index every slide's data-field keys for fast ownership lookup.
+  const fieldIndex = useMemo(() => indexDataFieldsBySlide(files), [files]);
+
+  // The full data.json content (read-only — the modal writes the new
+  // content as a flat map, not as a schema-preserving rewrite).
+  const dataFile = files.find((f) => f.layer === 'content' && f.name === FILE_NAME);
+  const dataJsonContent = dataFile?.content ?? '';
 
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(() =>
     readPreferredProviderId(),
@@ -164,20 +155,23 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
   const updateMutation = useUpdateProjectFile();
   const queryClient = useQueryClient();
 
+  const [scope, setScope] = useState<Scope>('whole');
   const [direction, setDirection] = useState('');
   const [response, setResponse] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previewContent, setPreviewContent] = useState<string | null>(null);
+  const [parsedChanges, setParsedChanges] = useState<ParsedChanges | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  // Reset state when the modal opens so a stale response can't leak.
   useEffect(() => {
     if (open) {
+      setScope('whole');
       setDirection('');
       setResponse('');
       setStreaming(false);
       setError(null);
-      setPreviewContent(null);
+      setParsedChanges(null);
       setSelectedProviderId(readPreferredProviderId());
     } else {
       abortRef.current?.abort();
@@ -185,37 +179,84 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
     }
   }, [open]);
 
+  // For the "current" scope, only ship keys the selected slide owns.
+  const scopedKeys = useMemo(() => {
+    if (scope === 'whole') {
+      const all = new Set<string>();
+      for (const m of fieldIndex.values()) for (const k of m.keys()) all.add(k);
+      return [...all].sort();
+    }
+    if (!currentSlide) return [];
+    const inner = fieldIndex.get(currentSlide.id);
+    return inner ? [...inner.keys()].sort() : [];
+  }, [scope, fieldIndex, currentSlide]);
+
+  // Pre-compute the apply plan so the modal can show the user exactly
+  // what will change before they hit Apply.
+  const applyPlan = useMemo(() => {
+    if (!parsedChanges) return null;
+    const { affectedFiles, unmatchedKeys } = applyChangesToSlides(
+      slideFiles,
+      fieldIndex,
+      parsedChanges,
+    );
+    const affectedCount = affectedFiles.size;
+    const updatedDataJson = parsedChanges
+      ? { ...(safeParse(dataJsonContent) ?? {}), ...parsedChanges }
+      : null;
+    return { affectedFiles, unmatchedKeys, affectedCount, updatedDataJson };
+  }, [parsedChanges, slideFiles, fieldIndex, dataJsonContent]);
+
   const handleGenerate = async () => {
     if (!direction.trim() || streaming) return;
     if (!selectedProviderId) {
       setError('No AI provider selected. Open Settings → AI Providers to add one.');
       return;
     }
+    if (scope === 'current' && !currentSlide) {
+      setError('No slide selected. Pick a slide in the library first.');
+      return;
+    }
     setStreaming(true);
     setError(null);
     setResponse('');
-    setPreviewContent(null);
+    setParsedChanges(null);
 
-    const systemPrompt = TASK_REGENERATE_CONTENT_PROMPT;
-    const userMessage = [
-      direction.trim(),
+    // Build the scope context. For 'whole' we don't ship every slide's
+    // full HTML (that's noise); we ship a short key index so the AI
+    // can see which keys exist without bloating the prompt.
+    const userMessageLines: string[] = [direction.trim(), '', `<scope>${scope}</scope>`];
+
+    if (scope === 'current' && currentSlide) {
+      const fields = fieldIndex.get(currentSlide.id) ?? new Map();
+      userMessageLines.push(
+        '',
+        `<target-slide name="${currentSlide.name}">`,
+        `keys: ${[...fields.keys()].join(', ') || '(none)'}`,
+        '</target-slide>',
+      );
+    } else {
+      const summary = slideFiles
+        .map((s) => {
+          const fields = fieldIndex.get(s.id) ?? new Map();
+          return `${s.name}: ${[...fields.keys()].join(', ') || '(no data-field)'}`;
+        })
+        .join('\n');
+      userMessageLines.push('', '<all-slides-key-index>', summary, '</all-slides-key-index>');
+    }
+
+    userMessageLines.push(
       '',
       '<required-data-keys>',
-      // `{{key}}` placeholders the slide HTMLs reference. The AI MUST
-      // keep emitting values for every one of these (or the slide
-      // renders fallback text and looks unchanged).
-      placeholderKeys.length ? placeholderKeys.join(', ') : '(none — free to invent)',
+      scopedKeys.length ? scopedKeys.join(', ') : '(none — nothing to change)',
       '</required-data-keys>',
       '',
       `<current-file-content name="${FILE_NAME}" layer="content">`,
-      currentContent,
+      dataJsonContent,
       '</current-file-content>',
-      '',
-      '<slide-html-context>',
-      ...slideHtmls.map((s) => `--- ${s.name} ---\n${s.content}`),
-      '</slide-html-context>',
-    ].join('\n');
+    );
 
+    const userMessage = userMessageLines.join('\n');
     let assistant = '';
     const controller = new AbortController();
     abortRef.current = controller;
@@ -223,7 +264,7 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
     await minimaxService.streamChat(
       {
         model: 'MiniMax-M3',
-        system: systemPrompt,
+        system: TASK_REGENERATE_CONTENT_PROMPT,
         messages: [{ role: 'user', content: userMessage }],
         providerId: selectedProviderId,
         signal: controller.signal,
@@ -240,30 +281,28 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
           if (!parsed.ok) {
             setError(
               parsed.error.startsWith('No JSON')
-                ? "The model didn't return a single ```json code block. Try rephrasing or use a larger model."
+                ? "The model didn't return a ```json code block. Try rephrasing or use a larger model."
                 : `Invalid JSON from the model: ${parsed.error}`,
             );
             return;
           }
-          // Re-stringify the parsed value to normalize whitespace and
-          // guarantee the preview receives well-formed JSON regardless
-          // of what the model emitted.
-          const normalized = JSON.stringify(parsed.value, null, 2);
-          setPreviewContent(normalized);
-          const proposal: Proposal = {
-            messageId: -1,
-            label: `Regenerate ${FILE_NAME}`,
-            override: { kind: 'content', content: normalized },
-            files: [
-              {
-                layer: 'content',
-                name: FILE_NAME,
-                extension: 'json',
-                content: normalized,
-              },
-            ],
-          };
-          dispatch({ type: 'SET_PROPOSAL', payload: proposal });
+          if (!parsed.value || typeof parsed.value !== 'object' || Array.isArray(parsed.value)) {
+            setError('Expected a flat {key: value} object from the model.');
+            return;
+          }
+          // Coerce every value to string and drop non-scalar entries —
+          // the renderer only ever substitutes text into a data-field
+          // element so an object/array value is meaningless.
+          const flat: ParsedChanges = {};
+          for (const [k, v] of Object.entries(parsed.value as Record<string, unknown>)) {
+            if (v == null) continue;
+            flat[k] = typeof v === 'string' ? v : String(v);
+          }
+          if (Object.keys(flat).length === 0) {
+            setError('Model returned an empty change set. Try a more specific direction.');
+            return;
+          }
+          setParsedChanges(flat);
         },
         onError: (err) => {
           setStreaming(false);
@@ -275,18 +314,49 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
   };
 
   const handleApply = async () => {
-    if (!previewContent || !current) return;
+    if (!parsedChanges || !applyPlan) return;
+    const { affectedFiles, unmatchedKeys } = applyPlan;
+
     try {
-      await updateMutation.mutateAsync({
-        projectId,
-        fileId: current.id,
-        payload: { content: previewContent },
-      });
+      // 1. Update every affected slide HTML with the new data-field
+      //    values. PUT per slide so the editor view reflects each
+      //    change immediately.
+      const slideUpdates: Promise<unknown>[] = [];
+      for (const [fileId, content] of affectedFiles.entries()) {
+        slideUpdates.push(
+          updateMutation.mutateAsync({
+            projectId,
+            fileId,
+            payload: { content },
+          }),
+        );
+      }
+
+      // 2. Update data.json so PPTX export + content-var injection
+      //    see the same values the slides now show.
+      if (dataFile) {
+        const merged = { ...(safeParse(dataJsonContent) ?? {}), ...parsedChanges };
+        slideUpdates.push(
+          updateMutation.mutateAsync({
+            projectId,
+            fileId: dataFile.id,
+            payload: { content: JSON.stringify(merged, null, 2) },
+          }),
+        );
+      }
+
+      await Promise.all(slideUpdates);
       await queryClient.invalidateQueries({
         queryKey: ['projects', projectId, 'files'],
       });
-      dispatch({ type: 'CLEAR_PROPOSAL' });
-      toast.success(`Applied change to ${FILE_NAME}`);
+
+      const slideWord = affectedFiles.size === 1 ? 'slide' : 'slides';
+      const keyWord = Object.keys(parsedChanges).length === 1 ? 'key' : 'keys';
+      let summary = `Applied ${Object.keys(parsedChanges).length} ${keyWord} to ${affectedFiles.size} ${slideWord}.`;
+      if (unmatchedKeys.length > 0) {
+        summary += ` (${unmatchedKeys.length} unmatched key${unmatchedKeys.length === 1 ? '' : 's'} ignored)`;
+      }
+      toast.success(summary);
       onOpenChange(false);
     } catch (err) {
       toast.error(`Apply failed: ${err instanceof Error ? err.message : 'unknown error'}`);
@@ -294,17 +364,8 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
   };
 
   const handleDiscard = () => {
-    if (state.proposal && state.proposal.files[0]?.name === FILE_NAME) {
-      dispatch({ type: 'CLEAR_PROPOSAL' });
-    }
     onOpenChange(false);
   };
-
-  // Live diff between current data.json and the proposed preview.
-  const diff = useMemo(
-    () => (previewContent ? diffKeys(currentContent, previewContent) : null),
-    [previewContent, currentContent],
-  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -312,19 +373,47 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
         <DialogHeader>
           <DialogTitle>Regenerate Content</DialogTitle>
           <DialogDescription>
-            Rewrite <span className="font-mono">data.json</span>. The preview canvas re-renders
-            the live slide with the new data substituted in so you can see the change applied
-            before saving. Keep all <span className="font-mono">{'{{key}}'}</span> placeholders
-            listed below or the slide will fall back to placeholder text.
+            Rewrite slide text. The AI emits a flat{' '}
+            <span className="font-mono">{'{key: value}'}</span> map; the modal then patches every
+            matching <span className="font-mono">data-field</span> element inside the affected
+            slide HTML(s) and writes <span className="font-mono">data.json</span>.
           </DialogDescription>
         </DialogHeader>
 
-        {placeholderKeys.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-1 text-xs">
+            <input
+              type="radio"
+              name="regen-content-scope"
+              value="whole"
+              checked={scope === 'whole'}
+              onChange={() => setScope('whole')}
+              disabled={streaming}
+            />
+            <span>Whole project ({scopedKeys.length} keys)</span>
+          </label>
+          <label className="flex items-center gap-1 text-xs">
+            <input
+              type="radio"
+              name="regen-content-scope"
+              value="current"
+              checked={scope === 'current'}
+              onChange={() => setScope('current')}
+              disabled={streaming || !currentSlide}
+            />
+            <span>
+              Current slide only ({scopedKeys.length} keys
+              {currentSlide ? ` in ${currentSlide.name}` : ', no slide selected'})
+            </span>
+          </label>
+        </div>
+
+        {scopedKeys.length > 0 && (
           <div className="flex flex-wrap items-center gap-1 rounded-md border border-(--bor2) bg-(--sur1) p-2 text-[11px]">
-            <span className="font-medium">Required keys:</span>
-            {placeholderKeys.map((k) => (
+            <span className="font-medium">In-scope keys:</span>
+            {scopedKeys.map((k) => (
               <code key={k} className="rounded bg-(--bg) px-1 py-0.5 font-mono">
-                {`{{${k}}}`}
+                {k}
               </code>
             ))}
           </div>
@@ -332,9 +421,9 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="flex flex-col gap-1">
-            <Label>Current data.json</Label>
+            <Label>Current {FILE_NAME}</Label>
             <pre className="max-h-[60vh] min-h-48 overflow-auto rounded-md border border-(--bor2) bg-(--sur1) p-2 font-mono text-[11px] leading-snug">
-              {currentContent || '(empty)'}
+              {dataJsonContent || '(empty)'}
             </pre>
           </div>
           <div className="flex flex-col gap-1">
@@ -343,7 +432,11 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
               id="regen-content-direction"
               value={direction}
               onChange={(e) => setDirection(e.target.value)}
-              placeholder="e.g. Rewrite the hero subtitle to emphasize speed and clarity"
+              placeholder={
+                scope === 'current'
+                  ? 'e.g. Rewrite the title to emphasize speed; shorten the body to two sentences'
+                  : 'e.g. Make every title punchier and replace buzzwords with concrete numbers'
+              }
               className="min-h-48 rounded-md border border-(--bor2) bg-(--bg) p-2 text-xs"
               disabled={streaming}
             />
@@ -356,25 +449,37 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
           </div>
         </div>
 
-        {diff && (
-          <div className="flex flex-wrap items-center gap-3 rounded-md border border-(--bor2) bg-(--sur1) p-2 text-[11px]">
-            <span>
-              <span className="font-semibold text-(--cy)">{diff.changed}</span> changed
-            </span>
-            <span>
-              <span className="font-semibold text-(--t2)">{diff.unchanged}</span> unchanged
-            </span>
-            <span>
-              <span className="font-semibold text-(--gn)">+{diff.added.length}</span> added
-            </span>
-            <span>
-              <span className="font-semibold text-destructive">-{diff.removed.length}</span> removed
-            </span>
-            {diff.removed.length > 0 && (
-              <span className="text-destructive">
-                ⚠ Some keys were dropped — slide may render fallback text.
+        {applyPlan && (
+          <div
+            className="flex flex-col gap-2 rounded-md border border-(--bor2) bg-(--sur1) p-3 text-[12px]"
+            data-testid="regen-content-plan"
+          >
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-semibold text-(--cy)">
+                {applyPlan.affectedCount} slide{applyPlan.affectedCount === 1 ? '' : 's'}
               </span>
-            )}
+              <span>will be updated.</span>
+              {applyPlan.unmatchedKeys.length > 0 && (
+                <span className="text-(--t3)">
+                  ⚠ {applyPlan.unmatchedKeys.length} unmatched key
+                  {applyPlan.unmatchedKeys.length === 1 ? '' : 's'}:{' '}
+                  {applyPlan.unmatchedKeys.map((k) => (
+                    <code key={k} className="ml-1 rounded bg-(--bg) px-1 font-mono">
+                      {k}
+                    </code>
+                  ))}
+                </span>
+              )}
+            </div>
+            <ul className="flex flex-wrap gap-1 text-[11px]">
+              {Object.entries(parsedChanges ?? {}).map(([k, v]) => (
+                <li key={k} className="flex items-baseline gap-1">
+                  <code className="rounded bg-(--bg) px-1 font-mono">{k}</code>
+                  <span className="text-(--t3)">→</span>
+                  <span className="max-w-[40ch] truncate text-(--t2)">{v}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
@@ -398,13 +503,33 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
             variant="accent"
             size="sm"
             onClick={handleApply}
-            disabled={!previewContent || !current || updateMutation.isPending}
+            disabled={
+              !parsedChanges ||
+              !applyPlan ||
+              applyPlan.affectedCount === 0 ||
+              updateMutation.isPending
+            }
             data-testid="regen-content-apply"
           >
-            {updateMutation.isPending ? 'Applying…' : `Apply to ${FILE_NAME}`}
+            {updateMutation.isPending
+              ? 'Applying…'
+              : applyPlan
+                ? `Apply to ${applyPlan.affectedCount} slide${applyPlan.affectedCount === 1 ? '' : 's'}`
+                : 'Generate first'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+}
+
+/** Parse JSON safely — returns `null` on any error. */
+function safeParse(text: string): Record<string, unknown> | null {
+  try {
+    const v = JSON.parse(text);
+    if (v && typeof v === 'object' && !Array.isArray(v)) return v as Record<string, unknown>;
+    return null;
+  } catch {
+    return null;
+  }
 }
