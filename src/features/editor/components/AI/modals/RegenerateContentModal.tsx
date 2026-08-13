@@ -308,7 +308,7 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[99vw] w-[99vw] max-h-[95vh] overflow-y-auto">
+      <DialogContent className="max-w-[99vw]! w-[99vw]! max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Regenerate Content</DialogTitle>
           <DialogDescription>

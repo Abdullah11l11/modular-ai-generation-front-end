@@ -309,7 +309,7 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[99vw] w-[99vw] max-h-[95vh] overflow-y-auto">
+      <DialogContent className="max-w-[99vw]! w-[99vw]! max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Regenerate Structure</DialogTitle>
           <DialogDescription>
