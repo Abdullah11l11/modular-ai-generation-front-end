@@ -10,6 +10,7 @@
  * writes the file on Apply.
  */
 import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -51,6 +52,7 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
   );
 
   const updateMutation = useUpdateProjectFile();
+  const queryClient = useQueryClient();
 
   const [direction, setDirection] = useState('');
   const [response, setResponse] = useState('');
@@ -158,6 +160,9 @@ export function RegenerateContentModal({ projectId, open, onOpenChange }: Props)
         projectId,
         fileId: current.id,
         payload: { content: previewContent },
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['projects', projectId, 'files'],
       });
       dispatch({ type: 'CLEAR_PROPOSAL' });
       toast.success(`Applied change to ${FILE_NAME}`);

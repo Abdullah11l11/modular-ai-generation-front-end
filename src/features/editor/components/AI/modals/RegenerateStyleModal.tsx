@@ -9,6 +9,7 @@
  * slide with the new CSS, and writes the file on Apply.
  */
 import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -53,6 +54,7 @@ export function RegenerateStyleModal({ projectId, open, onOpenChange }: Props) {
   );
 
   const updateMutation = useUpdateProjectFile();
+  const queryClient = useQueryClient();
 
   const [direction, setDirection] = useState('');
   const [response, setResponse] = useState('');
@@ -155,6 +157,14 @@ export function RegenerateStyleModal({ projectId, open, onOpenChange }: Props) {
         projectId,
         fileId: current.id,
         payload: { content: previewContent },
+      });
+      // Refetch the project files so the editor view (library,
+      // theme/style/content tabs, preview canvas) reflects the new
+      // CSS immediately — without this, the old content lingers in
+      // the React Query cache and the user thinks "apply" did
+      // nothing.
+      await queryClient.invalidateQueries({
+        queryKey: ['projects', projectId, 'files'],
       });
       dispatch({ type: 'CLEAR_PROPOSAL' });
       toast.success(`Applied change to ${FILE_NAME}`);

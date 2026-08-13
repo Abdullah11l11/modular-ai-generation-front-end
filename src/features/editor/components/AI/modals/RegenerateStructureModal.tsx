@@ -16,6 +16,7 @@
  * correctly (existing → PUT, missing → POST).
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -28,6 +29,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
+import { useCreateProjectFile } from '@/features/files/hooks/useCreateProjectFile';
+import { useUpdateProjectFile } from '@/features/files/hooks/useUpdateProjectFile';
 import { useEditorContext, type Proposal } from '@/features/editor/hooks/useEditorStore';
 import { TASK_REGENERATE_STRUCTURE_PROMPT } from '@/lib/ai/prompts';
 import { parseHtmlBlocks } from '@/lib/ai/responseParsers';
@@ -71,6 +74,10 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
     readPreferredProviderId(),
   );
 
+  const createMutation = useCreateProjectFile();
+  const updateMutation = useUpdateProjectFile();
+  const queryClient = useQueryClient();
+
   const [mode, setMode] = useState<Mode>('modify');
   const [direction, setDirection] = useState('');
   const [response, setResponse] = useState('');
@@ -79,8 +86,14 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
   const [parsedBlocks, setParsedBlocks] = useState<string[] | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  // Derived once per render so both `handleGenerate` and `handleApply`
+  // can use the same target file without re-deriving inside closures.
+  const modifyTarget = mode === 'modify' ? currentSlideFile : null;
+
   // Reset state whenever the modal opens so a stale response from a
-  // previous session can't leak in.
+  // previous session can't leak in. We do NOT clear the proposal on
+  // unmount — the user might still want to inspect the live preview
+  // banner after closing the modal.
   useEffect(() => {
     if (open) {
       setMode('modify');
@@ -95,16 +108,6 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
       abortRef.current = null;
     }
   }, [open]);
-
-  // Clear any stale proposal when the modal closes — but only if it
-  // was one we set (so we don't clobber a chat proposal).
-  useEffect(() => {
-    return () => {
-      if (state.proposal && state.proposal.label.startsWith('Regenerate slide')) {
-        dispatch({ type: 'CLEAR_PROPOSAL' });
-      }
-    };
-  }, [dispatch, state.proposal]);
 
   const handleGenerate = async () => {
     if (!direction.trim() || streaming) return;
@@ -123,7 +126,6 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
 
     // Build the context block. For modify, ship the current slide HTML.
     // For add, we ship a short sibling summary so the AI stays consistent.
-    const modifyTarget = mode === 'modify' ? currentSlideFile : null;
     const contextLines: string[] = [direction.trim(), ''];
     if (modifyTarget) {
       contextLines.push(
@@ -224,18 +226,63 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
 
   const handleApply = async () => {
     if (!parsedBlocks) return;
-    // The actual write happens via EditorPage's "Apply" button — but
-    // for v1 the modal's Apply button also dispatches a Clear so the
-    // modal closes cleanly. The proposal is still sitting in the
-    // store; the user hits the editor's Apply button to commit.
-    // We surface a toast so they know what to do next.
-    dispatch({ type: 'CLEAR_PROPOSAL' });
-    toast.success(
-      `Preview ready — click "Apply" in the editor to commit ${
-        parsedBlocks.length === 1 ? '1 slide' : `${parsedBlocks.length} slides`
-      }.`,
-    );
-    onOpenChange(false);
+
+    // Build the same plan the proposal used so we know which slide
+    // names to PUT vs POST. Re-derived here (instead of stashed in
+    // state) so the apply logic is independent of when onDone ran.
+    const modifyName = modifyTarget?.name;
+    const startingNum =
+      Math.max(0, ...slideFiles.map((s: ProjectFile) => slideIndexFromName(s.name))) + 1;
+    const plans = parsedBlocks.map((content, i) => {
+      if (modifyName) {
+        const existing = slideFiles.find((s: ProjectFile) => s.name === modifyName);
+        if (existing) {
+          return { kind: 'update' as const, fileId: existing.id, name: modifyName, content };
+        }
+      }
+      const num = String(startingNum + i).padStart(2, '0');
+      return {
+        kind: 'create' as const,
+        name: `slide-${num}.html`,
+        content,
+      };
+    });
+
+    try {
+      await Promise.all(
+        plans.map((p) =>
+          p.kind === 'update'
+            ? updateMutation.mutateAsync({
+                projectId,
+                fileId: p.fileId,
+                payload: { content: p.content },
+              })
+            : createMutation.mutateAsync({
+                projectId,
+                payload: {
+                  layer: 'slide',
+                  name: p.name,
+                  extension: 'html',
+                  content: p.content,
+                },
+              }),
+        ),
+      );
+      // Refetch the project files so the slide library, file tabs,
+      // and preview canvas all show the new slide(s) immediately.
+      await queryClient.invalidateQueries({
+        queryKey: ['projects', projectId, 'files'],
+      });
+      dispatch({ type: 'CLEAR_PROPOSAL' });
+      toast.success(
+        `Applied ${plans.length === 1 ? '1 slide' : `${plans.length} slides`}.`,
+      );
+      onOpenChange(false);
+    } catch (err) {
+      toast.error(
+        `Apply failed: ${err instanceof Error ? err.message : 'unknown error'}`,
+      );
+    }
   };
 
   const handleDiscard = () => {
@@ -349,10 +396,18 @@ export function RegenerateStructureModal({ projectId, open, onOpenChange }: Prop
             variant="accent"
             size="sm"
             onClick={handleApply}
-            disabled={!parsedBlocks}
+            disabled={!parsedBlocks || createMutation.isPending || updateMutation.isPending}
             data-testid="regen-structure-apply"
           >
-            Send to editor preview
+            {createMutation.isPending || updateMutation.isPending
+              ? 'Applying…'
+              : parsedBlocks
+                ? mode === 'modify'
+                  ? `Apply to ${modifyTarget?.name ?? 'slide'}`
+                  : `Add ${parsedBlocks.length} slide${parsedBlocks.length === 1 ? '' : 's'}`
+                : mode === 'modify'
+                  ? 'Apply'
+                  : 'Generate first'}
           </Button>
         </DialogFooter>
       </DialogContent>
