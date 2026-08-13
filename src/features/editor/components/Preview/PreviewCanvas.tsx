@@ -71,24 +71,44 @@ export function PreviewCanvas({
     direction: state.direction,
   });
 
-  // When a proposal is set, render the proposal HTML inside the
-  // project's full visual context (BASE_CSS + style.css + layout.css
-  // + data.json) so the user sees the suggested change in the same
-  // framing as the live preview. No layout.html wrapper though — the
-  // AI output is a slide block, not a full document.
+  // When a proposal is set, decide how to render the preview:
+  //
+  // - `proposal.override` (CSS / JSON layer tasks): the live slide
+  //   is re-rendered with the proposed layer swapped in. This lets
+  //   the user SEE a CSS or data.json change applied to the actual
+  //   slide before committing.
+  // - Otherwise (slide HTML proposals): the proposal's HTML is
+  //   wrapped in the project's full visual context so the user sees
+  //   the new slide in the same framing as the live preview.
   const proposalSrcDoc = state.proposal
-    ? assemblePreviewHtml({
-        slideHtml:
-          state.proposal.previewHtml ??
-          state.proposal.files[0]?.content ??
-          '',
-        slideCss: '',
-        layoutCss,
-        layoutHtml: '',
-        styleCss,
-        contentJson,
-        direction: state.direction,
-      })
+    ? state.proposal.override
+      ? assemblePreviewHtml({
+          slideHtml,
+          slideCss,
+          layoutCss,
+          layoutHtml,
+          styleCss:
+            state.proposal.override.kind === 'style'
+              ? state.proposal.override.content
+              : styleCss,
+          contentJson:
+            state.proposal.override.kind === 'content'
+              ? state.proposal.override.content
+              : contentJson,
+          direction: state.direction,
+        })
+      : assemblePreviewHtml({
+          slideHtml:
+            state.proposal.previewHtml ??
+            state.proposal.files[0]?.content ??
+            '',
+          slideCss: '',
+          layoutCss,
+          layoutHtml: '',
+          styleCss,
+          contentJson,
+          direction: state.direction,
+        })
     : '';
 
   const srcDoc = state.proposal ? proposalSrcDoc : liveSrcDoc;

@@ -79,6 +79,7 @@ export function SinglePagePropertiesPanel({
         </TabsContent>
         <TabsContent value="ai">
           <AiTab
+            projectId={projectId}
             selectedSlideHtmlFile={htmlFile}
             styleCssFile={styleFile}
             layoutCssFile={layoutFile}

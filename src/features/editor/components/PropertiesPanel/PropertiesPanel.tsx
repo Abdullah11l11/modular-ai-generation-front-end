@@ -141,6 +141,7 @@ export function PropertiesPanel({
 
         <TabsContent value="ai" forceMount className={state.activeTab === 'ai' ? '' : 'hidden'}>
           <AiTab
+            projectId={projectId}
             selectedSlideHtmlFile={selectedSlideHtmlFile}
             styleCssFile={styleCssFile}
             layoutCssFile={layoutCssFile}

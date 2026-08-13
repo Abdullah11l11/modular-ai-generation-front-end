@@ -21,6 +21,9 @@ import CONTENT_MD from './tasks/content.md?raw';
 import THEME_MD from './tasks/theme.md?raw';
 import COMPONENT_MD from './tasks/component.md?raw';
 import REGEN_LAYER_MD from './tasks/regen-layer.md?raw';
+import REGEN_STYLE_MD from './tasks/regen-style.md?raw';
+import REGEN_CONTENT_MD from './tasks/regen-content.md?raw';
+import REGEN_STRUCTURE_MD from './tasks/regen-structure.md?raw';
 
 /* ------------------------------------------------------------------ */
 /* Standards                                                            */
@@ -48,6 +51,9 @@ export const TASK_GENERATE_CONTENT_PROMPT = CONTENT_MD;
 export const TASK_GENERATE_THEME_PROMPT = THEME_MD;
 export const TASK_GENERATE_COMPONENT_PROMPT = COMPONENT_MD;
 export const TASK_REGENERATE_LAYER_PROMPT = REGEN_LAYER_MD;
+export const TASK_REGENERATE_STYLE_PROMPT = REGEN_STYLE_MD;
+export const TASK_REGENERATE_CONTENT_PROMPT = REGEN_CONTENT_MD;
+export const TASK_REGENERATE_STRUCTURE_PROMPT = REGEN_STRUCTURE_MD;
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -74,7 +80,10 @@ export type TaskKey =
   | 'content'
   | 'theme'
   | 'component'
-  | 'regen-layer';
+  | 'regen-layer'
+  | 'regen-style'
+  | 'regen-content'
+  | 'regen-structure';
 
 const TASK_BY_KEY: Record<TaskKey, string> = {
   'full-project': TASK_FULL_PROJECT_PROMPT,
@@ -83,6 +92,9 @@ const TASK_BY_KEY: Record<TaskKey, string> = {
   theme: TASK_GENERATE_THEME_PROMPT,
   component: TASK_GENERATE_COMPONENT_PROMPT,
   'regen-layer': TASK_REGENERATE_LAYER_PROMPT,
+  'regen-style': TASK_REGENERATE_STYLE_PROMPT,
+  'regen-content': TASK_REGENERATE_CONTENT_PROMPT,
+  'regen-structure': TASK_REGENERATE_STRUCTURE_PROMPT,
 };
 
 export const buildPromptFor = (task: TaskKey, extra: string[] = []): string =>

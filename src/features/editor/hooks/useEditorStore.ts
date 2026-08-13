@@ -59,6 +59,17 @@ export type Proposal = {
    *  the rendered preview can include BASE_CSS / style.css even
    *  when the proposal itself is a raw block. */
   previewHtml?: string;
+  /** Optional layer swap for the live preview. When set, the
+   *  PreviewCanvas re-runs `assemblePreviewHtml` with the live
+   *  slide HTML but the proposed `content` swapped in for the
+   *  matching layer (`style` → `styleCss`, `content` → `contentJson`).
+   *  Lets the user SEE the CSS / JSON change applied to the live
+   *  project before committing. The actual write goes through
+   *  `files[]` on Apply. */
+  override?: {
+    kind: 'style' | 'content';
+    content: string;
+  };
 };
 
 export type EditorState = {
