@@ -8,6 +8,7 @@ import { PublicProfilePage } from '@/pages/PublicProfilePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import { EditorPage } from '@/features/editor/components/EditorPage';
+import AdminPage from '@/pages/admin/AdminPage';
 
 export const router = createBrowserRouter([
   {
@@ -55,7 +56,16 @@ export const router = createBrowserRouter([
     children: [
       {
         element: <RootLayout />,
-        children: [{ path: '/admin/*', element: <></> }],
+        children: [
+          {
+            path: '/admin/*',
+            element: (
+              <>
+                <AdminPage />
+              </>
+            ),
+          },
+        ],
       },
     ],
   },

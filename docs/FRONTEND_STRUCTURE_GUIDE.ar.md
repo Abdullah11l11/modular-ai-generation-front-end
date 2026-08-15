@@ -323,14 +323,14 @@ features/resources/types/createResourceRequest.ts
 
 المكونات المشتركة التالية متاحة لجميع المسارات والميزات:
 
-| المكون | الملف | الغرض |
-|--------|-------|-------|
-| `ErrorBoundary` | `src/components/error-boundary.tsx` | مكون كلاس React يلتقط أخطاء التصيير ويعرض `ErrorFallback` مع زر إعادة المحاولة |
-| `ErrorFallback` | `src/components/error-fallback.tsx` | واجهة عرض الخطأ — أيقونة، رسالة، وإجراء إعادة محاولة اختياري |
-| `FullPageLoader` | `src/components/full-page-loader.tsx` | مؤشر تحميل مركزي لـ Suspense fallback |
-| `EmptyState` | `src/components/empty-state.tsx` | عنصر نائب للقوائم/الجداول الفارغة — أيقونة، عنوان، وصف، وإجراء اختياري |
-| `PageHeader` | `src/components/page-header.tsx` | عنوان الصفحة (26px, وزن 800) + نص فرعي اختياري + حاوية إجراءات |
-| `NotFoundPage` | `src/pages/NotFoundPage.tsx` | صفحة 404 موصولة بالمسار `*` |
+| المكون           | الملف                                 | الغرض                                                                          |
+| ---------------- | ------------------------------------- | ------------------------------------------------------------------------------ |
+| `ErrorBoundary`  | `src/components/error-boundary.tsx`   | مكون كلاس React يلتقط أخطاء التصيير ويعرض `ErrorFallback` مع زر إعادة المحاولة |
+| `ErrorFallback`  | `src/components/error-fallback.tsx`   | واجهة عرض الخطأ — أيقونة، رسالة، وإجراء إعادة محاولة اختياري                   |
+| `FullPageLoader` | `src/components/full-page-loader.tsx` | مؤشر تحميل مركزي لـ Suspense fallback                                          |
+| `EmptyState`     | `src/components/empty-state.tsx`      | عنصر نائب للقوائم/الجداول الفارغة — أيقونة، عنوان، وصف، وإجراء اختياري         |
+| `PageHeader`     | `src/components/page-header.tsx`      | عنوان الصفحة (26px, وزن 800) + نص فرعي اختياري + حاوية إجراءات                 |
+| `NotFoundPage`   | `src/pages/NotFoundPage.tsx`          | صفحة 404 موصولة بالمسار `*`                                                    |
 
 هذه المكونات تستخدم خصائص CSS المخصصة للمشروع (مثل `var(--cy)`، `var(--t1)`، `var(--t2)`، `var(--cy-d)`) وهي متوافقة مع `docs/design.md`.
 
