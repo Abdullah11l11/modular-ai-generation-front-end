@@ -10,7 +10,7 @@ export async function reorderProjectFiles(
   projectId: string,
   payload: ReorderProjectFilesRequest,
 ): Promise<ProjectFile[]> {
-  const response = await apiClient.put<ReorderProjectFilesResponse, ReorderProjectFilesRequest>(
+  const response = await apiClient.patch<ReorderProjectFilesResponse, ReorderProjectFilesRequest>(
     `/projects/${projectId}/files/reorder`,
     payload,
   );

@@ -673,9 +673,6 @@ export function ExportDialog({
               expiresAt={
                 exportJob?.expires_at
               }
-              errorMessage={
-                exportJob?.error_message
-              }
               onDownload={
                 handleDownload
               }
@@ -741,7 +738,6 @@ interface ExportJobStatusProps {
   isFailed: boolean;
   downloadExpired: boolean;
   expiresAt: string | null | undefined;
-  errorMessage: string | null | undefined;
   onDownload: () => void;
   onRegenerate: () => void;
 }
@@ -754,7 +750,6 @@ function ExportJobStatus({
   isFailed,
   downloadExpired,
   expiresAt,
-  errorMessage,
   onDownload,
   onRegenerate,
 }: ExportJobStatusProps) {
@@ -780,8 +775,7 @@ function ExportJobStatus({
           </h3>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            {errorMessage ??
-              'Something went wrong while exporting the project.'}
+            Something went wrong while exporting the project.
           </p>
         </div>
 

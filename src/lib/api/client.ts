@@ -107,6 +107,11 @@ export const apiClient = {
     body?: Body,
     options?: Omit<ApiRequestOptions<Body>, 'body'>,
   ) => request<Response, Body>('PUT', path, { ...options, body }),
+  patch: <Response, Body = unknown>(
+    path: string,
+    body?: Body,
+    options?: Omit<ApiRequestOptions<Body>, 'body'>,
+  ) => request<Response, Body>('PATCH', path, { ...options, body }),
   delete: <Response = void>(path: string, options?: ApiRequestOptions) =>
     request<Response>('DELETE', path, options),
   auth: {
