@@ -19,7 +19,11 @@ export function EditorPage() {
   if (isError || !project) {
     return (
       <ErrorFallback
-        error={new Error('Could not load this project. It may have been deleted or you may not have access.')}
+        error={
+          new Error(
+            'Could not load this project. It may have been deleted or you may not have access.',
+          )
+        }
         reset={() => refetch()}
       />
     );
@@ -27,10 +31,7 @@ export function EditorPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <EditorToolbar
-        project={project}
-        onOpenSettings={() => setSettingsOpen(true)}
-      />
+      <EditorToolbar project={project} onOpenSettings={() => setSettingsOpen(true)} />
       <div className="flex flex-1 items-center justify-center text-(--t3) text-sm">
         Editor canvas will be built in a future phase.
       </div>
