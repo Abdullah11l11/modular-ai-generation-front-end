@@ -1,4 +1,6 @@
 import { apiClient } from '@/lib/api/client';
-import type { ExportJob, Id } from '@/types/api';
+import type { Id } from '@/types/api';
+import type { ExportJob } from '../types/exportJob';
 
-export const getExportJob = (jobId: Id) => apiClient.get<ExportJob>(`export-jobs/${jobId}`);
+export const getExportJob = (jobId: Id) =>
+  apiClient.get<ExportJob>(`export-jobs/${jobId}`);
