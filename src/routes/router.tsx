@@ -31,7 +31,7 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { path: '/', element: <></> },
-      { path: '/templates', element: <></> },
+      { path: '/templates', element: <TemplatesPage /> },
       { path: '/templates/:templateId', element: <></> },
       { path: '/users/:userId', element: <PublicProfilePage /> },
     ],

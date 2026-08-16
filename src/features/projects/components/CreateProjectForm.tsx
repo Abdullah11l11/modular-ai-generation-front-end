@@ -1,9 +1,12 @@
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useCreateProject } from '@/features/projects/hooks/useCreateProject';
 import { useTypes } from '@/features/types/hooks/useTypes';
+import {
+  createProjectSchema,
+  type CreateProjectFormValues,
+} from '@/features/projects/types/createProjectSchema';
 import { Field, FieldLabel, FieldGroup, FieldContent, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,17 +21,6 @@ import {
 import { TagInput } from '@/components/ui/tag-input';
 import { toastSuccess, toastError } from '@/lib/toast';
 import { Loader2Icon } from 'lucide-react';
-
-const createProjectSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
-  type_id: z.string().min(1, 'Type is required'),
-  description: z.string().optional(),
-  visibility: z.enum(['public', 'private', 'unlisted']).optional(),
-  tags: z.array(z.string()).optional(),
-  direction: z.enum(['ltr', 'rtl']).optional(),
-});
-
-type FormValues = z.infer<typeof createProjectSchema>;
 
 type CreateProjectFormProps = {
   onSuccess?: () => void;
@@ -45,7 +37,7 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
     control,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
+  } = useForm<CreateProjectFormValues>({
     resolver: zodResolver(createProjectSchema),
     defaultValues: {
       name: '',
@@ -62,7 +54,7 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
   const visibility = useWatch({ control, name: 'visibility' });
   const direction = useWatch({ control, name: 'direction' });
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: CreateProjectFormValues) => {
     try {
       const project = await createProject.mutateAsync(data);
       toastSuccess(`Project "${project.name}" created`);
