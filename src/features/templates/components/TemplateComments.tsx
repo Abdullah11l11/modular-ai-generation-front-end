@@ -1,36 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
+import { useComments } from '@/features/social/hooks/useComments';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiClient } from '@/lib/api/client';
 import { formatRelativeTime } from '@/lib/format';
-import type { Id, PaginatedResponse } from '@/types/api';
-
-type Comment = {
-  id: Id;
-  body: string;
-  created_at: string;
-  author?: { id: Id; name: string; avatar_url?: string | null };
-};
+import type { Comment, Id } from '@/types/api';
 
 type TemplateCommentsProps = {
   templateId: Id;
 };
 
-async function fetchComments(templateId: Id): Promise<Comment[]> {
-  try {
-    const res = await apiClient.get<PaginatedResponse<Comment>>(`templates/${templateId}/comments`);
-    return res.data ?? [];
-  } catch {
-    return [];
-  }
-}
-
 export function TemplateComments({ templateId }: TemplateCommentsProps) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['templates', templateId, 'comments'],
-    queryFn: () => fetchComments(templateId),
-    retry: false,
-  });
+  const { data, isLoading } = useComments('templates', templateId);
+  const comments = data?.data ?? [];
 
   if (isLoading) {
     return (
@@ -45,7 +25,7 @@ export function TemplateComments({ templateId }: TemplateCommentsProps) {
     );
   }
 
-  if (error || !data || data.length === 0) {
+  if (comments.length === 0) {
     return (
       <section className="space-y-2">
         <h2 className="text-sm font-semibold text-[var(--t1)]">Comments</h2>
@@ -58,7 +38,7 @@ export function TemplateComments({ templateId }: TemplateCommentsProps) {
     <section className="space-y-3">
       <h2 className="text-sm font-semibold text-[var(--t1)]">Comments</h2>
       <ul className="space-y-3">
-        {data.map((comment) => {
+        {comments.map((comment: Comment) => {
           const initial = comment.author?.name?.trim().charAt(0).toUpperCase() ?? '?';
           return (
             <li key={comment.id} className="flex gap-3 rounded-md border border-[var(--bor)] bg-[var(--sur)] p-3">
@@ -75,7 +55,7 @@ export function TemplateComments({ templateId }: TemplateCommentsProps) {
                   <span className="font-medium text-[var(--t1)]">{comment.author?.name ?? 'Unknown'}</span>
                   <span className="text-[var(--t3)]">{formatRelativeTime(comment.created_at)}</span>
                 </div>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--t2)]">{comment.body}</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--t2)]">{comment.content}</p>
               </div>
             </li>
           );
