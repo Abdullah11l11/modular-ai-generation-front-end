@@ -8,7 +8,7 @@ import { PublicProfilePage } from '@/pages/PublicProfilePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import EditorPage from '@/pages/editor/EditorPage';
-import TemplatesPage from '@/pages/templates/TemplatesPage';
+import { TemplatesPage } from '@/pages/templates/TemplatesPage';
 import AiProvidersPage from '@/pages/settings/AiProvidersPage';
 import { ResourcePage } from '@/pages/resources/resourcesPage';
 import { ResourceDetailPage } from '@/pages/resources/ResourceDetailPage';

@@ -10,7 +10,7 @@ const mockResources: Resource[] = [
     name: 'React Prompt Template',
     kind: 'prompt',
     description: null,
-    body: '',
+    content: '',
     visibility: 'public',
     tags: ['react'],
     fork_count: 3,

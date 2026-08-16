@@ -1,4 +1,3 @@
-import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserProfileHeader } from '@/features/users/components/UserProfileHeader';

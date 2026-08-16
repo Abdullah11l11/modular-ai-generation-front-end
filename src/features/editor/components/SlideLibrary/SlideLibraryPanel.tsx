@@ -22,7 +22,7 @@ type SlideLibraryPanelProps = {
   onToggleLayer: (kind: FileLayer) => void;
   onAddSlide: (sourceStem: string | null) => void;
   onDeleteSlides: (stems: string[]) => void;
-  onReorderFiles: (projectId: string, order: string[]) => void;
+  onReorderFiles: (projectId: string, files: ProjectFile[]) => void;
   projectId: string;
   /** Document direction — controls how thumbnails render when the
    *  assembled preview is shown inside the picker. */
@@ -63,17 +63,17 @@ export function SlideLibraryPanel({
   }
 
   function handleReorder(stems: string[]) {
-    const fileIds: string[] = [];
+    const reorderedFiles: ProjectFile[] = [];
     for (const stem of stems) {
       const group = slides.find((s) => s.stem === stem);
       if (group) {
-        const ids = [group.files.slide?.id, group.files.style?.id, group.files.content?.id].filter(
+        const groupFiles = [group.files.slide, group.files.style, group.files.content].filter(
           Boolean,
-        ) as string[];
-        fileIds.push(...ids);
+        ) as ProjectFile[];
+        reorderedFiles.push(...groupFiles);
       }
     }
-    onReorderFiles(projectId, fileIds);
+    onReorderFiles(projectId, reorderedFiles);
   }
 
   function handleAddSlideClick() {

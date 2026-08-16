@@ -107,7 +107,7 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
           <FieldContent>
             <Select
               value={visibility ?? 'private'}
-              onValueChange={(v) => setValue('visibility', v as FormValues['visibility'])}
+              onValueChange={(v) => setValue('visibility', v as CreateProjectFormValues['visibility'])}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -126,7 +126,7 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
           <FieldContent>
             <Select
               value={direction ?? 'ltr'}
-              onValueChange={(v) => setValue('direction', v as FormValues['direction'])}
+              onValueChange={(v) => setValue('direction', v as CreateProjectFormValues['direction'])}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />

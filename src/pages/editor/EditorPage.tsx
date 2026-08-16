@@ -113,8 +113,8 @@ function EditorShell({ project }: EditorShellProps) {
   const layoutCssFile = findFile('layout', 'layout.css') ?? null;
 
   const createMutation = useCreateProjectFile();
-  const deleteMutation = useDeleteProjectFile();
-  const reorderMutation = useReorderProjectFiles();
+  const deleteMutation = useDeleteProjectFile(state.projectId);
+  const reorderMutation = useReorderProjectFiles(state.projectId);
   const updateMutation = useUpdateProjectFile();
 
   const invalidateFiles = useCallback(() => {
@@ -368,17 +368,17 @@ function EditorShell({ project }: EditorShellProps) {
         }
       }
       Promise.all(
-        fileIds.map((fileId) => deleteMutation.mutateAsync({ projectId: state.projectId, fileId })),
+        fileIds.map((fileId) => deleteMutation.mutateAsync(fileId)),
       ).then(() => invalidateFiles());
     },
     [slides, state.projectId, deleteMutation, invalidateFiles],
   );
 
   const handleReorderFiles = useCallback(
-    (projectId: string, order: string[]) => {
-      reorderMutation.mutate({ projectId, order }, { onSuccess: () => invalidateFiles() });
+    (_projectId: string, files: ProjectFile[]) => {
+      reorderMutation.mutate(files);
     },
-    [reorderMutation, invalidateFiles],
+    [reorderMutation],
   );
 
   return (

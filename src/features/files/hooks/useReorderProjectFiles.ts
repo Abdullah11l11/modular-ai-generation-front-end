@@ -1,9 +1,20 @@
-import { useMutation } from '@tanstack/react-query';
-import { reorderFiles } from '@/features/files/api/reorderFiles';
-import type { Id } from '@/types/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-export const useReorderProjectFiles = () =>
-  useMutation({
-    mutationFn: ({ projectId, order }: { projectId: Id; order: Id[] }) =>
-      reorderFiles(projectId, order),
+import { reorderProjectFiles } from '@/features/files/api/reorderProjectFiles';
+
+import type { ProjectFile } from '@/features/files/types/projectFile';
+
+export function useReorderProjectFiles(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (files: ProjectFile[]) =>
+      reorderProjectFiles(projectId, {
+        order: files.map((file) => file.id),
+      }),
+
+    onSuccess: (files) => {
+      queryClient.setQueryData(['project-files', projectId], files);
+    },
   });
+}

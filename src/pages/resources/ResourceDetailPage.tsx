@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Heart, GitBranch } from 'lucide-react';
 import {
   Select,
@@ -163,7 +162,7 @@ export function ResourceDetailPage() {
                 </Select>
               ) : (
                 <Input
-                  placeholder={p.default || `Enter ${p.label.toLoweCase()}...`}
+                  placeholder={p.default || `Enter ${p.label.toLowerCase()}...`}
                   value={values[p.key] ?? ''}
                   onChange={(e) => setValues((prev) => ({ ...prev, [p.key]: e.target.value }))}
                 />
