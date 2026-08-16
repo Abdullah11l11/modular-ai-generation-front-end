@@ -192,10 +192,10 @@ export function formatNumber(n: number): string {
   if (n < 1_000) return String(n);
   if (n < 1_000_000) {
     const v = n / 1_000;
-    return `${v.toFixed(v >= 100 ? 0 : 1).replace(/\.0$/, '')}k`;
+    return `${v.toFixed(v >= 10 ? 0 : 1).replace(/\.0$/, '')}k`;
   }
   const v = n / 1_000_000;
-  return `${v.toFixed(v >= 100 ? 0 : 1).replace(/\.0$/, '')}M`;
+  return `${v.toFixed(v >= 10 ? 0 : 1).replace(/\.0$/, '')}M`;
 }
 
 export function formatRelativeTime(iso: string, now: Date = new Date()): string {
