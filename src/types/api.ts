@@ -167,7 +167,11 @@ export type Comment = {
   updated_at: string;
 };
 
-export type ToggleResponse = {
-  active: boolean;
-  count: number;
+export type UpvoteResponse = {
+  upvoted: boolean;
+  upvote_count: number;
+};
+
+export type BookmarkResponse = {
+  bookmarked: boolean;
 };

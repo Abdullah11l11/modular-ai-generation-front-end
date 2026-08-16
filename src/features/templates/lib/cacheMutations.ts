@@ -1,23 +1,23 @@
-import type { Template, ToggleResponse } from '@/types/api';
+import type { BookmarkResponse, Template, UpvoteResponse } from '@/types/api';
 
 /**
  * Returns a new Template reflecting the upvote state from the server.
- * Trusts the server's `active` flag — the caller should treat `count` as authoritative.
+ * Trusts the server's `upvoted` flag and `upvote_count` (both authoritative).
  */
-export function applyUpvoteToggle(template: Template, response: ToggleResponse): Template {
+export function applyUpvoteToggle(template: Template, response: UpvoteResponse): Template {
   return {
     ...template,
-    is_upvoted: response.active,
-    upvote_count: response.count,
+    is_upvoted: response.upvoted,
+    upvote_count: response.upvote_count,
   };
 }
 
 /**
  * Returns a new Template reflecting the bookmark state from the server.
  */
-export function applyBookmarkToggle(template: Template, response: ToggleResponse): Template {
+export function applyBookmarkToggle(template: Template, response: BookmarkResponse): Template {
   return {
     ...template,
-    is_bookmarked: response.active,
+    is_bookmarked: response.bookmarked,
   };
 }
