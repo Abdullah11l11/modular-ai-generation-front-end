@@ -13,6 +13,8 @@ import AiProvidersPage from '@/pages/settings/AiProvidersPage';
 import { ResourcePage } from '@/pages/resources/resourcesPage';
 import { ResourceDetailPage } from '@/pages/resources/ResourceDetailPage';
 import AdminPage from '@/pages/admin/AdminPage';
+import { ProfileRedirect } from '@/routes/ProfileRedirect';
+import { TemplateDetailPage } from '@/pages/templates/TemplateDetailPage';
 
 export const router = createBrowserRouter([
   {
@@ -36,7 +38,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/', element: <></> },
       { path: '/templates', element: <TemplatesPage /> },
-      { path: '/templates/:templateId', element: <></> },
+      { path: '/templates/:templateId', element: <TemplateDetailPage /> },
       { path: '/users/:userId', element: <PublicProfilePage /> },
     ],
   },
@@ -47,6 +49,7 @@ export const router = createBrowserRouter([
         element: <RootLayout />,
         children: [
           { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/me', element: <ProfileRedirect /> },
           { path: '/settings', element: <></> },
           { path: '/settings/ai-providers', element: <AiProvidersPage /> },
           { path: '/resources', element: <ResourcePage /> },
