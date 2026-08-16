@@ -34,12 +34,21 @@ export function TemplateCard({ template }: TemplateCardProps) {
           </Badge>
 
           <div className="flex items-center gap-1.5 text-[11px] font-medium text-(--t2)">
-            <Avatar className="size-4">
-              <AvatarImage src={template.author?.avatar_url ?? ''} />
-              <AvatarFallback className="text-[8px]">
-                {template.author?.name?.charAt(0) ?? 'U'}
-              </AvatarFallback>
-            </Avatar>
+            {template.author && (
+              <Link
+                to={`/users/${template.author.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center no-underline hover:opacity-80"
+                aria-label={`View ${template.author.name ?? 'user'}'s profile`}
+              >
+                <Avatar className="size-4">
+                  <AvatarImage src={template.author.avatar_url ?? ''} />
+                  <AvatarFallback className="text-[8px]">
+                    {template.author.name?.charAt(0) ?? 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+            )}
             <span>{template.upvote_count}</span>
           </div>
         </div>
