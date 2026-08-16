@@ -16,28 +16,28 @@ import {
 } from '@/components/ui/table';
 
 import { useAdminTemplates } from '@/features/admin/hooks/useAdminTemplates';
+
+import { Pagination } from '@/components/common/Pagination';
+
 import { LoadingState } from '@/features/admin/components/shared/LoadingState';
 
 import { EmptyState } from '@/features/admin/components/shared/EmptyState';
-
-import { Pagination } from '@/components/common/Pagination';
 
 export function TemplatesTable() {
   const [page, setPage] = useState(1);
 
   const [search, setSearch] = useState('');
 
-  const {
-    data,
-
-    isLoading,
-  } = useAdminTemplates();
+  const { data, isLoading } = useAdminTemplates({
+    page,
+    q: search || undefined,
+  });
 
   if (isLoading) {
     return <LoadingState />;
   }
 
-  const items = (data as any)?.items ?? (data as any)?.data ?? [];
+  const items = data?.data ?? [];
 
   if (!items.length) {
     return <EmptyState />;
@@ -59,7 +59,7 @@ export function TemplatesTable() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Title</TableHead>
+            <TableHead>Name</TableHead>
 
             <TableHead>Author</TableHead>
 
@@ -72,19 +72,23 @@ export function TemplatesTable() {
         </TableHeader>
 
         <TableBody>
-          {items.map((template: any) => (
+          {items.map((template) => (
             <TableRow key={template.id}>
-              <TableCell>{template.title}</TableCell>
-              <TableCell>{template.author_name}</TableCell>
-              <TableCell>{template.type}</TableCell>
+              <TableCell>{template.name}</TableCell>
+
+              <TableCell>{template.author?.name ?? ''}</TableCell>
+
+              <TableCell>{template.type?.name ?? ''}</TableCell>
+
               <TableCell>{template.visibility}</TableCell>
-              <TableCell>{template.upvotes}</TableCell>
+
+              <TableCell>{template.upvote_count}</TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      <Pagination page={page} totalPages={(data as any)?.meta?.last_page ?? 1} onChange={setPage} />
+      <Pagination page={page} totalPages={data?.meta?.last_page ?? 1} onChange={setPage} />
     </Card>
   );
 }

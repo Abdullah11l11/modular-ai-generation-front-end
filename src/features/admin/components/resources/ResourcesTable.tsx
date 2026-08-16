@@ -22,7 +22,7 @@ import { EmptyState } from '@/features/admin/components/shared/EmptyState';
 export function ResourcesTable() {
   const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useAdminResources();
+  const { data, isLoading } = useAdminResources({ page });
 
   if (isLoading) {
     return <LoadingState />;
@@ -54,12 +54,7 @@ export function ResourcesTable() {
 
               <TableCell>{resource.kind}</TableCell>
 
-              <TableCell>
-                {(resource as any).author_name ??
-                  (resource as any).authorName ??
-                  (resource as any).author?.name ??
-                  ''}
-              </TableCell>
+              <TableCell>{resource.author?.name ?? ''}</TableCell>
 
               <TableCell>{resource.created_at}</TableCell>
             </TableRow>
