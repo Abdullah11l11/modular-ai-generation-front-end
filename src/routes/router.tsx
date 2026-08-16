@@ -8,6 +8,8 @@ import { PublicProfilePage } from '@/pages/PublicProfilePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import { EditorPage } from '@/features/editor/components/EditorPage';
+import { ResourcePage } from '@/pages/resources/resourcesPage';
+import { ResourceDetailPage } from '@/pages/resources/ResourceDetailPage';
 import AdminPage from '@/pages/admin/AdminPage';
 
 export const router = createBrowserRouter([
@@ -44,9 +46,9 @@ export const router = createBrowserRouter([
         children: [
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/settings', element: <></> },
-          { path: '/resources', element: <></> },
+          { path: '/resources', element: <ResourcePage /> },
           { path: '/resources/new', element: <></> },
-          { path: '/resources/:resourceId', element: <></> },
+          { path: '/resources/:resourceId', element: <ResourceDetailPage /> },
         ],
       },
     ],

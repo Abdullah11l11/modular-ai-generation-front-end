@@ -141,28 +141,28 @@ export type ResourcePlaceholder = {
 export type Resource = {
   id: Id;
   user_id: Id;
-  author?: UserSummary;
-  forked_from_id?: Id | null;
-  kind: ResourceKind;
-  name: string;
-  description: string | null;
-  body: string;
-  placeholders?: ResourcePlaceholder[] | null;
+  author?: UserSummary; // author.name => card
+  forked_from_id?: Id | null; //resourceDetail
+  kind: ResourceKind; //card
+  name: string; //card
+  description: string | null; //card
+  content: string; //resourceDetail
+  placeholders?: ResourcePlaceholder[] | null;  //resourceDetail
   visibility: Visibility;
   tags: string[];
-  fork_count: number;
-  upvote_count: number;
-  is_upvoted: boolean;
-  is_bookmarked: boolean;
-  created_at: string;
-  updated_at: string;
+  fork_count: number; //card
+  upvote_count: number;  //card
+  is_upvoted: boolean; //resourceDetail
+  is_bookmarked: boolean; //resourceDetail
+  created_at: string; //resourceDetail
+  updated_at: string; //resourceDetail
 };
 
 export type Comment = {
   id: Id;
   user_id: Id;
   author?: UserSummary;
-  body: string;
+  content: string;
   created_at: string;
   updated_at: string;
 };
