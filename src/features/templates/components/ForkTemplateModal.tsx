@@ -45,11 +45,7 @@ export function ForkTemplateModal({ template, open, onOpenChange }: ForkTemplate
       { templateId: template.id, payload: { name: trimmed } },
       {
         onSuccess: (response) => {
-          // response shape depends on Task 1 fix — should contain new project id
-          const newProjectId =
-            (response as { project?: { id: string } }).project?.id ??
-            (response as { id?: string }).id ??
-            '';
+          const newProjectId = response.id ?? '';
           toastSuccess(`Created "${trimmed}"`);
           queryClient.invalidateQueries({ queryKey: ['projects'] });
           queryClient.invalidateQueries({ queryKey: ['templates'] });
