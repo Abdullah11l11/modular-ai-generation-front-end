@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '@/hooks/useTheme';
+import { AuthControl } from '@/components/layout/AuthControl';
 
 const navLinks = [
   { to: '/templates', label: 'Browse' },
@@ -94,9 +95,7 @@ export function Navbar() {
 
         <span className="inline-block h-[18px] w-px bg-[var(--bor2)]" />
 
-        <div className="flex size-7 items-center justify-center rounded-full bg-[var(--acc)] text-xs font-bold text-[var(--sur)] select-none">
-          U
-        </div>
+        <AuthControl />
       </div>
     </nav>
   );
