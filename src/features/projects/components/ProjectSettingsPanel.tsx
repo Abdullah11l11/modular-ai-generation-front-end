@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useProject } from '@/features/projects/hooks/useProject';
@@ -57,8 +57,8 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
   const {
     register,
     handleSubmit,
+    control,
     setValue,
-    watch,
     reset,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<FormValues>({
@@ -86,8 +86,10 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
     }
   }, [project, reset]);
 
-  const tags = watch('tags') ?? [];
-  const currentStatus = watch('status');
+  const tags = useWatch({ control, name: 'tags' }) ?? [];
+  const currentStatus = useWatch({ control, name: 'status' });
+  const visibility = useWatch({ control, name: 'visibility' });
+  const direction = useWatch({ control, name: 'direction' });
 
   const onSubmit = async (data: FormValues) => {
     await updateProject.mutateAsync(
@@ -167,7 +169,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
               <FieldLabel>Status</FieldLabel>
               <FieldContent>
                 <Select
-                  value={watch('status')}
+                  value={currentStatus}
                   onValueChange={(v) => setValue('status', v as FormValues['status'])}
                 >
                   <SelectTrigger className="w-full">
@@ -187,7 +189,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
               <FieldLabel>Visibility</FieldLabel>
               <FieldContent>
                 <Select
-                  value={watch('visibility')}
+                  value={visibility}
                   onValueChange={(v) => setValue('visibility', v as FormValues['visibility'])}
                 >
                   <SelectTrigger className="w-full">
@@ -206,7 +208,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
               <FieldLabel>Direction</FieldLabel>
               <FieldContent>
                 <Select
-                  value={watch('direction')}
+                  value={direction}
                   onValueChange={(v) => setValue('direction', v as FormValues['direction'])}
                 >
                   <SelectTrigger className="w-full">

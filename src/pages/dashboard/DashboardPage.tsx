@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useProjects } from '@/features/projects/hooks/useProjects';
 import { ProjectGrid } from '@/features/projects/components/ProjectGrid';
 import { CreateProjectModal } from '@/features/projects/components/CreateProjectModal';
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDebounce } from '@/hooks/useDebounce';
 import { PlusIcon, FolderOpenIcon, SearchIcon, Loader2Icon } from 'lucide-react';
-import type { Project } from '@/types/api';
+import type { Project, PaginatedResponse } from '@/types/api';
 
 const statusTabs: { value: string; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -44,23 +44,29 @@ export default function DashboardPage() {
   const { data, isLoading, isFetching, isError, error, refetch } = useProjects(params);
   const hasMore = data ? data.meta.current_page < data.meta.last_page : false;
 
-  useEffect(() => {
+  const [activeFilters, setActiveFilters] = useState('');
+  const filterKey = `${statusFilter}:${debouncedSearch}`;
+  if (filterKey !== activeFilters) {
+    setActiveFilters(filterKey);
     setPage(1);
     setLoadedProjects([]);
-  }, [statusFilter, debouncedSearch]);
+  }
 
-  useEffect(() => {
-    if (!data) return;
-    if (data.meta.current_page === 1) {
-      setLoadedProjects(data.data);
-    } else {
-      setLoadedProjects((prev) => {
-        const existingIds = new Set(prev.map((p) => p.id));
-        const newProjects = data.data.filter((p) => !existingIds.has(p.id));
-        return [...prev, ...newProjects];
-      });
+  const [prevData, setPrevData] = useState<PaginatedResponse<Project> | null>(null);
+  if (data !== prevData) {
+    setPrevData(data ?? null);
+    if (data) {
+      if (data.meta.current_page === 1) {
+        setLoadedProjects(data.data);
+      } else {
+        setLoadedProjects((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const newProjects = data.data.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...newProjects];
+        });
+      }
     }
-  }, [data]);
+  }
 
   if (isError) {
     return <ErrorFallback error={error as Error} reset={refetch} />;

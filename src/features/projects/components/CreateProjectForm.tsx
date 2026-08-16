@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
@@ -42,8 +42,8 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
   const {
     register,
     handleSubmit,
+    control,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(createProjectSchema),
@@ -57,7 +57,10 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
     },
   });
 
-  const tags = watch('tags') ?? [];
+  const tags = useWatch({ control, name: 'tags' }) ?? [];
+  const typeId = useWatch({ control, name: 'type_id' });
+  const visibility = useWatch({ control, name: 'visibility' });
+  const direction = useWatch({ control, name: 'direction' });
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -84,7 +87,7 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
         <Field>
           <FieldLabel>Type</FieldLabel>
           <FieldContent>
-            <Select value={watch('type_id')} onValueChange={(v) => setValue('type_id', v)}>
+            <Select value={typeId} onValueChange={(v) => setValue('type_id', v)}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={typesLoading ? 'Loading...' : 'Select type'} />
               </SelectTrigger>
@@ -111,7 +114,7 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
           <FieldLabel>Visibility</FieldLabel>
           <FieldContent>
             <Select
-              value={watch('visibility') ?? 'private'}
+              value={visibility ?? 'private'}
               onValueChange={(v) => setValue('visibility', v as FormValues['visibility'])}
             >
               <SelectTrigger className="w-full">
@@ -130,7 +133,7 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
           <FieldLabel>Direction</FieldLabel>
           <FieldContent>
             <Select
-              value={watch('direction') ?? 'ltr'}
+              value={direction ?? 'ltr'}
               onValueChange={(v) => setValue('direction', v as FormValues['direction'])}
             >
               <SelectTrigger className="w-full">
