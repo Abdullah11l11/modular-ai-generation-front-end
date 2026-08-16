@@ -12,14 +12,14 @@ import {
 import { SlideList } from '@/features/editor/components/SlideLibrary/SlideList';
 import { SlidePickerDialog } from '@/features/editor/components/SlideLibrary/SlidePickerDialog';
 import { groupSlides, type SlideGroup } from '@/features/editor/utils/groupSlides';
-import type { Direction, ProjectFile, ProjectFileKind } from '@/types/api';
+import type { Direction, ProjectFile, FileLayer } from '@/types/api';
 
 type SlideLibraryPanelProps = {
   files: ProjectFile[];
   selectedSlideId: string | null;
-  layerVisibility: Record<ProjectFileKind, boolean>;
+  layerVisibility: Record<FileLayer, boolean>;
   onSelectSlide: (fileId: string) => void;
-  onToggleLayer: (kind: ProjectFileKind) => void;
+  onToggleLayer: (kind: FileLayer) => void;
   onAddSlide: (sourceStem: string | null) => void;
   onDeleteSlides: (stems: string[]) => void;
   onReorderFiles: (projectId: string, order: string[]) => void;
@@ -29,7 +29,7 @@ type SlideLibraryPanelProps = {
   direction: Direction;
 };
 
-const LAYER_BUTTONS: { kind: ProjectFileKind; label: string }[] = [
+const LAYER_BUTTONS: { kind: FileLayer; label: string }[] = [
   { kind: 'slide', label: 'STR' },
   { kind: 'style', label: 'STY' },
   { kind: 'content', label: 'CON' },

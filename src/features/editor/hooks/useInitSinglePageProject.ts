@@ -1,16 +1,16 @@
 import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCreateProjectFile } from '@/features/files/hooks/useCreateProjectFile';
-import type { ProjectFile, ProjectFileKind } from '@/types/api';
+import type { ProjectFile, FileLayer } from '@/types/api';
 
 type FileSpec = {
-  layer: ProjectFileKind;
+  layer: FileLayer;
   name: string;
   extension: string;
   content: string;
 };
 
-function getDefaultContent(layer: ProjectFileKind, name: string): string {
+function getDefaultContent(layer: FileLayer, name: string): string {
   if (layer === 'slide' && name === 'content') {
     return '<!DOCTYPE html>\n<html>\n<head><title>Content</title></head>\n<body>\n  <h1>{{title}}</h1>\n  <p>{{subtitle}}</p>\n  <div>{{body}}</div>\n</body>\n</html>';
   }

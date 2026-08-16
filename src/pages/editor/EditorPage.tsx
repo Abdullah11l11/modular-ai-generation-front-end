@@ -24,7 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ProjectSettingsPanel } from '@/features/projects/components/ProjectSettingsPanel';
 import { ErrorFallback } from '@/components/error-fallback';
 import { FullPageLoader } from '@/components/full-page-loader';
-import type { Project, ProjectFileKind, Id, ProjectFile } from '@/types/api';
+import type { Project, FileLayer, Id, ProjectFile } from '@/types/api';
 
 function getNextStem(slides: { stem: string }[]): string {
   const nums = slides
@@ -40,7 +40,7 @@ function getNextStem(slides: { stem: string }[]): string {
 /** Plan entry — one resolved file mutation produced by Apply. */
 type Plan = {
   fileId?: string;
-  layer: ProjectFileKind;
+  layer: FileLayer;
   name: string;
   extension: string;
   content: string;
@@ -48,7 +48,7 @@ type Plan = {
 
 /** Best-guess extension for a layer + name when the caller didn't
  *  supply one. Falls back to the layer's canonical extension. */
-function inferExtension(layer: ProjectFileKind, name: string): string {
+function inferExtension(layer: FileLayer, name: string): string {
   const fromName = name.match(/\.([^.]+)$/);
   if (fromName) return fromName[1];
   switch (layer) {
@@ -94,7 +94,7 @@ function EditorShell({ project }: EditorShellProps) {
   const selectedIdx = state.selectedSlideId
     ? slides.findIndex((s) => s.files.slide?.id === state.selectedSlideId)
     : -1;
-  const activeLayers = (Object.entries(state.layerVisibility) as [ProjectFileKind, boolean][])
+  const activeLayers = (Object.entries(state.layerVisibility) as [FileLayer, boolean][])
     .filter(([, v]) => v)
     .map(([k]) => k);
   const isPerSlide = state.editorMode === 'per-slide';
@@ -308,7 +308,7 @@ function EditorShell({ project }: EditorShellProps) {
         : '';
       const stem = titleFragment ? `${baseStem}-${titleFragment}` : baseStem;
 
-      type FileSpec = { layer: ProjectFileKind; extension: string; content: string };
+      type FileSpec = { layer: FileLayer; extension: string; content: string };
 
       // Clone every layer the source slide has. UVCP projects only carry
       // a `slide` file per slide, so cloning just produces one file. MGF

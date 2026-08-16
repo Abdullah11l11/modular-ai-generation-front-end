@@ -1,7 +1,7 @@
-import type { ProjectFileKind } from '@/types/api';
+import type { FileLayer } from '@/types/api';
 
 export type CreateFileRequest = {
-  layer: ProjectFileKind;
+  layer: FileLayer;
   name: string;
   extension: string;
   sort_order?: number;

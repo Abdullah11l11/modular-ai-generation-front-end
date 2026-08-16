@@ -1,10 +1,10 @@
-import type { ProjectFileKind } from '@/types/api';
+import type { FileLayer } from '@/types/api';
 
 type EditorStatusBarProps = {
   slideIndex: number;
   totalSlides: number;
   selectedElement: string | null;
-  activeLayers: ProjectFileKind[];
+  activeLayers: FileLayer[];
 };
 
 export function EditorStatusBar({ slideIndex, totalSlides, selectedElement, activeLayers }: EditorStatusBarProps) {

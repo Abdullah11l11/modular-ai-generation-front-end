@@ -1,18 +1,18 @@
 import { createContext, useContext, type Dispatch } from 'react';
-import type { ProjectFileKind, Direction } from '@/types/api';
+import type { FileLayer, Direction } from '@/types/api';
 import type { EditorMode } from '@/features/editor/utils/editorMode';
 
 export type ActiveTab = 'theme' | 'content' | 'style' | 'ai';
 
-const ALL_KINDS: ProjectFileKind[] = [
+const ALL_KINDS: FileLayer[] = [
   'slide', 'style', 'layout', 'content', 'context', 'rules', 'meta', 'asset',
 ];
 
 const defaultLayerVisibility = Object.fromEntries(
   ALL_KINDS.map((k) => [k, true]),
-) as Record<ProjectFileKind, boolean>;
+) as Record<FileLayer, boolean>;
 
-export type LayerVisibility = Record<ProjectFileKind, boolean>;
+export type LayerVisibility = Record<FileLayer, boolean>;
 
 /**
  * A single file change inside an AI proposal. The Apply handler
@@ -24,7 +24,7 @@ export type LayerVisibility = Record<ProjectFileKind, boolean>;
  * case for AI suggestions that just rewrite "the current slide".
  */
 export type ProposalFile = {
-  layer: ProjectFileKind;
+  layer: FileLayer;
   content: string;
   /** Omit to apply to the currently selected slide (per-slide mode)
    *  or the project's content.html (single-page mode). */
@@ -92,7 +92,7 @@ export type EditorAction =
   | { type: 'SET_DIRECTION'; payload: Direction }
   | { type: 'SET_SELECTED_SLIDE_ID'; payload: string | null }
   | { type: 'SET_SELECTED_ELEMENT'; payload: string | null }
-  | { type: 'TOGGLE_LAYER'; payload: ProjectFileKind }
+  | { type: 'TOGGLE_LAYER'; payload: FileLayer }
   | { type: 'SET_ACTIVE_TAB'; payload: ActiveTab }
   | { type: 'SET_IS_GENERATING'; payload: boolean }
   | { type: 'SET_PROPOSAL'; payload: Proposal }

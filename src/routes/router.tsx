@@ -8,7 +8,12 @@ import { PublicProfilePage } from '@/pages/PublicProfilePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import EditorPage from '@/pages/editor/EditorPage';
+import TemplatesPage from '@/pages/templates/TemplatesPage';
 import AiProvidersPage from '@/pages/settings/AiProvidersPage';
+import { ResourcePage } from '@/pages/resources/resourcesPage';
+import { ResourceDetailPage } from '@/pages/resources/ResourceDetailPage';
+import AdminPage from '@/pages/admin/AdminPage';
+
 export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
@@ -30,7 +35,7 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { path: '/', element: <></> },
-      { path: '/templates', element: <></> },
+      { path: '/templates', element: <TemplatesPage /> },
       { path: '/templates/:templateId', element: <></> },
       { path: '/users/:userId', element: <PublicProfilePage /> },
     ],
@@ -44,9 +49,9 @@ export const router = createBrowserRouter([
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/settings', element: <></> },
           { path: '/settings/ai-providers', element: <AiProvidersPage /> },
-          { path: '/resources', element: <></> },
+          { path: '/resources', element: <ResourcePage /> },
           { path: '/resources/new', element: <></> },
-          { path: '/resources/:resourceId', element: <></> },
+          { path: '/resources/:resourceId', element: <ResourceDetailPage /> },
         ],
       },
     ],
@@ -56,7 +61,16 @@ export const router = createBrowserRouter([
     children: [
       {
         element: <RootLayout />,
-        children: [{ path: '/admin/*', element: <></> }],
+        children: [
+          {
+            path: '/admin/*',
+            element: (
+              <>
+                <AdminPage />
+              </>
+            ),
+          },
+        ],
       },
     ],
   },

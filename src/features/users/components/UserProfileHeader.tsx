@@ -3,14 +3,14 @@ import type { User } from '@/types/api';
 type UserProfileHeaderProps = {
   user: User;
   templatesCount?: number;
-  resourcesCount?: number;
+  projectsCount?: number;
   upvotesCount?: number;
 };
 
 export function UserProfileHeader({
   user,
   templatesCount,
-  resourcesCount,
+  projectsCount,
   upvotesCount,
 }: UserProfileHeaderProps) {
   const initials = user.name.slice(0, 2);
@@ -33,7 +33,7 @@ export function UserProfileHeader({
             <strong className="text-base">{templatesCount ?? 0}</strong> Templates
           </p>
           <p className="text-sm">
-            <strong className="text-base">{resourcesCount ?? 0}</strong> Resources
+            <strong className="text-base">{projectsCount ?? 0}</strong> Projects
           </p>
           <p className="text-sm">
             <strong className="text-base">{upvotesCount ?? 0}</strong> Upvotes
