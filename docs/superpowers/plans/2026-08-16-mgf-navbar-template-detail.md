@@ -130,13 +130,13 @@ describe('formatNumber', () => {
     expect(formatNumber(42)).toBe('42');
     expect(formatNumber(999)).toBe('999');
   });
-  it('uses k-suffix for thousands', () => {
+  it('uses k-suffix for thousands, dropping trailing .0', () => {
     expect(formatNumber(1_000)).toBe('1k');
     expect(formatNumber(1_234)).toBe('1.2k');
     expect(formatNumber(12_345)).toBe('12k');
     expect(formatNumber(999_999)).toBe('1000k');
   });
-  it('uses M-suffix for millions', () => {
+  it('uses M-suffix for millions, dropping trailing .0', () => {
     expect(formatNumber(1_000_000)).toBe('1M');
     expect(formatNumber(2_500_000)).toBe('2.5M');
   });
@@ -147,11 +147,12 @@ describe('formatRelativeTime', () => {
   it('returns "just now" for <60s', () => {
     expect(formatRelativeTime('2026-08-16T11:59:30Z', now)).toBe('just now');
   });
-  it('returns minutes for <1h', () => {
+  it('returns minutes for <60m', () => {
     expect(formatRelativeTime('2026-08-16T11:55:00Z', now)).toBe('5m ago');
-    expect(formatRelativeTime('2026-08-16T11:00:00Z', now)).toBe('60m ago');
+    expect(formatRelativeTime('2026-08-16T11:01:00Z', now)).toBe('59m ago');
   });
-  it('returns hours for <24h', () => {
+  it('flips to hours at the 60-minute boundary', () => {
+    expect(formatRelativeTime('2026-08-16T11:00:00Z', now)).toBe('1h ago');
     expect(formatRelativeTime('2026-08-16T09:00:00Z', now)).toBe('3h ago');
   });
   it('returns days for <7d', () => {
@@ -191,10 +192,10 @@ export function formatNumber(n: number): string {
   if (n < 1_000) return String(n);
   if (n < 1_000_000) {
     const v = n / 1_000;
-    return `${v.toFixed(v >= 100 ? 0 : 1)}k`;
+    return `${v.toFixed(v >= 100 ? 0 : 1).replace(/\.0$/, '')}k`;
   }
   const v = n / 1_000_000;
-  return `${v.toFixed(v >= 100 ? 0 : 1)}M`;
+  return `${v.toFixed(v >= 100 ? 0 : 1).replace(/\.0$/, '')}M`;
 }
 
 export function formatRelativeTime(iso: string, now: Date = new Date()): string {
