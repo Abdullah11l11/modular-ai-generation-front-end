@@ -22,32 +22,23 @@ import {
 } from "@/components/ui/button"
 
 import {
-
     Table,
-
     TableBody,
-
     TableCell,
-
     TableHead,
-
     TableHeader,
-
     TableRow,
-
 } from "@/components/ui/table"
 
 import {
-
     Badge,
-
 } from "@/components/ui/badge"
 
 import {
-
     useAdminUsers,
-
 } from "@/features/admin/hooks/useAdminUsers"
+
+import type { User as AdminUser } from "@/types/api"
 
 import { LoadingState } from "@/features/admin/components/shared/LoadingState"
 
@@ -61,23 +52,17 @@ export function UsersTable() {
 
     const [search, setSearch] = useState("")
 
-    const [selectedUser, setSelectedUser] = useState<any>()
+    const [selectedUser, setSelectedUser] = useState<AdminUser>()
 
     const {
-
         data,
-
         isLoading,
-
     } = useAdminUsers({
-
         page,
-
         q: search,
-
     })
 
-    const users = useMemo(() => data ?? [], [data])
+    const users = useMemo(() => data?.data ?? [], [data])
 
     if (isLoading) {
 
@@ -175,7 +160,7 @@ export function UsersTable() {
 
                         {
 
-                            users.map((user: any) => (
+                            users.map((user) => (
 
                                 <TableRow key={user.id}>
 
@@ -280,6 +265,8 @@ export function UsersTable() {
                 selectedUser && (
 
                     <UserRoleDialog
+
+                        key={selectedUser.id}
 
                         user={selectedUser}
 

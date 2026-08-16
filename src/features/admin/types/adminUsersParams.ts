@@ -1,4 +1,4 @@
-export interface AdminUsersParams {
+export type AdminUsersParams = {
 
     page?: number
 
