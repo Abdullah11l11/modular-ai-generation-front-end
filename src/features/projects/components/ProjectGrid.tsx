@@ -46,11 +46,7 @@ export function ProjectGrid({ projects, isLoading }: ProjectGridProps) {
     <>
       <div className="grid grid-cols-1 gap-(--space-card-gap,12px) sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {projects.map((project) => (
-          <ProjectCard
-            key={project.id}
-            project={project}
-            onDeleteRequest={handleDeleteRequest}
-          />
+          <ProjectCard key={project.id} project={project} onDeleteRequest={handleDeleteRequest} />
         ))}
       </div>
 
@@ -58,7 +54,9 @@ export function ProjectGrid({ projects, isLoading }: ProjectGridProps) {
         <DeleteProjectDialog
           project={projectToDelete}
           open={true}
-          onOpenChange={(open) => { if (!open) setProjectToDelete(null); }}
+          onOpenChange={(open) => {
+            if (!open) setProjectToDelete(null);
+          }}
         />
       )}
     </>

@@ -26,7 +26,12 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleReset(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) handleReset();
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>New Project</DialogTitle>
@@ -53,7 +58,10 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
             <Button
               variant="outline"
               className="flex h-auto flex-col items-start gap-1.5 px-4 py-3"
-              onClick={() => { onOpenChange(false); navigate('/templates'); }}
+              onClick={() => {
+                onOpenChange(false);
+                navigate('/templates');
+              }}
             >
               <span className="flex items-center gap-2 text-sm font-semibold">
                 <LayoutTemplateIcon className="size-4 text-(--cy)" />

@@ -61,6 +61,8 @@ tags:
     description: Community AI resource library (prompts, skills, agents, MCPs…)
   - name: Social
     description: Upvotes, comments, bookmarks — polymorphic across templates and resources
+  - name: Admin
+    description: Administration — user management and content moderation (admin only)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # REUSABLE COMPONENTS
@@ -180,6 +182,12 @@ components:
         avatar_url: { type: string, nullable: true }
         website: { type: string, nullable: true }
         location: { type: string, nullable: true }
+
+    UpdateUserRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role: { type: string, enum: [user, admin] }
 
     # ── AI Provider ─────────────────────────────────────────────────────────
 
@@ -1628,3 +1636,104 @@ paths:
                 properties:
                   data: { type: array, items: { $ref: '#/components/schemas/Resource' } }
                   meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # ADMIN (requires `role: admin`)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: List all users (admin only)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - name: q
+          in: query
+          description: 'Keyword search on name and email'
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/User' } }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/users/{user_id}:
+    parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      tags: [Admin]
+      summary: Update a user's role (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateUserRoleRequest' }
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /admin/templates:
+    get:
+      tags: [Admin]
+      summary: List all templates including private and unlisted (admin only)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - name: q
+          in: query
+          description: 'Keyword search on name and description'
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Template' } }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/resources:
+    get:
+      tags: [Admin]
+      summary: List all resources including private and unlisted (admin only)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - name: q
+          in: query
+          description: 'Keyword search on name and description'
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Resource' } }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
