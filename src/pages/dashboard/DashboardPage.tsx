@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useProjects } from '@/features/projects/hooks/useProjects';
 import { ProjectGrid } from '@/features/projects/components/ProjectGrid';
 import { CreateProjectModal } from '@/features/projects/components/CreateProjectModal';
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDebounce } from '@/hooks/useDebounce';
 import { PlusIcon, FolderOpenIcon, SearchIcon, Loader2Icon } from 'lucide-react';
-import type { Project } from '@/types/api';
+import type { Project, PaginatedResponse } from '@/types/api';
 
 const statusTabs: { value: string; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -20,7 +20,7 @@ const statusTabs: { value: string; label: string }[] = [
 ];
 
 const statusValue = (v: string): Project['status'] | undefined =>
-  v === 'all' ? undefined : v as Project['status'];
+  v === 'all' ? undefined : (v as Project['status']);
 
 export default function DashboardPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -31,33 +31,42 @@ export default function DashboardPage() {
 
   const debouncedSearch = useDebounce(searchInput, 300);
 
-  const params = useMemo(() => ({
-    page,
-    per_page: 12,
-    status: statusValue(statusFilter),
-    q: debouncedSearch || undefined,
-  }), [page, statusFilter, debouncedSearch]);
+  const params = useMemo(
+    () => ({
+      page,
+      per_page: 12,
+      status: statusValue(statusFilter),
+      q: debouncedSearch || undefined,
+    }),
+    [page, statusFilter, debouncedSearch],
+  );
 
   const { data, isLoading, isFetching, isError, error, refetch } = useProjects(params);
   const hasMore = data ? data.meta.current_page < data.meta.last_page : false;
 
-  useEffect(() => {
+  const [activeFilters, setActiveFilters] = useState('');
+  const filterKey = `${statusFilter}:${debouncedSearch}`;
+  if (filterKey !== activeFilters) {
+    setActiveFilters(filterKey);
     setPage(1);
     setLoadedProjects([]);
-  }, [statusFilter, debouncedSearch]);
+  }
 
-  useEffect(() => {
-    if (!data) return;
-    if (data.meta.current_page === 1) {
-      setLoadedProjects(data.data);
-    } else {
-      setLoadedProjects((prev) => {
-        const existingIds = new Set(prev.map((p) => p.id));
-        const newProjects = data.data.filter((p) => !existingIds.has(p.id));
-        return [...prev, ...newProjects];
-      });
+  const [prevData, setPrevData] = useState<PaginatedResponse<Project> | null>(null);
+  if (data !== prevData) {
+    setPrevData(data ?? null);
+    if (data) {
+      if (data.meta.current_page === 1) {
+        setLoadedProjects(data.data);
+      } else {
+        setLoadedProjects((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const newProjects = data.data.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...newProjects];
+        });
+      }
     }
-  }, [data]);
+  }
 
   if (isError) {
     return <ErrorFallback error={error as Error} reset={refetch} />;
@@ -99,7 +108,7 @@ export default function DashboardPage() {
       </div>
 
       {!isLoading && loadedProjects.length === 0 ? (
-        (statusFilter !== 'all' || debouncedSearch.length > 0) ? (
+        statusFilter !== 'all' || debouncedSearch.length > 0 ? (
           <EmptyState
             title="No matching projects"
             description={
@@ -108,7 +117,14 @@ export default function DashboardPage() {
                 : `No ${statusFilter} projects yet`
             }
             action={
-              <Button variant="ghost" size="sm" onClick={() => { setStatusFilter('all'); setSearchInput(''); }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setStatusFilter('all');
+                  setSearchInput('');
+                }}
+              >
                 Clear filters
               </Button>
             }

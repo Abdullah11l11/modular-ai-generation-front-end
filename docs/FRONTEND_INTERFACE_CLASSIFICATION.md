@@ -425,7 +425,7 @@ A paginated comment list with the ability to post, reply, edit own comments, and
 
 **Route:** `/admin/*`
 **Feature folder:** `features/admin`
-**API endpoints used:** `GET /admin/users`, `PUT /admin/users/{id}/role`, `GET /admin/templates`, `GET /admin/resources`
+**API endpoints used:** `GET /admin/users`, `PUT /admin/users/{id}` (body `{ role }`), `GET /admin/templates`, `GET /admin/resources`
 
 A protected admin-only section listing all users, all templates, and all resources with moderation capabilities. Currently, the only write action defined in the contract is updating a user's role.
 
@@ -433,7 +433,7 @@ A protected admin-only section listing all users, all templates, and all resourc
 - Role guard required: the route must redirect non-admins; this depends on the auth system correctly surfacing `role` in the current user context
 - Three paginated admin lists (`users`, `templates`, `resources`) each need their own independent data fetching and table components
 - The PRD notes that admin endpoints are "provisional" and may not fully align with the final backend contract — this introduces a risk of rework
-- The `updateUserRole` mutation (`PUT /admin/users/{id}/role`) is the most write-sensitive admin action; it needs a confirmation step to prevent accidental role changes
+- The `updateUserRole` mutation (`PUT /admin/users/{id}` with body `{ role }`) is the most write-sensitive admin action; it needs a confirmation step to prevent accidental role changes
 - Future moderation features (content reports, template verification) are implied by the PRD's community safety section but are not yet in the API contract, so the admin UI shell must be designed to accommodate additions
 
 ---

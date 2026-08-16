@@ -39,22 +39,15 @@ export function DeleteProjectDialog({ project, open, onOpenChange }: DeleteProje
         <DialogHeader>
           <DialogTitle>Delete project</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete <strong className="text-(--t1)">{project.name}</strong>? This action cannot be undone.
+            Are you sure you want to delete <strong className="text-(--t1)">{project.name}</strong>?
+            This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end gap-2 pt-2">
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            disabled={isDeleting}
-          >
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isDeleting}>
             Cancel
           </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
+          <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
             {isDeleting ? (
               <Loader2Icon className="size-3.5 animate-spin" />
             ) : (

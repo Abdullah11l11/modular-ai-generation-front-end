@@ -1,9 +1,12 @@
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useCreateProject } from '@/features/projects/hooks/useCreateProject';
 import { useTypes } from '@/features/types/hooks/useTypes';
+import {
+  createProjectSchema,
+  type CreateProjectFormValues,
+} from '@/features/projects/types/createProjectSchema';
 import { Field, FieldLabel, FieldGroup, FieldContent, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,17 +22,6 @@ import { TagInput } from '@/components/ui/tag-input';
 import { toastSuccess, toastError } from '@/lib/toast';
 import { Loader2Icon } from 'lucide-react';
 
-const createProjectSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
-  type_id: z.string().min(1, 'Type is required'),
-  description: z.string().optional(),
-  visibility: z.enum(['public', 'private', 'unlisted']).optional(),
-  tags: z.array(z.string()).optional(),
-  direction: z.enum(['ltr', 'rtl']).optional(),
-});
-
-type FormValues = z.infer<typeof createProjectSchema>;
-
 type CreateProjectFormProps = {
   onSuccess?: () => void;
 };
@@ -42,10 +34,10 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
   const {
     register,
     handleSubmit,
+    control,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
+  } = useForm<CreateProjectFormValues>({
     resolver: zodResolver(createProjectSchema),
     defaultValues: {
       name: '',
@@ -57,9 +49,12 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
     },
   });
 
-  const tags = watch('tags') ?? [];
+  const tags = useWatch({ control, name: 'tags' }) ?? [];
+  const typeId = useWatch({ control, name: 'type_id' });
+  const visibility = useWatch({ control, name: 'visibility' });
+  const direction = useWatch({ control, name: 'direction' });
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: CreateProjectFormValues) => {
     try {
       const project = await createProject.mutateAsync(data);
       toastSuccess(`Project "${project.name}" created`);
@@ -84,10 +79,7 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
         <Field>
           <FieldLabel>Type</FieldLabel>
           <FieldContent>
-            <Select
-              value={watch('type_id')}
-              onValueChange={(v) => setValue('type_id', v)}
-            >
+            <Select value={typeId} onValueChange={(v) => setValue('type_id', v)}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={typesLoading ? 'Loading...' : 'Select type'} />
               </SelectTrigger>
@@ -114,7 +106,7 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
           <FieldLabel>Visibility</FieldLabel>
           <FieldContent>
             <Select
-              value={watch('visibility') ?? 'private'}
+              value={visibility ?? 'private'}
               onValueChange={(v) => setValue('visibility', v as FormValues['visibility'])}
             >
               <SelectTrigger className="w-full">
@@ -133,7 +125,7 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
           <FieldLabel>Direction</FieldLabel>
           <FieldContent>
             <Select
-              value={watch('direction') ?? 'ltr'}
+              value={direction ?? 'ltr'}
               onValueChange={(v) => setValue('direction', v as FormValues['direction'])}
             >
               <SelectTrigger className="w-full">

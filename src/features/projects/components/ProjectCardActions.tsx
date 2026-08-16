@@ -47,10 +47,7 @@ export function ProjectCardActions({ project, onDeleteRequest }: ProjectCardActi
           )}
           Duplicate
         </DropdownMenuItem>
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={() => onDeleteRequest(project)}
-        >
+        <DropdownMenuItem variant="destructive" onClick={() => onDeleteRequest(project)}>
           <Trash2Icon className="size-3.5" />
           Delete
         </DropdownMenuItem>

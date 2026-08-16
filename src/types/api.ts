@@ -83,23 +83,27 @@ export type Project = {
   updated_at: string;
 };
 
-export type ProjectFileKind =
-  | 'content'
-  | 'sequence'
+export type FileLayer =
   | 'slide'
   | 'style'
   | 'layout'
+  | 'content'
   | 'context'
   | 'rules'
-  | 'meta';
+  | 'meta'
+  | 'asset';
 
 export type ProjectFile = {
   id: Id;
-  owner_type: 'template' | 'project';
-  owner_id: Id;
-  kind: ProjectFileKind;
-  path: string;
-  content: string;
+  template_id: Id | null;
+  project_id: Id | null;
+  layer: FileLayer;
+  name: string;
+  extension: string;
+  sort_order: number;
+  content: string | null;
+  storage_url: string | null;
+  size_bytes: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -118,11 +122,11 @@ export type AiJob = {
 export type ExportJob = {
   id: Id;
   project_id: Id;
-  status: 'queued' | 'running' | 'ready' | 'failed';
+  status: 'pending' | 'processing' | 'ready' | 'failed';
   format: 'html' | 'pdf' | 'png' | 'jpg' | 'zip' | 'md' | 'pptx';
   download_url: string | null;
+  expires_at: string | null;
   created_at: string;
-  updated_at: string;
 };
 
 export type ResourceKind = 'prompt' | 'skill' | 'agent' | 'rule' | 'mcp' | 'design_doc' | 'hook';

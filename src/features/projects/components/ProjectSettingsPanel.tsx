@@ -1,10 +1,16 @@
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useProject } from '@/features/projects/hooks/useProject';
 import { useUpdateProject } from '@/features/projects/hooks/useUpdateProject';
-import { Field, FieldLabel, FieldGroup, FieldContent, FieldError, FieldDescription } from '@/components/ui/field';
+import {
+  Field,
+  FieldLabel,
+  FieldGroup,
+  FieldContent,
+  FieldError,
+  FieldDescription,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -26,17 +32,6 @@ import { TagInput } from '@/components/ui/tag-input';
 import { Loader2Icon } from 'lucide-react';
 import type { Id } from '@/types/api';
 
-const settingsSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
-  description: z.string().optional(),
-  status: z.enum(['draft', 'published', 'archived']),
-  visibility: z.enum(['public', 'private', 'unlisted']),
-  tags: z.array(z.string()).optional(),
-  direction: z.enum(['ltr', 'rtl']),
-});
-
-type FormValues = z.infer<typeof settingsSchema>;
-
 type ProjectSettingsPanelProps = {
   projectId: Id;
   open: boolean;
@@ -50,12 +45,12 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
   const {
     register,
     handleSubmit,
+    control,
     setValue,
-    watch,
     reset,
     formState: { errors, isDirty, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(settingsSchema),
+  } = useForm<ProjectSettingsFormValues>({
+    resolver: zodResolver(projectSettingsSchema),
     defaultValues: {
       name: '',
       description: '',
@@ -79,10 +74,12 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
     }
   }, [project, reset]);
 
-  const tags = watch('tags') ?? [];
-  const currentStatus = watch('status');
+  const tags = useWatch({ control, name: 'tags' }) ?? [];
+  const currentStatus = useWatch({ control, name: 'status' });
+  const visibility = useWatch({ control, name: 'visibility' });
+  const direction = useWatch({ control, name: 'direction' });
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: ProjectSettingsFormValues) => {
     await updateProject.mutateAsync(
       { projectId, payload: { ...data, description: data.description || null } },
       { onSuccess: () => onOpenChange(false) },
@@ -160,7 +157,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
               <FieldLabel>Status</FieldLabel>
               <FieldContent>
                 <Select
-                  value={watch('status')}
+                  value={currentStatus}
                   onValueChange={(v) => setValue('status', v as FormValues['status'])}
                 >
                   <SelectTrigger className="w-full">
@@ -172,9 +169,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
                     <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
-                {statusNote && (
-                  <FieldDescription>{statusNote}</FieldDescription>
-                )}
+                {statusNote && <FieldDescription>{statusNote}</FieldDescription>}
               </FieldContent>
             </Field>
 
@@ -182,7 +177,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
               <FieldLabel>Visibility</FieldLabel>
               <FieldContent>
                 <Select
-                  value={watch('visibility')}
+                  value={visibility}
                   onValueChange={(v) => setValue('visibility', v as FormValues['visibility'])}
                 >
                   <SelectTrigger className="w-full">
@@ -201,7 +196,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
               <FieldLabel>Direction</FieldLabel>
               <FieldContent>
                 <Select
-                  value={watch('direction')}
+                  value={direction}
                   onValueChange={(v) => setValue('direction', v as FormValues['direction'])}
                 >
                   <SelectTrigger className="w-full">
@@ -228,11 +223,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
           </FieldGroup>
 
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" variant="accent" disabled={isSubmitting || !isDirty}>
