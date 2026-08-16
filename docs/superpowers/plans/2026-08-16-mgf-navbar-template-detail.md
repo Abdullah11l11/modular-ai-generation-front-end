@@ -249,7 +249,6 @@ const baseTemplate: Template = {
   id: 't1',
   user_id: 'u1',
   author: { id: 'u1', name: 'Alice', avatar_url: null },
-  type: null,
   name: 'Acme Pitch',
   description: null,
   thumbnail_url: null,
