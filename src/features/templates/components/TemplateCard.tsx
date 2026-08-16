@@ -12,10 +12,19 @@ export function TemplateCard({ template }: TemplateCardProps) {
   const typeName = template.type?.name ?? 'Untyped';
 
   return (
-    <Link
-      to={`/templates/${template.id}`}
-      className="group/card flex cursor-pointer flex-col overflow-hidden rounded-(--r12,12px) bg-(--sur) shadow-sm ring-1 ring-(--bor2)/50 transition-all duration-150 hover:-translate-y-px hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--cy)"
-    >
+    // Stretched-link pattern: outer `<div>` is the styled card; the main
+    // navigation Link is absolutely positioned and z-index: 0 so it covers
+    // the entire card. The author avatar Link sits above (z-index: 10) and
+    // receives its own click. This avoids nested `<a>` (which produces a
+    // React hydration error in React 19) while preserving middle-click →
+    // open in new tab on both targets.
+    <div className="group/card relative flex cursor-pointer flex-col overflow-hidden rounded-(--r12,12px) bg-(--sur) shadow-sm ring-1 ring-(--bor2)/50 transition-all duration-150 hover:-translate-y-px hover:shadow-md focus-within:ring-2 focus-within:ring-(--cy)">
+      <Link
+        to={`/templates/${template.id}`}
+        aria-label={`View template ${template.name}`}
+        className="absolute inset-0 z-0"
+      />
+
       <div className="flex aspect-16/10 items-center justify-center bg-(--sur2) text-(--cy)">
         <span className="text-3xl font-extrabold tracking-tight opacity-30">{initial}</span>
       </div>
@@ -33,11 +42,10 @@ export function TemplateCard({ template }: TemplateCardProps) {
             {typeName}
           </Badge>
 
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-(--t2)">
+          <div className="relative z-10 flex items-center gap-1.5 text-[11px] font-medium text-(--t2)">
             {template.author && (
               <Link
                 to={`/users/${template.author.id}`}
-                onClick={(e) => e.stopPropagation()}
                 className="flex items-center no-underline hover:opacity-80"
                 aria-label={`View ${template.author.name ?? 'user'}'s profile`}
               >
@@ -53,6 +61,6 @@ export function TemplateCard({ template }: TemplateCardProps) {
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

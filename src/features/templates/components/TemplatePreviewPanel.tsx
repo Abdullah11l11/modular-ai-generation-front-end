@@ -52,7 +52,6 @@ export function TemplatePreviewPanel({ files, direction, isLoading }: TemplatePr
     <div className="space-y-2">
       <ScaledIframe
         srcDoc={srcDoc}
-        sandbox="allow-same-origin"
         naturalWidth={1280}
         naturalHeight={720}
         title="Template preview"
