@@ -1,49 +1,28 @@
-import { Search } from "lucide-react";
+import { Search } from 'lucide-react';
 
-import {
+import { Input } from '@/components/ui/input';
 
-Input
+interface Props {
+  value: string;
 
-} from "@/components/ui/input";
-
-interface Props{
-
-value:string;
-
-onChange(value:string):void;
-
+  onChange(value: string): void;
 }
 
 export function SearchBar({
+  value,
 
-value,
+  onChange,
+}: Props) {
+  return (
+    <div className="relative w-80">
+      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
 
-onChange
-
-}:Props){
-
-return(
-
-<div className="relative w-80">
-
-<Search
-className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"
-/>
-
-<Input
-
-placeholder="Search..."
-
-value={value}
-
-onChange={(e)=>onChange(e.target.value)}
-
-className="pl-9"
-
-/>
-
-</div>
-
-)
-
+      <Input
+        placeholder="Search..."
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="pl-9"
+      />
+    </div>
+  );
 }

@@ -1,21 +1,19 @@
 export interface AdminTemplate {
+  id: number;
 
-    id: number
+  title: string;
 
-    title: string
+  author_id: number;
 
-    author_id: number
+  author_name: string;
 
-    author_name: string
+  type: string;
 
-    type: string
+  visibility: 'public' | 'private';
 
-    visibility: "public" | "private"
+  upvotes: number;
 
-    upvotes: number
+  clones: number;
 
-    clones: number
-
-    created_at: string
-
+  created_at: string;
 }

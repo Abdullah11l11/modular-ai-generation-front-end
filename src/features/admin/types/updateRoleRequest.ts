@@ -1,5 +1,3 @@
 export interface UpdateUserRoleRequest {
-
-    role: "user" | "admin"
-
+  role: 'user' | 'admin';
 }

@@ -1,15 +1,13 @@
 export interface AdminResource {
+  id: number;
 
-    id: number
+  title: string;
 
-    title: string
+  kind: string;
 
-    kind: string
+  author_id: number;
 
-    author_id: number
+  author_name: string;
 
-    author_name: string
-
-    created_at: string
-
+  created_at: string;
 }

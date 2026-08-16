@@ -20,7 +20,7 @@ const statusTabs: { value: string; label: string }[] = [
 ];
 
 const statusValue = (v: string): Project['status'] | undefined =>
-  v === 'all' ? undefined : v as Project['status'];
+  v === 'all' ? undefined : (v as Project['status']);
 
 export default function DashboardPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -31,12 +31,15 @@ export default function DashboardPage() {
 
   const debouncedSearch = useDebounce(searchInput, 300);
 
-  const params = useMemo(() => ({
-    page,
-    per_page: 12,
-    status: statusValue(statusFilter),
-    q: debouncedSearch || undefined,
-  }), [page, statusFilter, debouncedSearch]);
+  const params = useMemo(
+    () => ({
+      page,
+      per_page: 12,
+      status: statusValue(statusFilter),
+      q: debouncedSearch || undefined,
+    }),
+    [page, statusFilter, debouncedSearch],
+  );
 
   const { data, isLoading, isFetching, isError, error, refetch } = useProjects(params);
   const hasMore = data ? data.meta.current_page < data.meta.last_page : false;
@@ -99,7 +102,7 @@ export default function DashboardPage() {
       </div>
 
       {!isLoading && loadedProjects.length === 0 ? (
-        (statusFilter !== 'all' || debouncedSearch.length > 0) ? (
+        statusFilter !== 'all' || debouncedSearch.length > 0 ? (
           <EmptyState
             title="No matching projects"
             description={
@@ -108,7 +111,14 @@ export default function DashboardPage() {
                 : `No ${statusFilter} projects yet`
             }
             action={
-              <Button variant="ghost" size="sm" onClick={() => { setStatusFilter('all'); setSearchInput(''); }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setStatusFilter('all');
+                  setSearchInput('');
+                }}
+              >
                 Clear filters
               </Button>
             }

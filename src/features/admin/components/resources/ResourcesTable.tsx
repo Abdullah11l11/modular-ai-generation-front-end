@@ -1,109 +1,73 @@
-import { useState } from "react"
+import { useState } from 'react';
 
-import { Card } from "@/components/ui/card"
+import { Card } from '@/components/ui/card';
 
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
-Table,
+import { useAdminResources } from '@/features/admin/hooks/useAdminResources';
 
-TableBody,
+import { Pagination } from '@/components/common/Pagination';
 
-TableCell,
+import { LoadingState } from '@/features/admin/components/shared/LoadingState';
 
-TableHead,
+import { EmptyState } from '@/features/admin/components/shared/EmptyState';
 
-TableHeader,
+export function ResourcesTable() {
+  const [page, setPage] = useState(1);
 
-TableRow,
+  const { data, isLoading } = useAdminResources();
 
-} from "@/components/ui/table"
+  if (isLoading) {
+    return <LoadingState />;
+  }
 
-import { useAdminResources } from "@/features/admin/hooks/useAdminResources"
+  if (!data?.data?.length) {
+    return <EmptyState />;
+  }
 
-import { Pagination } from "@/components/common/Pagination"
+  return (
+    <Card className="p-6">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
 
-import { LoadingState } from "@/features/admin/components/shared/LoadingState"
+            <TableHead>Kind</TableHead>
 
-import { EmptyState } from "@/features/admin/components/shared/EmptyState"
+            <TableHead>Author</TableHead>
 
-export function ResourcesTable(){
+            <TableHead>Date</TableHead>
+          </TableRow>
+        </TableHeader>
 
-const [page,setPage]=useState(1)
+        <TableBody>
+          {data.data.map((resource) => (
+            <TableRow key={resource.id}>
+              <TableCell>{resource.name}</TableCell>
 
-const {data,isLoading}=useAdminResources()
+              <TableCell>{resource.kind}</TableCell>
 
-if(isLoading){
+              <TableCell>
+                {(resource as any).author_name ??
+                  (resource as any).authorName ??
+                  (resource as any).author?.name ??
+                  ''}
+              </TableCell>
 
-return <LoadingState/>
+              <TableCell>{resource.created_at}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
 
-}
-
-if(!data?.data?.length){
-
-return <EmptyState/>
-
-}
-
-return(
-
-<Card className="p-6">
-
-<Table>
-
-<TableHeader>
-
-<TableRow>
-
-<TableHead>Name</TableHead>
-
-<TableHead>Kind</TableHead>
-
-<TableHead>Author</TableHead>
-
-<TableHead>Date</TableHead>
-
-</TableRow>
-
-</TableHeader>
-
-<TableBody>
-
-{
-
-data.data.map(resource=>(
-
-<TableRow key={resource.id}>
-
-<TableCell>{resource.name}</TableCell>
-
-<TableCell>{resource.kind}</TableCell>
-
-<TableCell>{(resource as any).author_name ?? (resource as any).authorName ?? (resource as any).author?.name ?? ""}</TableCell>
-
-<TableCell>{resource.created_at}</TableCell>
-
-</TableRow>
-
-))
-
-}
-
-</TableBody>
-
-</Table>
-
-<Pagination
-
-page={page}
-
-totalPages={data.meta.last_page}
-
-onChange={setPage}
-
-/>
-
-</Card>
-
-)
-
+      <Pagination page={page} totalPages={data.meta.last_page} onChange={setPage} />
+    </Card>
+  );
 }

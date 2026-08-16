@@ -4,7 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useProject } from '@/features/projects/hooks/useProject';
 import { useUpdateProject } from '@/features/projects/hooks/useUpdateProject';
-import { Field, FieldLabel, FieldGroup, FieldContent, FieldError, FieldDescription } from '@/components/ui/field';
+import {
+  Field,
+  FieldLabel,
+  FieldGroup,
+  FieldContent,
+  FieldError,
+  FieldDescription,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -172,9 +179,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
                     <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
-                {statusNote && (
-                  <FieldDescription>{statusNote}</FieldDescription>
-                )}
+                {statusNote && <FieldDescription>{statusNote}</FieldDescription>}
               </FieldContent>
             </Field>
 
@@ -228,11 +233,7 @@ export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectS
           </FieldGroup>
 
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" variant="accent" disabled={isSubmitting || !isDirty}>

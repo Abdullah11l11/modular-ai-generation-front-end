@@ -1,27 +1,17 @@
-import {
+import { Skeleton } from '@/components/ui/skeleton';
 
-Skeleton,
+export function LoadingState() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-12 w-full" />
 
-} from "@/components/ui/skeleton"
+      <Skeleton className="h-12 w-full" />
 
-export function LoadingState(){
+      <Skeleton className="h-12 w-full" />
 
-return(
+      <Skeleton className="h-12 w-full" />
 
-<div className="space-y-3">
-
-<Skeleton className="h-12 w-full"/>
-
-<Skeleton className="h-12 w-full"/>
-
-<Skeleton className="h-12 w-full"/>
-
-<Skeleton className="h-12 w-full"/>
-
-<Skeleton className="h-12 w-full"/>
-
-</div>
-
-)
-
+      <Skeleton className="h-12 w-full" />
+    </div>
+  );
 }

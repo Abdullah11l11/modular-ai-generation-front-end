@@ -1,9 +1,7 @@
 export interface AdminTemplatesParams {
+  page?: number;
 
-    page?: number
+  per_page?: number;
 
-    per_page?: number
-
-    q?: string
-
+  q?: string;
 }

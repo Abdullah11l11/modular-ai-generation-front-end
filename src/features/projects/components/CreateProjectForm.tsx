@@ -84,10 +84,7 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
         <Field>
           <FieldLabel>Type</FieldLabel>
           <FieldContent>
-            <Select
-              value={watch('type_id')}
-              onValueChange={(v) => setValue('type_id', v)}
-            >
+            <Select value={watch('type_id')} onValueChange={(v) => setValue('type_id', v)}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={typesLoading ? 'Loading...' : 'Select type'} />
               </SelectTrigger>
