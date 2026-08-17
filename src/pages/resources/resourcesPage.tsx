@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useResources } from '@/features/resources/hooks/useResources';
 import { ResourcesGrid } from '@/features/resources/components/resourcesGrid';
-import type { ResourceKind } from '@/types/api';
+import type { Resource, ResourceKind } from '@/types/api';
 import { PageHeader } from '@/components/page-header';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/empty-state';
+import { Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const KIND_OPTIONS: { label: string; value: ResourceKind | 'all' }[] = [
   { label: 'All', value: 'all' },
@@ -20,12 +23,16 @@ const KIND_OPTIONS: { label: string; value: ResourceKind | 'all' }[] = [
   { label: 'Hook', value: 'hook' },
 ];
 
+const PER_PAGE = 20;
+
 export function ResourcePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const kindParam = searchParams.get('kind') as ResourceKind | null;
   const qParam = searchParams.get('q') ?? '';
   const activeKind = kindParam ?? 'all';
   const [search, setSearch] = useState(qParam);
+  const [page, setPage] = useState(1);
+  const [all, setAll] = useState<Resource[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -33,14 +40,32 @@ export function ResourcePage() {
       if (search) next.set('q', search);
       else next.delete('q');
       setSearchParams(next, { replace: true });
+      setPage(1);
+      setAll([]);
     }, 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+    setAll([]);
+  }, [activeKind]);
 
   const { data, isLoading, error } = useResources({
     kind: activeKind === 'all' ? undefined : activeKind,
     q: qParam || undefined,
+    page,
+    per_page: PER_PAGE,
   });
+
+  useEffect(() => {
+    if (!data?.data) return;
+    setAll((prev) => (page === 1 ? data.data : [...prev, ...data.data]));
+  }, [data, page]);
+
+  const meta = data?.meta;
+  const hasMore = !!meta && meta.current_page < meta.last_page;
 
   const setKind = (kind: string) => {
     const next = new URLSearchParams(searchParams);
@@ -53,10 +78,14 @@ export function ResourcePage() {
     <div className="mx-auto max-w-6xl p-6">
       <PageHeader
         title="Resources"
-        subtitle={
-          data?.meta.total
-            ? `${data.meta.total} resources`
-            : 'Reusable prompts, skills, agents, and rules'
+        subtitle={meta?.total ? `${meta.total} resources` : 'Reusable prompts, skills, agents, and rules'}
+        actions={
+          <Button asChild size="sm">
+            <Link to="/resources/new">
+              <Plus className="size-4" />
+              New resource
+            </Link>
+          </Button>
         }
       />
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -83,7 +112,7 @@ export function ResourcePage() {
           className="max-w-xs"
         />
       </div>
-      {isLoading ? (
+      {isLoading && page === 1 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-32 rounded-xl" />
@@ -94,7 +123,7 @@ export function ResourcePage() {
           title="Failed to load resources"
           description="Something went wrong. Please try again."
         />
-      ) : !data?.data.length ? (
+      ) : all.length === 0 ? (
         <EmptyState
           title="No resources found"
           description={
@@ -104,7 +133,20 @@ export function ResourcePage() {
           }
         />
       ) : (
-        <ResourcesGrid resources={data.data} />
+        <>
+          <ResourcesGrid resources={all} />
+          {hasMore && (
+            <div className="mt-6 flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Loading...' : 'Load more'}
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
