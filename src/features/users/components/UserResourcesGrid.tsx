@@ -1,52 +1,32 @@
 import { useUserResources } from '@/features/users/hooks/useUserResources';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { ResourcesGrid } from '@/features/resources/components/resourcesGrid';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Id, Resource } from '@/types/api';
-const mockResources: Resource[] = [
-  {
-    id: '1',
-    user_id: '1',
-    name: 'React Prompt Template',
-    kind: 'prompt',
-    description: null,
-    content: '',
-    visibility: 'public',
-    tags: ['react'],
-    fork_count: 3,
-    upvote_count: 8,
-    is_upvoted: false,
-    is_bookmarked: false,
-    created_at: '2026-01-15T10:30:00Z',
-    updated_at: '2026-01-15T10:30:00Z',
-  },
-];
+import { EmptyState } from '@/components/empty-state';
+import { Library } from 'lucide-react';
+import type { Id } from '@/types/api';
+
 type UserResourcesGridProps = { userId: Id };
 
 export function UserResourcesGrid({ userId }: UserResourcesGridProps) {
   const { data, isLoading, error } = useUserResources(userId);
   if (isLoading)
     return (
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-40 rounded-xl" />
+          <Skeleton key={i} className="h-32 rounded-xl" />
         ))}
       </div>
     );
   if (error) return <p className="text-red-500">Failed to load resources</p>;
-  const items = data?.data ?? mockResources;
-  return (
-    <div className="grid grid-cols-3 gap-4">
-      {items.map((resource) => (
-        <Card key={resource.id}>
-          <CardHeader>
-            <CardTitle className="text-sm">{resource.name}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Badge>{resource.kind}</Badge>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+  const items = data?.data ?? [];
+  if (items.length === 0) {
+    return (
+      <EmptyState
+        icon={<Library className="size-6" />}
+        title="No resources yet"
+        description="This user has not published any resources."
+      />
+    );
+  }
+  return <ResourcesGrid resources={items} />;
 }

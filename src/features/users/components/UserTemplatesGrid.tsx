@@ -2,30 +2,15 @@ import { useUserTemplates } from '@/features/users/hooks/useUserTemplates';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Id, Template } from '@/types/api';
-const mockTemplates: Template[] = [
-  {
-    id: '1',
-    user_id: '1',
-    name: 'Business Pitch Deck',
-    description: null,
-    thumbnail_url: null,
-    visibility: 'public',
-    tags: ['business'],
-    locale: 'en',
-    direction: 'ltr',
-    fork_count: 5,
-    upvote_count: 12,
-    is_upvoted: false,
-    is_bookmarked: false,
-    type: { id: '1', name: 'Presentation', description: '', icon: '' },
-    created_at: '2026-01-15T10:30:00Z',
-    updated_at: '2026-01-15T10:30:00Z',
-  },
-];
+import { EmptyState } from '@/components/empty-state';
+import { LayoutTemplate } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import type { Id } from '@/types/api';
+
 type UserTemplatesGridProps = {
   userId: Id;
 };
+
 export function UserTemplatesGrid({ userId }: UserTemplatesGridProps) {
   const { data, isLoading, error } = useUserTemplates(userId);
   if (isLoading)
@@ -37,16 +22,29 @@ export function UserTemplatesGrid({ userId }: UserTemplatesGridProps) {
       </div>
     );
   if (error) return <p className="text-red-500">Failed To Load Templates</p>;
-  const items = data?.data ?? mockTemplates;
+  const items = data?.data ?? [];
+  if (items.length === 0) {
+    return (
+      <EmptyState
+        icon={<LayoutTemplate className="size-6" />}
+        title="No templates yet"
+        description="This user has not published any templates."
+      />
+    );
+  }
   return (
     <div className="grid grid-cols-3 gap-4">
       {items.map((template) => (
-        <Card key={template.id}>
-          <CardHeader>
-            <CardTitle className="text-sm">{template.name}</CardTitle>
-          </CardHeader>
-          <CardContent>{template.type && <Badge>{template.type.name}</Badge>}</CardContent>
-        </Card>
+        <Link key={template.id} to={`/templates/${template.id}`}>
+          <Card className="transition-colors hover:bg-(--sur-h)">
+            <CardHeader>
+              <CardTitle className="text-sm">{template.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {template.type && <Badge>{template.type.name}</Badge>}
+            </CardContent>
+          </Card>
+        </Link>
       ))}
     </div>
   );
