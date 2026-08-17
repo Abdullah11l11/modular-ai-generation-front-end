@@ -1,13 +1,16 @@
 import { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMutation } from '@tanstack/react-query';
 import { useResource } from '@/features/resources/hooks/useResource';
 import { useUpdateResource } from '@/features/resources/hooks/useUpdateResource';
 import { useDeleteResource } from '@/features/resources/hooks/useDeleteResource';
 import { useForkResource } from '@/features/resources/hooks/useForkResource';
 import { createResource as createResourceApi } from '@/features/resources/api/createResource';
 import { useMe } from '@/features/me/hooks/useMe';
+import { useToggleUpvote } from '@/features/social/hooks/useToggleUpvote';
+import { useToggleBookmark } from '@/features/social/hooks/useToggleBookmark';
+import { applyBookmarkToggle, applyUpvoteToggle } from '@/features/templates/lib/cacheMutations';
+import { toastError } from '@/lib/toast';
 import { CommentsSection } from '@/features/social/components/CommentsSection';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,7 +48,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import type { ResourceKind, Visibility } from '@/types/api';
+import type { Resource, ResourceKind, Visibility } from '@/types/api';
 
 const KIND_LABELS: Record<string, string> = {
   prompt: 'Prompt',
@@ -117,13 +120,8 @@ export function ResourceDetailPage() {
   const updateMutation = useUpdateResource();
   const deleteMutation = useDeleteResource();
   const forkMutation = useForkResource();
-
-  const upvoteMutation = useMutation({
-    mutationFn: () => fetch(`/api/v1/resources/${resourceId}/upvote`, { method: 'POST' }).then((r) => r.json()),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['resources', resourceId] });
-    },
-  });
+  const upvoteMutation = useToggleUpvote();
+  const bookmarkMutation = useToggleBookmark();
 
   const [values, setValues] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState(false);
@@ -250,6 +248,79 @@ export function ResourceDetailPage() {
     }
   };
 
+  const handleUpvote = () => {
+    if (!resource) return;
+    const resourceId = resource.id;
+    const previous = queryClient.getQueryData<Resource>(['resources', resourceId]);
+    if (previous) {
+      const optimisticActive = !previous.is_upvoted;
+      const optimisticCount = previous.upvote_count + (optimisticActive ? 1 : -1);
+      queryClient.setQueryData<Resource>(['resources', resourceId], {
+        ...previous,
+        is_upvoted: optimisticActive,
+        upvote_count: optimisticCount,
+      });
+    }
+    upvoteMutation.mutate(
+      { target: 'resources', targetId: resourceId },
+      {
+        onSuccess: (response) => {
+          const cached = queryClient.getQueryData<Resource>(['resources', resourceId]);
+          if (cached) {
+            queryClient.setQueryData<Resource>(
+              ['resources', resourceId],
+              applyUpvoteToggle(cached, response),
+            );
+          }
+        },
+        onError: (err: unknown) => {
+          if (previous) queryClient.setQueryData(['resources', resourceId], previous);
+          const status = (err as { status?: number })?.status;
+          if (status === 401) {
+            toastError('Sign in to upvote resources');
+          } else {
+            toastError('Could not save vote');
+          }
+        },
+      },
+    );
+  };
+
+  const handleBookmark = () => {
+    if (!resource) return;
+    const resourceId = resource.id;
+    const previous = queryClient.getQueryData<Resource>(['resources', resourceId]);
+    if (previous) {
+      queryClient.setQueryData<Resource>(['resources', resourceId], {
+        ...previous,
+        is_bookmarked: !previous.is_bookmarked,
+      });
+    }
+    bookmarkMutation.mutate(
+      { target: 'resources', targetId: resourceId },
+      {
+        onSuccess: (response) => {
+          const cached = queryClient.getQueryData<Resource>(['resources', resourceId]);
+          if (cached) {
+            queryClient.setQueryData<Resource>(
+              ['resources', resourceId],
+              applyBookmarkToggle(cached, response),
+            );
+          }
+        },
+        onError: (err: unknown) => {
+          if (previous) queryClient.setQueryData(['resources', resourceId], previous);
+          const status = (err as { status?: number })?.status;
+          if (status === 401) {
+            toastError('Sign in to bookmark resources');
+          } else {
+            toastError('Could not save bookmark');
+          }
+        },
+      },
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-5xl p-6">
@@ -326,25 +397,31 @@ export function ResourceDetailPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant={resource.is_upvoted ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => upvoteMutation.mutate()}
-              disabled={upvoteMutation.isPending}
-              className={cn(resource.is_upvoted && 'bg-(--cy) text-(--cy-fg) hover:bg-(--cy)/90')}
-            >
-              <Heart className={cn('size-4', resource.is_upvoted && 'fill-current')} />
-              {resource.upvote_count}
-            </Button>
-
-            <Button
-              variant={resource.is_bookmarked ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => toast.info('Bookmark endpoint wired but UI not enabled in this round')}
-              className={cn(resource.is_bookmarked && 'bg-(--cy) text-(--cy-fg)')}
-            >
-              <Bookmark className={cn('size-4', resource.is_bookmarked && 'fill-current')} />
-            </Button>
+            {!isOwner ? (
+              <>
+                <Button
+                  variant={resource.is_upvoted ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={handleUpvote}
+                  disabled={upvoteMutation.isPending}
+                  aria-pressed={resource.is_upvoted}
+                  className={cn(resource.is_upvoted && 'bg-(--cy) text-(--cy-fg) hover:bg-(--cy)/90')}
+                >
+                  <Heart className={cn('size-4', resource.is_upvoted && 'fill-current')} />
+                  {resource.upvote_count}
+                </Button>
+                <Button
+                  variant={resource.is_bookmarked ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={handleBookmark}
+                  disabled={bookmarkMutation.isPending}
+                  aria-pressed={resource.is_bookmarked}
+                  className={cn(resource.is_bookmarked && 'bg-(--cy) text-(--cy-fg) hover:bg-(--cy)/90')}
+                >
+                  <Bookmark className={cn('size-4', resource.is_bookmarked && 'fill-current')} />
+                </Button>
+              </>
+            ) : null}
 
             <Button
               variant="outline"
