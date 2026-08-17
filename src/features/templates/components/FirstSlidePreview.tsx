@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { assemblePreviewHtml } from '@/features/editor/hooks/useAssemblePreview';
 import type { Direction, ProjectFile } from '@/types/api';
 
-type TemplateCardPreviewProps = {
+type FirstSlidePreviewProps = {
   files: ProjectFile[] | undefined;
   direction: Direction;
   isLoading: boolean;
@@ -17,11 +17,14 @@ function firstByLayer(files: ProjectFile[], layer: ProjectFile['layer']) {
 /**
  * Passive thumbnail: assembles the first slide + style + layout + content
  * (the same recipe TemplatePreviewPanel uses) and renders it inside a
- * sandboxed iframe with `pointer-events-none` so the card's stretched
- * `<Link>` still receives clicks. `sandbox=""` is intentional — a static
- * preview does not need scripts.
+ * sandboxed iframe with `pointer-events-none` so the card's click target
+ * still works. `sandbox=""` is intentional — a static preview does not
+ * need scripts.
+ *
+ * Used by both TemplateCard (browse) and ProjectCard (dashboard) since
+ * the underlying file shape (ProjectFile[]) and recipe are identical.
  */
-export function TemplateCardPreview({ files, direction, isLoading }: TemplateCardPreviewProps) {
+export function FirstSlidePreview({ files, direction, isLoading }: FirstSlidePreviewProps) {
   const slideFile = files ? firstByLayer(files, 'slide') : undefined;
   const styleFile = files ? firstByLayer(files, 'style') : undefined;
   const layoutFile = files ? firstByLayer(files, 'layout') : undefined;
@@ -47,9 +50,7 @@ export function TemplateCardPreview({ files, direction, isLoading }: TemplateCar
   if (!slideFile) {
     return (
       <div className="flex aspect-16/10 w-full items-center justify-center bg-(--sur2) text-(--cy)">
-        <span className="text-3xl font-extrabold tracking-tight opacity-30">
-          {slideFile ? '' : '—'}
-        </span>
+        <span className="text-3xl font-extrabold tracking-tight opacity-30">—</span>
       </div>
     );
   }
@@ -57,7 +58,7 @@ export function TemplateCardPreview({ files, direction, isLoading }: TemplateCar
   return (
     <div className="relative aspect-16/10 w-full overflow-hidden bg-(--sur2)">
       <iframe
-        title="Template preview"
+        title="First slide preview"
         srcDoc={srcDoc}
         sandbox=""
         className="pointer-events-none absolute left-0 top-0 h-[1000%] w-[1000%] origin-top-left scale-[0.1]"

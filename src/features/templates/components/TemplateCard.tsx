@@ -3,7 +3,7 @@ import type { Template } from '@/types/api';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTemplateFiles } from '@/features/files/hooks/useTemplateFiles';
-import { TemplateCardPreview } from './TemplateCardPreview';
+import { FirstSlidePreview } from './FirstSlidePreview';
 
 type TemplateCardProps = {
   template: Template;
@@ -27,7 +27,7 @@ export function TemplateCard({ template }: TemplateCardProps) {
         className="absolute inset-0 z-0"
       />
 
-      <TemplateCardPreview
+      <FirstSlidePreview
         files={filesData?.data}
         direction={template.direction}
         isLoading={filesLoading}

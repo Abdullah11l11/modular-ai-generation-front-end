@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import type { Project } from '@/types/api';
 import { Badge } from '@/components/ui/badge';
 import { ProjectCardActions } from '@/features/projects/components/ProjectCardActions';
+import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
+import { FirstSlidePreview } from '@/features/templates/components/FirstSlidePreview';
 
 const statusConfig: Record<
   Project['status'],
@@ -24,8 +26,8 @@ type ProjectCardProps = {
 export function ProjectCard({ project, onDeleteRequest }: ProjectCardProps) {
   const navigate = useNavigate();
   const status = statusConfig[project.status];
-  const initial = project.name.charAt(0).toUpperCase();
   const typeName = project.type?.name ?? 'Untyped';
+  const { data: filesData, isLoading: filesLoading } = useProjectFiles(project.id);
 
   const handleClick = () => {
     navigate(`/editor/projects/${project.id}`);
@@ -51,9 +53,11 @@ export function ProjectCard({ project, onDeleteRequest }: ProjectCardProps) {
       }}
       className="group/card flex cursor-pointer flex-col overflow-hidden rounded-(--r12,12px) bg-(--sur) shadow-sm ring-1 ring-(--bor2)/50 transition-all duration-150 hover:-translate-y-px hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--cy)"
     >
-      <div className="flex aspect-16/10 items-center justify-center bg-(--sur2) text-(--cy)">
-        <span className="text-3xl font-extrabold tracking-tight opacity-30">{initial}</span>
-      </div>
+      <FirstSlidePreview
+        files={filesData?.data}
+        direction={project.direction}
+        isLoading={filesLoading}
+      />
 
       <div className="flex flex-col gap-2 p-(--space-card-pad,15px)">
         <div className="flex items-start justify-between gap-2">
