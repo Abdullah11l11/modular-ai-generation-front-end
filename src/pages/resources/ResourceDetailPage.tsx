@@ -8,6 +8,7 @@ import { useDeleteResource } from '@/features/resources/hooks/useDeleteResource'
 import { useForkResource } from '@/features/resources/hooks/useForkResource';
 import { createResource as createResourceApi } from '@/features/resources/api/createResource';
 import { useMe } from '@/features/me/hooks/useMe';
+import { CommentsSection } from '@/features/social/components/CommentsSection';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -698,6 +699,11 @@ export function ResourceDetailPage() {
             </Button>
           </DialogFooter>
         </DialogContent>
+      {/* Comments */}
+      <div className="mt-8">
+        <CommentsSection target="resources" targetId={resource.id} />
+      </div>
+
       </Dialog>
     </div>
   );

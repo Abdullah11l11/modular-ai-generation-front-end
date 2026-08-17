@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AuthorChip } from '@/features/users/components/AuthorChip';
 import { TemplatePreviewPanel } from '@/features/templates/components/TemplatePreviewPanel';
 import { TemplateFileList } from '@/features/templates/components/TemplateFileList';
-import { TemplateComments } from '@/features/templates/components/TemplateComments';
+import { CommentsSection } from '@/features/social/components/CommentsSection';
 import { RelatedTemplatesStrip } from '@/features/templates/components/RelatedTemplatesStrip';
 import { ForkTemplateModal } from '@/features/templates/components/ForkTemplateModal';
 import { applyBookmarkToggle, applyUpvoteToggle } from '@/features/templates/lib/cacheMutations';
@@ -220,7 +220,7 @@ export function TemplateDetailPage() {
 
       {!filesError && filesList.length > 0 ? <TemplateFileList files={filesList} /> : null}
 
-      <TemplateComments templateId={template.id} />
+      <CommentsSection target="templates" targetId={template.id} />
 
       <RelatedTemplatesStrip template={template} />
 
