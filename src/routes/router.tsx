@@ -15,6 +15,7 @@ import { ResourceDetailPage } from '@/pages/resources/ResourceDetailPage';
 import AdminPage from '@/pages/admin/AdminPage';
 import { ProfileRedirect } from '@/routes/ProfileRedirect';
 import { TemplateDetailPage } from '@/pages/templates/TemplateDetailPage';
+import { HomeRedirect } from '@/routes/HomeRedirect';
 
 export const router = createBrowserRouter([
   {
@@ -36,7 +37,7 @@ export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      { path: '/', element: <></> },
+      { path: '/', element: <HomeRedirect /> },
       { path: '/templates', element: <TemplatesPage /> },
       { path: '/templates/:templateId', element: <TemplateDetailPage /> },
       { path: '/users/:userId', element: <PublicProfilePage /> },
