@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Project } from '@/types/api';
 import { Badge } from '@/components/ui/badge';
 import { ProjectCardActions } from '@/features/projects/components/ProjectCardActions';
+import { ForkedFromLine } from '@/features/projects/components/ForkedFromLine';
 import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
 import { FirstSlidePreview } from '@/features/templates/components/FirstSlidePreview';
 
@@ -20,7 +21,7 @@ const statusConfig: Record<
 
 type ProjectCardProps = {
   project: Project;
-  onDeleteRequest: (project: Project) => void;
+  onDeleteRequest?: (project: Project) => void;
 };
 
 export function ProjectCard({ project, onDeleteRequest }: ProjectCardProps) {
@@ -46,7 +47,7 @@ export function ProjectCard({ project, onDeleteRequest }: ProjectCardProps) {
       onClick={handleClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter') handleClick();
-        if (e.key === 'Delete') {
+        if (e.key === 'Delete' && onDeleteRequest) {
           e.preventDefault();
           onDeleteRequest(project);
         }
@@ -61,7 +62,7 @@ export function ProjectCard({ project, onDeleteRequest }: ProjectCardProps) {
 
       <div className="flex flex-col gap-2 p-(--space-card-pad,15px)">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 space-y-1">
+          <div className="min-w-0 flex-1 space-y-1">
             <h3 className="truncate text-[13px] font-bold text-(--t1)">{project.name}</h3>
             <p className="text-[11px] font-medium text-(--t3)">{typeName}</p>
           </div>
@@ -74,6 +75,13 @@ export function ProjectCard({ project, onDeleteRequest }: ProjectCardProps) {
           </Badge>
           <span className="text-[11px] font-medium text-(--t3)">{formattedDate}</span>
         </div>
+
+        {project.template_id || project.origin_template_name ? (
+          <ForkedFromLine
+            templateId={project.template_id}
+            fallbackName={project.origin_template_name}
+          />
+        ) : null}
       </div>
     </div>
   );

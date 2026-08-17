@@ -12,7 +12,7 @@ import { EllipsisVerticalIcon, PencilIcon, CopyIcon, Trash2Icon, Loader2Icon } f
 
 type ProjectCardActionsProps = {
   project: Project;
-  onDeleteRequest: (project: Project) => void;
+  onDeleteRequest?: (project: Project) => void;
 };
 
 export function ProjectCardActions({ project, onDeleteRequest }: ProjectCardActionsProps) {
@@ -47,10 +47,12 @@ export function ProjectCardActions({ project, onDeleteRequest }: ProjectCardActi
           )}
           Duplicate
         </DropdownMenuItem>
-        <DropdownMenuItem variant="destructive" onClick={() => onDeleteRequest(project)}>
-          <Trash2Icon className="size-3.5" />
-          Delete
-        </DropdownMenuItem>
+        {onDeleteRequest ? (
+          <DropdownMenuItem variant="destructive" onClick={() => onDeleteRequest(project)}>
+            <Trash2Icon className="size-3.5" />
+            Delete
+          </DropdownMenuItem>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );

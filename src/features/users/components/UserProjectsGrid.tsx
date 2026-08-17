@@ -1,11 +1,9 @@
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/empty-state';
 import { FolderKanban } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import type { Id } from '@/types/api';
 import { useUserProjects } from '@/features/users/hooks/useUserProjects';
+import { ProjectCard } from '@/features/projects/components/ProjectCard';
 
 type UserProjectsGridProps = { userId: Id };
 
@@ -13,7 +11,7 @@ export function UserProjectsGrid({ userId }: UserProjectsGridProps) {
   const { data, error, isLoading } = useUserProjects(userId);
   if (isLoading)
     return (
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-40 rounded-xl" />
         ))}
@@ -31,21 +29,9 @@ export function UserProjectsGrid({ userId }: UserProjectsGridProps) {
     );
   }
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((project) => (
-        <Link key={project.id} to={`/editor/projects/${project.id}`}>
-          <Card className="transition-colors hover:bg-(--sur-h)">
-            <CardHeader>
-              <CardTitle className="text-sm">{project.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Badge>{project.status}</Badge>
-              {project.origin_template_name && (
-                <p className="mt-1 text-xs text-(--t3)">from: {project.origin_template_name}</p>
-              )}
-            </CardContent>
-          </Card>
-        </Link>
+        <ProjectCard key={project.id} project={project} />
       ))}
     </div>
   );
