@@ -10,6 +10,7 @@ import DashboardPage from '@/pages/dashboard/DashboardPage';
 import EditorPage from '@/pages/editor/EditorPage';
 import { TemplatesPage } from '@/pages/templates/TemplatesPage';
 import AiProvidersPage from '@/pages/settings/AiProvidersPage';
+import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { ResourcePage } from '@/pages/resources/resourcesPage';
 import { ResourceDetailPage } from '@/pages/resources/ResourceDetailPage';
 import { CreateResourcePage } from '@/pages/resources/CreateResourcePage';
@@ -52,7 +53,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/me', element: <ProfileRedirect /> },
-          { path: '/settings', element: <></> },
+          { path: '/settings', element: <SettingsPage /> },
           { path: '/settings/ai-providers', element: <AiProvidersPage /> },
           { path: '/resources', element: <ResourcePage /> },
           { path: '/resources/new', element: <CreateResourcePage /> },
