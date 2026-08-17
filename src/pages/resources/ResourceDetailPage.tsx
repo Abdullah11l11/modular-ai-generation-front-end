@@ -302,7 +302,15 @@ export function ResourceDetailPage() {
               <p className="text-sm text-(--t2)">{resource.description}</p>
             )}
             <div className="flex flex-wrap items-center gap-3 text-xs text-(--t3)">
-              {resource.author && <span>by {resource.author.name}</span>}
+              {resource.author && (
+                <Link
+                  to={`/users/${resource.author.id}`}
+                  className="text-(--cy) hover:underline"
+                  aria-label={`View ${resource.author.name}'s profile`}
+                >
+                  by {resource.author.name}
+                </Link>
+              )}
               <span>·</span>
               <span>
                 Created {new Date(resource.created_at).toLocaleDateString()}
@@ -487,7 +495,7 @@ export function ResourceDetailPage() {
                         )}
                       </div>
                     </div>
-                    <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap text-sm leading-relaxed text-(--t1)">
+                    <pre className="max-h-105 overflow-auto whitespace-pre-wrap text-sm leading-relaxed text-(--t1)">
                       {filled}
                     </pre>
                   </div>

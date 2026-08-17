@@ -2,6 +2,7 @@ import { useComments } from '@/features/social/hooks/useComments';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatRelativeTime } from '@/lib/format';
+import { Link } from 'react-router-dom';
 import type { Comment, Id } from '@/types/api';
 
 type TemplateCommentsProps = {
@@ -52,7 +53,17 @@ export function TemplateComments({ templateId }: TemplateCommentsProps) {
               </Avatar>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="font-medium text-[var(--t1)]">{comment.author?.name ?? 'Unknown'}</span>
+                  {comment.author ? (
+                    <Link
+                      to={`/users/${comment.author.id}`}
+                      className="font-medium text-[var(--cy)] hover:underline"
+                      aria-label={`View ${comment.author.name}'s profile`}
+                    >
+                      {comment.author.name}
+                    </Link>
+                  ) : (
+                    <span className="font-medium text-[var(--t1)]">Unknown</span>
+                  )}
                   <span className="text-[var(--t3)]">{formatRelativeTime(comment.created_at)}</span>
                 </div>
                 <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--t2)]">{comment.content}</p>
