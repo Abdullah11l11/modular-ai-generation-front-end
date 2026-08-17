@@ -60,6 +60,106 @@ function extractSlideTags(text: string): string[] {
 }
 
 /**
+ * Parse the AI's reply to a "generate a full project" task.
+ *
+ * Contract per `standards/output-schema.md`: a single top-level
+ * JSON object whose keys are file names and whose values are file
+ * contents (as strings). The system prompt instructs the model to
+ * emit raw JSON with NO markdown fences and NO preamble / postamble,
+ * but real models occasionally add either anyway — three strategies
+ * catch the common variations:
+ *
+ *   1. `JSON.parse(raw)` works when the model follows the contract
+ *      exactly.
+ *   2. Strip ` ```json … ``` ` fences (with optional whitespace
+ *      + language tag) and try again.
+ *   3. Locate the largest `{ … }` block by `indexOf` / `lastIndexOf`
+ *      and try to parse that.
+ *
+ * Validation: the result must be an object whose values are all
+ * strings. We additionally require at least `style.css` and one
+ * `slide-NN.html` key to consider the parse "useful" — a JSON object
+ * with no slides means the model either ignored the brief or the
+ * stream was truncated. The caller decides whether to surface the
+ * partially-parsed files anyway.
+ */
+export function parseFullProjectJson(
+  raw: string,
+):
+  | {
+      ok: true;
+      files: Record<string, string>;
+      warnings: string[];
+      hadFences: boolean;
+    }
+  | { ok: false; error: string } {
+  const trimmed = raw.trim();
+
+  const strategies: Array<{ label: string; extract: () => string; hadFences: boolean }> = [
+    { label: 'raw', extract: () => trimmed, hadFences: false },
+    {
+      label: 'fenced',
+      extract: () => stripFences(trimmed),
+      hadFences: true,
+    },
+    {
+      label: 'largest-block',
+      extract: () => extractLargestBraceBlock(trimmed),
+      hadFences: false,
+    },
+  ];
+
+  for (const strategy of strategies) {
+    const candidate = strategy.extract();
+    if (!candidate) continue;
+    try {
+      const parsed = JSON.parse(candidate) as unknown;
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        continue;
+      }
+      const obj = parsed as Record<string, unknown>;
+      // Coerce to Record<string, string>; drop non-scalar values with a warning.
+      const files: Record<string, string> = {};
+      const warnings: string[] = [];
+      for (const [k, v] of Object.entries(obj)) {
+        if (typeof v === 'string') {
+          files[k] = v;
+        } else {
+          warnings.push(`Skipped "${k}" — expected string, got ${typeof v}`);
+        }
+      }
+      return { ok: true, files, warnings, hadFences: strategy.hadFences };
+    } catch {
+      // try the next strategy
+    }
+  }
+
+  return {
+    ok: false,
+    error:
+      'The model response was not parseable as a JSON object. ' +
+      'Try regenerating, or use a larger model.',
+  };
+}
+
+/** Strip the outermost `\`\`\`json … \`\`\`` (or any-language) fence pair.
+ *  Returns the inner content trimmed, or the input if no fence found. */
+function stripFences(text: string): string {
+  const m = text.match(/^```\w*\s*\n([\s\S]*?)\n```\s*$/);
+  return m ? m[1].trim() : text;
+}
+
+/** Return the largest `{ … }` block in `text`, or the input if braces
+ *  don't balance (so the caller still sees the original). */
+function extractLargestBraceBlock(text: string): string {
+  const start = text.indexOf('{');
+  if (start < 0) return text;
+  const end = text.lastIndexOf('}');
+  if (end <= start) return text;
+  return text.slice(start, end + 1);
+}
+
+/**
  * Split a structure-task reply into multiple slide blocks.
  * Returns an array of trimmed HTML strings — one per new/modified slide.
  *

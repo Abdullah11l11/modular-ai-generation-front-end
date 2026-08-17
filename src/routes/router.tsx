@@ -14,6 +14,7 @@ import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { ResourcePage } from '@/pages/resources/resourcesPage';
 import { ResourceDetailPage } from '@/pages/resources/ResourceDetailPage';
 import { CreateResourcePage } from '@/pages/resources/CreateResourcePage';
+import { AIGenerateProjectPage } from '@/pages/newProject/AIGenerateProjectPage';
 import AdminPage from '@/pages/admin/AdminPage';
 import { ProfileRedirect } from '@/routes/ProfileRedirect';
 import { TemplateDetailPage } from '@/pages/templates/TemplateDetailPage';
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
           { path: '/resources', element: <ResourcePage /> },
           { path: '/resources/new', element: <CreateResourcePage /> },
           { path: '/resources/:resourceId', element: <ResourceDetailPage /> },
+          { path: '/projects/new/ai', element: <AIGenerateProjectPage /> },
         ],
       },
     ],
