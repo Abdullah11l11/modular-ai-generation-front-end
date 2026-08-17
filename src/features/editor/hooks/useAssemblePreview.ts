@@ -1,6 +1,11 @@
 import { useMemo } from 'react';
 import type { Direction } from '@/types/api';
-import { hasMathContent, MATH_HEAD_TAGS, MATH_RENDER_SCRIPT } from '@/features/editor/utils/mathRender';
+import {
+  hasMathContent,
+  MATH_HEAD_TAGS,
+  MATH_RENDER_SCRIPT,
+  KATEX_CDN_TAGS,
+} from '@/features/editor/utils/mathRender';
 import { ARABIC_FONT_LINKS, ARABIC_FONT_STACK } from '@/features/editor/utils/arabicFont';
 import { BASE_CSS } from '@/features/editor/lib/baseCss';
 
@@ -12,6 +17,19 @@ export type AssemblePreviewInput = {
   styleCss: string;
   contentJson: string | null;
   direction: Direction;
+  /**
+   * When true (the default), the assembled HTML is meant for the editor
+   * preview iframe. It includes a click-forwarding handler that posts
+   * `{type:'element-click', selector}` to the parent window so the
+   * editor can route clicks to the properties panel, and it loads
+   * KaTeX from Vite-bundled `/assets/...` URLs.
+   *
+   * When false, the document is meant to leave the app (standalone HTML
+   * download, rasterized PDF/PNG/JPG frame). The click handler is
+   * omitted (its `preventDefault()` would silently kill hyperlinks)
+   * and KaTeX is loaded from a public CDN instead of the dev server.
+   */
+  interactive?: boolean;
 };
 
 function injectContentVars(contentJson: string | null): string {
@@ -32,6 +50,9 @@ const CLICK_HANDLER = `
 <script>
 document.addEventListener('click',function(e){e.preventDefault();var el=e.target;var selector=el.tagName.toLowerCase()+(el.id?'#'+el.id:'')+(el.className?'.'+el.className.trim().split(/\\s+/).join('.'):'');window.parent.postMessage({type:'element-click',selector:selector},'*');});
 <\/script>`;
+
+/** Re-exported so tests outside this folder can assert against the literal string. */
+export const CLICK_HANDLER_SCRIPT = CLICK_HANDLER;
 
 /**
  * Theme-aware overrides for KaTeX-rendered math. KaTeX's own CSS sets
@@ -156,6 +177,7 @@ export function assemblePreviewHtml({
   styleCss,
   contentJson,
   direction,
+  interactive = true,
 }: AssemblePreviewInput): string {
   const contentVars = injectContentVars(contentJson);
   const slidesHtml = slideHtml || '';
@@ -174,7 +196,14 @@ export function assemblePreviewHtml({
   // the rendered body. If present, inject KaTeX assets + render hook.
   // Otherwise skip the ~270KB CSS / 120KB JS load entirely.
   const hasMath = hasMathContent(bodyHtml);
-  const mathHead = hasMath ? MATH_HEAD_TAGS : '';
+  // Interactive (preview) uses Vite-bundled `/assets/...` URLs. The
+  // exported variant serves from a public CDN so the standalone file
+  // and rasterized frames can resolve KaTeX without the dev server.
+  const mathHead = hasMath
+    ? interactive
+      ? MATH_HEAD_TAGS
+      : KATEX_CDN_TAGS
+    : '';
 
   // The body gets two cooperating classes when math is on the page:
   //
@@ -217,7 +246,7 @@ ${slideCss}
 ${MATH_THEMED_CSS}
 </style>
 ${rtlFonts}
-${CLICK_HANDLER}
+${interactive ? CLICK_HANDLER : ''}
 ${mathHead}
 </head>
 <body class="${bodyClass}">${bodyHtml}${hasMath ? MATH_RENDER_SCRIPT : ''}</body>

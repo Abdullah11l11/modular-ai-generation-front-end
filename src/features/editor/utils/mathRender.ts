@@ -47,6 +47,26 @@ export const MATH_HEAD_TAGS = `
 `;
 
 /**
+ * KaTeX tags loaded from a public CDN. Used by export pipelines
+ * (standalone HTML download, rasterized PDF/PNG/JPG frames) where the
+ * Vite-bundled `/assets/...` URLs won't resolve.
+ *
+ * Pinned to the same KaTeX version the project bundles locally so the
+ * `MATH_RENDER_SCRIPT` behavior is identical. KaTeX's CSS references
+ * its woff2 fonts by relative URL — jsDelivr serves them from the
+ * same CDN path, so they resolve correctly.
+ *
+ * Trade-off: exported HTML needs network on first open. The CDNs are
+ * the same ones the official docs link to and have multi-region PoPs,
+ * so this is reliable for the vast majority of users. We accept this
+ * rather than inlining ~1 MB of KaTeX + fonts into every export.
+ */
+export const KATEX_CDN_TAGS = `
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.18.4/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.18.4/dist/katex.min.js" crossorigin="anonymous"></script>
+`;
+
+/**
  * Render hook. Runs after `DOMContentLoaded`. For each `.math-inline`
  * / `.math-block` element, reads `data-tex` (or falls back to the
  * element's own text content) and hands it to KaTeX.

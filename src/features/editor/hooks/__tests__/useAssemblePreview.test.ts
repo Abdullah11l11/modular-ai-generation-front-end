@@ -82,3 +82,53 @@ describe('assemblePreviewHtml — RTL directional flips', () => {
     expect(ltr).toMatch(/\[dir=["']rtl["']\]\s*\.mgf-list\s*li\s*\{/);
   });
 });
+
+describe('assemblePreviewHtml — export mode (interactive: false)', () => {
+  it('omits the click-forwarding handler so hyperlinks survive', () => {
+    const html = assemblePreviewHtml({
+      ...BASE_INPUT,
+      direction: 'ltr',
+      interactive: false,
+    });
+    // The marker for CLICK_HANDLER injection is the `'element-click'`
+    // postMessage literal. If we still see it in export mode, every
+    // anchor in the exported file is being preventDefault'd.
+    expect(html).not.toContain("'element-click'");
+  });
+
+  it('keeps the click handler in the editor (interactive: true by default)', () => {
+    const html = assemblePreviewHtml({ ...BASE_INPUT, direction: 'ltr' });
+    expect(html).toContain('window.parent.postMessage');
+  });
+
+  it('loads KaTeX from the CDN in export mode when math is present', () => {
+    const html = assemblePreviewHtml({
+      ...BASE_INPUT,
+      direction: 'ltr',
+      interactive: false,
+      slideHtml: '<span class="math-inline" data-tex="x^2"></span>',
+    });
+    expect(html).toContain('cdn.jsdelivr.net/npm/katex@0.18.4/dist/katex.min.css');
+    expect(html).toContain('cdn.jsdelivr.net/npm/katex@0.18.4/dist/katex.min.js');
+  });
+
+  it('loads KaTeX from the local bundle in interactive mode when math is present', () => {
+    const html = assemblePreviewHtml({
+      ...BASE_INPUT,
+      direction: 'ltr',
+      slideHtml: '<span class="math-inline" data-tex="x^2"></span>',
+    });
+    expect(html).toContain('.katex');
+    expect(html).not.toContain('cdn.jsdelivr.net/npm/katex');
+  });
+
+  it('interactive:false still respects RTL Arabic font injection', () => {
+    const html = assemblePreviewHtml({
+      ...BASE_INPUT,
+      direction: 'rtl',
+      interactive: false,
+    });
+    expect(html).toContain('family=Cairo');
+    expect(html).toMatch(/<html dir="rtl" lang="ar">/);
+  });
+});
