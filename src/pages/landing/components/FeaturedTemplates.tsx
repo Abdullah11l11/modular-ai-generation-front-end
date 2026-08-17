@@ -21,10 +21,10 @@ export function FeaturedTemplates() {
   return (
     <section
       aria-labelledby="featured-templates-heading"
-      className="border-t border-(--bor2)/40 py-24 md:py-32"
+      className="border-t border-(--bor2)/40 py-[30px]"
     >
       <div className="mx-auto max-w-(--container-main) px-(--space-page-x)">
-        <div className="mb-10 flex items-end justify-between gap-4 md:mb-14">
+        <div className="mb-4 flex items-end justify-between gap-4">
           <div className="space-y-2">
             <span className="font-(--font-mono) text-[11px] tracking-wider text-(--cy) uppercase">
               01 / Featured templates

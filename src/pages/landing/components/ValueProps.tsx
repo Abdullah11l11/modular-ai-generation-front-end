@@ -36,10 +36,10 @@ export function ValueProps() {
   return (
     <section
       aria-labelledby="value-props-heading"
-      className="relative border-t border-(--bor2)/40 bg-gradient-to-b from-transparent via-(--sur2)/30 to-transparent py-24 md:py-32"
+      className="relative border-t border-(--bor2)/40 bg-gradient-to-b from-transparent via-(--sur2)/30 to-transparent py-[30px]"
     >
       <div className="mx-auto max-w-(--container-main) px-(--space-page-x)">
-        <div className="mb-12 flex flex-col gap-3 md:mb-16">
+        <div className="mb-4 flex flex-col gap-2">
           <span className="font-(--font-mono) text-[11px] tracking-wider text-(--cy) uppercase">
             Why MGF
           </span>

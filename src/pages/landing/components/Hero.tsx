@@ -25,7 +25,7 @@ export function Hero() {
   return (
     <section
       aria-labelledby="hero-heading"
-      className="relative overflow-hidden pb-24 pt-16 md:pb-32 md:pt-24"
+      className="relative overflow-hidden pb-[30px] pt-[30px]"
     >
       {/* Accent glow behind the hero — uses the app's cyan token at
           low opacity so it stays on-theme without introducing new colors. */}
@@ -38,8 +38,8 @@ export function Hero() {
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-(--bor) to-transparent"
       />
 
-      <div className="mx-auto grid max-w-(--container-main) gap-12 px-(--space-page-x) lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16">
-        <div className="space-y-8">
+      <div className="mx-auto grid max-w-(--container-main) gap-6 px-(--space-page-x) lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-10">
+        <div className="space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-(--bor2)/60 bg-(--sur)/60 px-3 py-1 font-(--font-mono) text-[11px] tracking-wider text-(--t2) uppercase backdrop-blur-sm">
             <span className="size-1.5 rounded-full bg-(--cy)" />
             Modular Generation Framework

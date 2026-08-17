@@ -12,7 +12,7 @@ export function FinalCTA() {
   return (
     <section
       aria-labelledby="final-cta-heading"
-      className="relative overflow-hidden border-t border-(--bor2)/40 py-24 md:py-32"
+      className="relative overflow-hidden border-t border-(--bor2)/40 py-[30px]"
     >
       <div
         aria-hidden
@@ -34,7 +34,7 @@ export function FinalCTA() {
           want and the AI takes it from there.
         </p>
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
           {isAuthenticated ? (
             <>
               <Button asChild variant="accent" size="lg">
