@@ -24,6 +24,14 @@ export type StreamChatParams = {
   baseUrl?: string;
   /** When true, route through the same-origin Vercel proxy (api/chat.ts or api/lmstudio.ts). */
   useProxy?: boolean;
+  /** Override for the upstream `max_tokens`. Defaults to 4096 inside
+   *  the provider (which is plenty for single-file regeneration
+   *  tasks). Tasks that emit a lot of output — e.g. the
+   *  "Generate full project" page, which has to return
+   *  style.css + layout.css + every slide-NN.html + data.json —
+   *  must override this or the AI's reply gets truncated mid-JSON
+   *  and the parser fails. */
+  maxTokens?: number;
 };
 
 export type StreamChatHandlers = {

@@ -65,7 +65,12 @@ export const minimaxService: AIService = {
           model: params.model,
           system: params.system,
           messages: params.messages,
-          max_tokens: 4096,
+          // Default to 4096 — that's plenty for single-file regeneration
+          // (style.css / data.json / a few slide blocks). The full-project
+          // generation task passes a larger override because it has to emit
+          // many files in one reply; without it the AI's JSON gets cut
+          // mid-string and the parser throws "not parseable as JSON".
+          max_tokens: params.maxTokens ?? 4096,
         }),
         signal: params.signal,
       });

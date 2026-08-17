@@ -340,6 +340,15 @@ export function AIGenerateProjectPage() {
         messages: [{ role: 'user', content: userMessage }],
         providerId,
         signal: controller.signal,
+        // Full project output is much larger than the editor's
+        // single-file regeneration tasks (style.css + layout.css + every
+        // slide-NN.html + data.json + _meta). The minimax provider
+        // defaults to 4096 — that's enough for one file but cuts this
+        // task off mid-JSON, so parseFullProjectJson fails with
+        // "not parseable as a JSON object". The backend
+        // (`AiChatController.php`) caps `max_tokens` at 16384 — we use
+        // that ceiling to fit a 5–10 slide deck in one reply.
+        maxTokens: 16384,
       },
       {
         onDelta: (text) => {
