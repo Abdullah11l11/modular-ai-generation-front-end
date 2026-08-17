@@ -50,7 +50,7 @@ export function CommentsSection({ target, targetId }: CommentsSectionProps) {
 
   const startEdit = (c: Comment) => {
     setEditingId(c.id);
-    setEditDraft(c.content);
+    setEditDraft(c.body);
   };
 
   const saveEdit = async () => {
@@ -241,7 +241,7 @@ export function CommentsSection({ target, targetId }: CommentsSectionProps) {
                     </div>
                   ) : (
                     <p className="mt-1 whitespace-pre-wrap text-sm text-(--t2)">
-                      {c.content}
+                      {c.body}
                     </p>
                   )}
                 </div>

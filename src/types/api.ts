@@ -162,7 +162,7 @@ export type Comment = {
   id: Id;
   user_id: Id;
   author?: UserSummary;
-  content: string;
+  body: string;
   created_at: string;
   updated_at: string;
 };
