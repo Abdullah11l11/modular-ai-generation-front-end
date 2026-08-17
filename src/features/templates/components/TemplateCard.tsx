@@ -2,14 +2,16 @@ import { Link } from 'react-router-dom';
 import type { Template } from '@/types/api';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useTemplateFiles } from '@/features/files/hooks/useTemplateFiles';
+import { TemplateCardPreview } from './TemplateCardPreview';
 
 type TemplateCardProps = {
   template: Template;
 };
 
 export function TemplateCard({ template }: TemplateCardProps) {
-  const initial = template.name.charAt(0).toUpperCase();
   const typeName = template.type?.name ?? 'Untyped';
+  const { data: filesData, isLoading: filesLoading } = useTemplateFiles(template.id);
 
   return (
     // Stretched-link pattern: outer `<div>` is the styled card; the main
@@ -25,9 +27,11 @@ export function TemplateCard({ template }: TemplateCardProps) {
         className="absolute inset-0 z-0"
       />
 
-      <div className="flex aspect-16/10 items-center justify-center bg-(--sur2) text-(--cy)">
-        <span className="text-3xl font-extrabold tracking-tight opacity-30">{initial}</span>
-      </div>
+      <TemplateCardPreview
+        files={filesData?.data}
+        direction={template.direction}
+        isLoading={filesLoading}
+      />
 
       <div className="flex flex-col gap-2 p-(--space-card-pad,15px)">
         <div className="flex items-start justify-between gap-2">
