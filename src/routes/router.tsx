@@ -12,6 +12,7 @@ import { TemplatesPage } from '@/pages/templates/TemplatesPage';
 import AiProvidersPage from '@/pages/settings/AiProvidersPage';
 import { ResourcePage } from '@/pages/resources/resourcesPage';
 import { ResourceDetailPage } from '@/pages/resources/ResourceDetailPage';
+import { CreateResourcePage } from '@/pages/resources/CreateResourcePage';
 import AdminPage from '@/pages/admin/AdminPage';
 import { ProfileRedirect } from '@/routes/ProfileRedirect';
 import { TemplateDetailPage } from '@/pages/templates/TemplateDetailPage';
@@ -54,7 +55,7 @@ export const router = createBrowserRouter([
           { path: '/settings', element: <></> },
           { path: '/settings/ai-providers', element: <AiProvidersPage /> },
           { path: '/resources', element: <ResourcePage /> },
-          { path: '/resources/new', element: <></> },
+          { path: '/resources/new', element: <CreateResourcePage /> },
           { path: '/resources/:resourceId', element: <ResourceDetailPage /> },
         ],
       },
