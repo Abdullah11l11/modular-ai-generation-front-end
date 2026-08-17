@@ -1,11 +1,24 @@
 import { useState, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useResource } from '@/features/resources/hooks/useResource';
+import { useUpdateResource } from '@/features/resources/hooks/useUpdateResource';
+import { useDeleteResource } from '@/features/resources/hooks/useDeleteResource';
+import { useMe } from '@/features/me/hooks/useMe';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Heart, GitBranch } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ArrowLeft, Heart, GitBranch, Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -13,6 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import type { ResourceKind, Visibility } from '@/types/api';
+
 const KIND_LABELS: Record<string, string> = {
   prompt: 'Prompt',
   skill: 'Skill',
@@ -22,11 +37,19 @@ const KIND_LABELS: Record<string, string> = {
   design_doc: 'Design Doc',
   hook: 'Hook',
 };
+
+const KIND_OPTIONS: { value: ResourceKind; label: string }[] = [
+  { value: 'prompt', label: 'Prompt' },
+  { value: 'skill', label: 'Skill' },
+  { value: 'agent', label: 'Agent' },
+  { value: 'rule', label: 'Rule' },
+  { value: 'mcp', label: 'MCP' },
+  { value: 'design_doc', label: 'Design Doc' },
+  { value: 'hook', label: 'Hook' },
+];
+
 const PLACEHOLDERS_REGEX = /\{\{(\w+)\}\}/g;
 type ContentSegment = { type: 'text'; value: string } | { type: 'placeholder'; key: string };
-// Hello {{name}} welocme to city {{}}
-// {type:'text' ; value: 'Hello'}
-//{type: 'placeholder' ; value : 'name'}
 
 function parseContent(content: string): ContentSegment[] {
   const segments: ContentSegment[] = [];
@@ -45,12 +68,25 @@ function parseContent(content: string): ContentSegment[] {
   }
   return segments;
 }
-//exec() => بترجع
-//match.index  match[0] التطابق كله   match[1] فقط الكلمة
+
 export function ResourceDetailPage() {
   const { resourceId } = useParams<{ resourceId: string }>();
   const { data: resource, isLoading, error } = useResource(resourceId as string);
+  const { data: me } = useMe();
+  const navigate = useNavigate();
+
+  const updateMutation = useUpdateResource();
+  const deleteMutation = useDeleteResource();
+
   const [values, setValues] = useState<Record<string, string>>({});
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editKind, setEditKind] = useState<ResourceKind>('prompt');
+  const [editVisibility, setEditVisibility] = useState<Visibility>('public');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   const segments = useMemo(() => (resource ? parseContent(resource.content) : []), [resource]);
 
   const preview = useMemo(() => {
@@ -59,6 +95,52 @@ export function ResourceDetailPage() {
       values[key] ? values[key] : `{{${key}}}`,
     );
   }, [resource, values]);
+
+  const isOwner = !!me && !!resource && me.id === resource.user_id;
+
+  const startEditing = () => {
+    if (!resource) return;
+    setEditName(resource.name);
+    setEditDescription(resource.description ?? '');
+    setEditContent(resource.content);
+    setEditKind(resource.kind);
+    setEditVisibility(resource.visibility);
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (!resource) return;
+    try {
+      await updateMutation.mutateAsync({
+        resourceId: resource.id,
+        payload: {
+          name: editName,
+          description: editDescription || null,
+          body: editContent,
+          kind: editKind,
+          visibility: editVisibility,
+        },
+      });
+      toast.success('Resource updated');
+      setEditing(false);
+    } catch (err) {
+      toast.error('Failed to update resource');
+      console.error(err);
+    }
+  };
+
+  const confirmAndDelete = async () => {
+    if (!resource) return;
+    try {
+      await deleteMutation.mutateAsync(resource.id);
+      toast.success('Resource deleted');
+      navigate('/resources');
+    } catch (err) {
+      toast.error('Failed to delete resource');
+      console.error(err);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-4xl p-6">
@@ -79,6 +161,7 @@ export function ResourceDetailPage() {
       </div>
     );
   }
+
   return (
     <div className="mx-auto max-w-4xl p-6">
       <Button asChild variant="ghost" size="sm" className="mb-4">
@@ -114,6 +197,24 @@ export function ResourceDetailPage() {
             <GitBranch className="size-4" />
             {resource.fork_count}
           </Button>
+
+          {isOwner && (
+            <>
+              <Button variant="outline" size="sm" onClick={startEditing}>
+                <Pencil className="size-4" />
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConfirmDelete(true)}
+                className="text-(--err) hover:text-(--err)"
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </Button>
+            </>
+          )}
         </div>
       </div>
       <div className="mb-8 rounded-xl  border-2  border-(--bor) bg-(--sur) p-4">
@@ -176,6 +277,108 @@ export function ResourceDetailPage() {
         <h2 className="mb-3 text-sm font-semibold text-(--t1)">Preview</h2>
         <pre className="whitespace-pre-wrap text-sm leading-relaxed text-(--t1)">{preview}</pre>
       </div>
+
+      {editing && (
+        <Dialog open={editing} onOpenChange={(open) => !open && setEditing(false)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit resource</DialogTitle>
+              <DialogDescription>
+                Changes save immediately and update the public listing.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-(--t2)">Name</label>
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-(--t2)">Kind</label>
+                  <Select value={editKind} onValueChange={(v) => setEditKind(v as ResourceKind)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {KIND_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-(--t2)">Visibility</label>
+                  <Select
+                    value={editVisibility}
+                    onValueChange={(v) => setEditVisibility(v as Visibility)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">Public</SelectItem>
+                      <SelectItem value="unlisted">Unlisted</SelectItem>
+                      <SelectItem value="private">Private</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-(--t2)">Description</label>
+                <Textarea
+                  rows={2}
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-(--t2)">Content</label>
+                <Textarea
+                  rows={10}
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="font-mono text-xs"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setEditing(false)} disabled={updateMutation.isPending}>
+                Cancel
+              </Button>
+              <Button onClick={saveEdit} disabled={updateMutation.isPending || !editName.trim()}>
+                {updateMutation.isPending ? 'Saving...' : 'Save changes'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete this resource?</DialogTitle>
+            <DialogDescription>
+              <span className="block">
+                “{resource.name}” will be soft-deleted. Anyone who forked it keeps their copy.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmDelete(false)} disabled={deleteMutation.isPending}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmAndDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
