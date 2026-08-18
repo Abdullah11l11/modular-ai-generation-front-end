@@ -212,7 +212,12 @@ async function rasterizeOne(
   html: string,
   width: number,
   height: number,
-  opts: { scale: number; quality: number; format: 'png' | 'jpeg' },
+  opts: {
+    scale: number;
+    quality: number;
+    format: 'png' | 'jpeg';
+    fitContent?: boolean;
+  },
   signal?: AbortSignal,
 ) {
   const rOpts: RasterizeOptions = {
@@ -222,6 +227,7 @@ async function rasterizeOne(
     scale: opts.scale,
     format: opts.format,
     quality: opts.quality,
+    fitContent: opts.fitContent,
     signal,
   };
   return rasterizeHtml(rOpts);
