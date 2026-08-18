@@ -11,12 +11,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
-import { User, KeyRound, Check } from 'lucide-react';
+import { User, KeyRound, Check, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: '/settings', label: 'Profile', icon: User, end: true },
   { to: '/settings/ai-providers', label: 'AI providers', icon: KeyRound, end: false },
+  { to: '/skill', label: 'Skill bundle', icon: Download, end: true },
 ];
 
 export function SettingsPage() {

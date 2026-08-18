@@ -11,6 +11,7 @@ import EditorPage from '@/pages/editor/EditorPage';
 import { TemplatesPage } from '@/pages/templates/TemplatesPage';
 import { CreateTemplatePage } from '@/pages/templates/CreateTemplatePage';
 import { DocsPage } from '@/pages/docs/DocsPage';
+import { SkillPage } from '@/pages/skill/SkillPage';
 import AiProvidersPage from '@/pages/settings/AiProvidersPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { ResourcePage } from '@/pages/resources/resourcesPage';
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
           { path: '/resources/new', element: <CreateResourcePage /> },
           { path: '/resources/:resourceId', element: <ResourceDetailPage /> },
           { path: '/templates/new', element: <CreateTemplatePage /> },
+          { path: '/skill', element: <SkillPage /> },
           { path: '/projects/new/ai', element: <AIGenerateProjectPage /> },
         ],
       },
