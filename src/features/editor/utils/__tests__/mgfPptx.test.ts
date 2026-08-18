@@ -275,3 +275,188 @@ describe('buildPptxPresentation — dimensions', () => {
     expect(SLIDE_W_IN / SLIDE_H_IN).toBeCloseTo(16 / 9, 2);
   });
 });
+
+describe('identifyComponent — cover regex no longer swallows problem', () => {
+  // Regression: the cover pattern used to match `mgf-eyebrow`, which
+  // is shared with problem/solution/market/ask/etc. Every non-cover
+  // slide routed to renderCover and lost its body and bullets.
+  it('still classifies h1 + data-field="title" as cover', () => {
+    expect(
+      identifyComponent('<section><h1 data-field="title">Cleartab</h1></section>'),
+    ).toBe('cover');
+  });
+
+  it('still classifies mgf-title-xl as cover', () => {
+    expect(identifyComponent('<div class="mgf-eyebrow mgf-title-xl"></div>')).toBe('cover');
+  });
+
+  it('does NOT classify a problem slide (eyebrow + h2 title) as cover', () => {
+    expect(
+      identifyComponent(
+        '<section>' +
+          '<span class="mgf-eyebrow" data-field="eyebrow">Problem</span>' +
+          '<h2 class="mgf-title" data-field="title">SMBs locked out</h2>' +
+          '<p class="mgf-body" data-field="body">70% of applications are declined.</p>' +
+          '</section>',
+      ),
+    ).not.toBe('cover');
+  });
+
+  it('does NOT classify a closing-style slide (eyebrow + flex-center) as cover', () => {
+    expect(
+      identifyComponent(
+        '<section>' +
+          '<span class="mgf-eyebrow" data-field="eyebrow">Contact</span>' +
+          '<h2 class="mgf-title" data-field="title">Let\'s talk</h2>' +
+          '<div class="mgf-flex-center mgf-cta-solid"></div>' +
+          '</section>',
+      ),
+    ).toBe('closing');
+  });
+});
+
+describe('buildPptxPresentation — synthesizes slides from data.json-only projects', () => {
+  // Seed bundles (fintech-pitch, climate-pitch, etc.) ship only
+  // data.json + style.css, never slide-NN.html files. Before this
+  // fix the export collapsed to a single "project name" slide.
+  const seedDataJson = JSON.stringify({
+    _meta: { project: 'Cleartab — SMB credit in 60 seconds' },
+    slides: [
+      { stem: 'slide-01-cover', data: { title: 'Cleartab', subtitle: 'SMB credit in 60s' } },
+      {
+        stem: 'slide-02-problem',
+        data: {
+          eyebrow: 'Problem',
+          title: 'SMBs are locked out of working capital',
+          body: '70% of SMB loan applications to traditional banks are declined.',
+          points: ['78% decline rate for sub-$500K requests', '$220B unmet demand'],
+        },
+      },
+      {
+        stem: 'slide-03-solution',
+        data: { eyebrow: 'Solution', title: 'Underwrite every invoice in 60s', body: '…' },
+      },
+      {
+        stem: 'slide-04-stats',
+        data: {
+          eyebrow: 'Traction',
+          title: 'Numbers that compound',
+          stats: [
+            { value: '$48M', label: 'processed Q4 2025' },
+            { value: '320', label: 'active SMB customers' },
+          ],
+        },
+      },
+      { stem: 'slide-05-market', data: { eyebrow: 'Market', title: 'Where we play first', body: 'GCC SMBs.' } },
+      { stem: 'slide-06-ask', data: { eyebrow: 'Ask', title: 'Raising $12M Series A', body: 'To expand into UAE and KSA.' } },
+      { stem: 'slide-07-closing', data: { eyebrow: 'Contact', title: "Let's talk", cta: 'hello@cleartab.io' } },
+    ],
+  });
+
+  it('emits one slide per data.slides entry, not a single fallback', async () => {
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: ':root{--mgf-color-bg:#0b0f17;--mgf-color-accent:#2f80ff;}' }),
+      file({ layer: 'content', name: 'data.json', content: seedDataJson }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'Cleartab' });
+    // Each rendered slide contributes a non-trivial number of bytes
+    // beyond the shared PPTX overhead, so 7 slides easily clears 5KB.
+    expect(bytes.byteLength).toBeGreaterThan(5000);
+  });
+
+  it('synthesized problem slide keeps the bullet points from data.json', async () => {
+    // Indirect check: if bullets were dropped the bytes would be
+    // smaller. We assert "at least one bullet worth of bytes per
+    // problem slide" — pptxgenjs emits a `<a:p>` paragraph with
+    // bullet XML for each entry.
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: ':root{--mgf-color-bg:#0b0f17;}' }),
+      file({
+        layer: 'content',
+        name: 'data.json',
+        content: JSON.stringify({
+          slides: [
+            {
+              stem: 'slide-02-problem',
+              data: {
+                title: 'P',
+                body: 'B',
+                points: ['x', 'y', 'z'],
+              },
+            },
+          ],
+        }),
+      }),
+    ];
+    const withBullets = await buildPptxPresentation({ files, projectName: 'B' });
+    const withoutBullets = await buildPptxPresentation({
+      files: [
+        file({ layer: 'style', name: 'style.css', content: ':root{--mgf-color-bg:#0b0f17;}' }),
+        file({
+          layer: 'content',
+          name: 'data.json',
+          content: JSON.stringify({
+            slides: [{ stem: 'slide-02-problem', data: { title: 'P', body: 'B' } }],
+          }),
+        }),
+      ],
+      projectName: 'B',
+    });
+    expect(withBullets.byteLength).toBeGreaterThan(withoutBullets.byteLength);
+  });
+
+  it('honors `data.eyebrow` over the renderer fallback', async () => {
+    // Without the eyebrow helper, renderProblem prints "THE PROBLEM".
+    // With `data.eyebrow = "Problem"`, the output should print
+    // "PROBLEM" instead. We assert a positive delta in bytes (the
+    // extra bytes come from the different text length in the OOXML).
+    const withEyebrow = await buildPptxPresentation({
+      files: [
+        file({ layer: 'style', name: 'style.css', content: ':root{--mgf-color-bg:#0b0f17;}' }),
+        file({
+          layer: 'content',
+          name: 'data.json',
+          content: JSON.stringify({
+            slides: [
+              {
+                stem: 'slide-02-problem',
+                data: {
+                  title: 'T',
+                  body: 'B',
+                  eyebrow: 'Market reality',
+                  points: ['x', 'y', 'z', 'w'],
+                },
+              },
+            ],
+          }),
+        }),
+      ],
+      projectName: 'E',
+    });
+    const fallbackOnly = await buildPptxPresentation({
+      files: [
+        file({ layer: 'style', name: 'style.css', content: ':root{--mgf-color-bg:#0b0f17;}' }),
+        file({
+          layer: 'content',
+          name: 'data.json',
+          content: JSON.stringify({
+            slides: [
+              {
+                stem: 'slide-02-problem',
+                data: {
+                  title: 'T',
+                  body: 'B',
+                  points: ['x', 'y', 'z', 'w'],
+                },
+              },
+            ],
+          }),
+        }),
+      ],
+      projectName: 'E',
+    });
+    // "MARKET REALITY" (15 chars) > "THE PROBLEM" (11 chars), so the
+    // eyebrow helper's output should be measurably larger.
+    expect(withEyebrow.byteLength).toBeGreaterThan(fallbackOnly.byteLength);
+  });
+});

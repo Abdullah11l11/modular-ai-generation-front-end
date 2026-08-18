@@ -276,7 +276,11 @@ function firstFont(name: string): string {
 type SlideData = Record<string, unknown>;
 
 type ParsedDataJson = {
-  slides: { id: number; component: string; data: SlideData }[];
+  // `stem` is part of the seed-bundle shape (`slide-04-stats`); the
+  // AI-generated shape instead sets `id` and `component`. Both are
+  // optional at the type level so the parser tolerates either, and
+  // `buildPptxPresentation` synthesizes missing pieces.
+  slides: { id?: number; component?: string; stem?: string; data: SlideData }[];
 };
 
 function parseDataJson(contentJson: string | null): ParsedDataJson | null {
@@ -343,7 +347,15 @@ export function identifyComponent(html: string): string {
     [/mgf-grid-3[\s\S]*?mgf-card|mgf-grid-4[\s\S]*?mgf-card|mgf-feature/, 'features'],
     [/mgf-split-left|mgf-split-right|mgf-media/, 'image-text'],
     [/mgf-badge|mgf-announcement/, 'announcement'],
-    [/mgf-eyebrow|mgf-title-lg|mgf-title-xl|mgf-accent-bar/, 'cover'],
+    // Cover only when the slide actually carries a display title (h1 +
+    // data-field="title") or one of the large display classes. We
+    // previously matched `mgf-eyebrow` here, but that class is used by
+    // problem/solution/market/ask/closing/etc. too — the broad match
+    // routed every non-cover slide to renderCover, which only knows
+    // about title/subtitle/label/author/date and silently dropped the
+    // body and bullet points. See test `identifyComponent — cover
+    // regex no longer swallows problem` in mgfPptx.test.ts.
+    [/<h1[\s\S]*?data-field=["']title["']|mgf-title-xl|mgf-title-lg/, 'cover'],
     [/mgf-flex-center|mgf-text-center[\s\S]*?mgf-cta-solid/, 'closing'],
   ];
   for (const [pattern, name] of classMap) {
@@ -386,6 +398,19 @@ function addEyebrow(slide: Slide, tokens: Tokens, text: string, x: number, y: nu
     charSpacing: 4,
     valign: 'middle',
   });
+}
+
+/**
+ * Render the small uppercase label that sits above the title on most
+ * slides. Prefer `data.eyebrow` (per-slide copy, e.g. `"Problem"`,
+ * `"Solution"`, `"Market"`) when it's present; otherwise fall back to
+ * the renderer's hard-coded default so existing decks without an
+ * eyebrow field still match the prior visual.
+ */
+function renderEyebrow(slide: Slide, tokens: Tokens, fallback: string, data: SlideData): void {
+  const fromData = getString(data, 'eyebrow');
+  const text = (fromData || fallback).toUpperCase();
+  addEyebrow(slide, tokens, text, tokens.padX, tokens.padY, 6);
 }
 
 function addTitle(
@@ -504,6 +529,33 @@ function getArray<T extends Record<string, unknown>>(d: SlideData, key: string):
 }
 
 /**
+ * Coerce a slide-data field into a flat string array, accepting both
+ * the bare-string shape (`points: ["a", "b"]`) and the wrapped shape
+ * (`points: [{ value: "a" }, { value: "b" }]`). The seed bundles ship
+ * bare strings; some AI outputs wrap them. Returns `[]` for missing
+ * keys, non-arrays, and entries of either shape that aren't usable.
+ */
+function getStringArray(d: SlideData, key: string): string[] {
+  const v = d[key];
+  if (!Array.isArray(v)) return [];
+  const out: string[] = [];
+  for (const item of v) {
+    if (typeof item === 'string' && item) {
+      out.push(item);
+    } else if (
+      item &&
+      typeof item === 'object' &&
+      'value' in item &&
+      typeof (item as { value: unknown }).value === 'string' &&
+      (item as { value: string }).value
+    ) {
+      out.push((item as { value: string }).value);
+    }
+  }
+  return out;
+}
+
+/**
  * Return an image source suitable for pptxgenjs `addImage({ data })`,
  * or `null` when nothing usable is present so the caller can fall back
  * to a placeholder.
@@ -589,10 +641,10 @@ function renderProblem(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const body = getString(data, 'body');
-  const points = getArray<{ value?: string }>(data, 'points').map((p) => p.value ?? '').filter(Boolean);
+  const points = getStringArray(data, 'points');
 
   let cy = tokens.padY;
-  addEyebrow(slide, tokens, 'THE PROBLEM', tokens.padX, cy, 6);
+  renderEyebrow(slide, tokens, 'THE PROBLEM', data);
   cy += 0.35;
   addAccentBar(slide, tokens, tokens.padX, cy);
   cy += 0.3;
@@ -625,7 +677,8 @@ function renderFeatures(slide: Slide, data: SlideData, tokens: Tokens, idx: numb
   const features = getArray<FeatureItem>(data, 'features');
 
   let cy = tokens.padY;
-  addEyebrow(slide, tokens, 'THE SOLUTION', tokens.padX, cy, 6);
+  renderEyebrow(slide, tokens, 'THE SOLUTION', data);
+  cy += 0.35;
   cy += 0.35;
   addAccentBar(slide, tokens, tokens.padX, cy);
   cy += 0.3;
@@ -684,7 +737,8 @@ function renderStats(slide: Slide, data: SlideData, tokens: Tokens, idx: number)
   const caption = getString(data, 'caption');
 
   let cy = tokens.padY;
-  addEyebrow(slide, tokens, 'TRACTION', tokens.padX, cy, 6);
+  renderEyebrow(slide, tokens, 'TRACTION', data);
+  cy += 0.35;
   cy += 0.35;
   addAccentBar(slide, tokens, tokens.padX, cy);
   cy += 0.3;
@@ -811,7 +865,8 @@ function renderPricing(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   const plans = getArray<PlanItem>(data, 'plans');
 
   let cy = tokens.padY;
-  addEyebrow(slide, tokens, 'BUSINESS MODEL', tokens.padX, cy, 6);
+  renderEyebrow(slide, tokens, 'BUSINESS MODEL', data);
+  cy += 0.35;
   cy += 0.35;
   addAccentBar(slide, tokens, tokens.padX, cy);
   cy += 0.3;
@@ -899,11 +954,12 @@ function renderComparison(slide: Slide, data: SlideData, tokens: Tokens, idx: nu
   const title = getString(data, 'title');
   const leftHeader = getString(data, 'left_header');
   const rightHeader = getString(data, 'right_header');
-  const leftItems = getArray<{ value?: string }>(data, 'left_items').map((i) => i.value ?? '').filter(Boolean);
-  const rightItems = getArray<{ value?: string }>(data, 'right_items').map((i) => i.value ?? '').filter(Boolean);
+  const leftItems = getStringArray(data, 'left_items');
+  const rightItems = getStringArray(data, 'right_items');
 
   let cy = tokens.padY;
-  addEyebrow(slide, tokens, 'COMPETITION', tokens.padX, cy, 6);
+  renderEyebrow(slide, tokens, 'COMPETITION', data);
+  cy += 0.35;
   cy += 0.35;
   addAccentBar(slide, tokens, tokens.padX, cy);
   cy += 0.3;
@@ -978,7 +1034,8 @@ function renderTeam(slide: Slide, data: SlideData, tokens: Tokens, idx: number):
   const members = getArray<MemberItem>(data, 'members');
 
   let cy = tokens.padY;
-  addEyebrow(slide, tokens, 'TEAM', tokens.padX, cy, 6);
+  renderEyebrow(slide, tokens, 'TEAM', data);
+  cy += 0.35;
   cy += 0.35;
   addAccentBar(slide, tokens, tokens.padX, cy);
   cy += 0.3;
@@ -1345,7 +1402,8 @@ function renderProcess(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   const steps = getArray<{ num?: string; title?: string; desc?: string }>(data, 'steps');
 
   let cy = tokens.padY;
-  addEyebrow(slide, tokens, 'PROCESS', tokens.padX, cy, 6);
+  renderEyebrow(slide, tokens, 'PROCESS', data);
+  cy += 0.35;
   cy += 0.35;
   addAccentBar(slide, tokens, tokens.padX, cy);
   cy += 0.3;
@@ -1441,7 +1499,8 @@ function renderFaq(slide: Slide, data: SlideData, tokens: Tokens, idx: number): 
   const items = getArray<{ q?: string; a?: string }>(data, 'items');
 
   let cy = tokens.padY;
-  addEyebrow(slide, tokens, 'FAQ', tokens.padX, cy, 6);
+  renderEyebrow(slide, tokens, 'FAQ', data);
+  cy += 0.35;
   cy += 0.35;
   addAccentBar(slide, tokens, tokens.padX, cy);
   cy += 0.3;
@@ -1590,12 +1649,33 @@ function renderAnnouncement(slide: Slide, data: SlideData, tokens: Tokens, idx: 
 
 function renderGeneric(slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string): void {
   addBackground(slide, tokens);
-  // Try to render anything that looks like title + body content.
+  // Try to render anything that looks like eyebrow + title + body
+  // content. After the cover-regex fix in `identifyComponent`,
+  // unmapped stems (`solution`, `market`, `ask`, `traction`,
+  // `evidence`, etc.) and any slide whose HTML doesn't match a more
+  // specific class pattern lands here. Keeping the visual rhythm of
+  // the other renderers (eyebrow + accent bar + title + body) means
+  // those slides still look like deck content rather than blank
+  // placeholders.
   const fields = extractFieldsFromHtml(html);
   const title = getString(data, 'title') || getString(fields, 'title');
   const body = getString(data, 'body') || getString(fields, 'body');
-  if (title) addTitle(slide, tokens, title, tokens.padX, tokens.padY, SLIDE_W_IN - 2 * tokens.padX);
-  if (body) addBody(slide, tokens, body, tokens.padX, tokens.padY + 1.0, SLIDE_W_IN - 2 * tokens.padX, 4);
+  const eyebrow = (getString(data, 'eyebrow') || getString(fields, 'eyebrow')).toUpperCase();
+
+  let cy = tokens.padY;
+  if (eyebrow) {
+    addEyebrow(slide, tokens, eyebrow, tokens.padX, cy, 6);
+    cy += 0.35;
+    addAccentBar(slide, tokens, tokens.padX, cy);
+    cy += 0.3;
+  }
+  if (title) {
+    addTitle(slide, tokens, title, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX);
+    cy += 1.0;
+  }
+  if (body) {
+    addBody(slide, tokens, body, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX, 4);
+  }
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
@@ -1656,6 +1736,118 @@ function findRenderer(component: string): (slide: Slide, data: SlideData, tokens
 }
 
 /**
+ * Derive the MGF component name from a slide stem, e.g.
+ * `slide-04-stats` → `stats`, `slide-02-problem` → `problem`. Returns
+ * `null` if the stem doesn't match `slide-NN-<name>`. Used when
+ * `data.json` carries slide stems but no explicit `component` field
+ * (the seed-bundle shape).
+ */
+function componentFromStem(stem: string | undefined): string | null {
+  if (!stem) return null;
+  const m = stem.match(/^slide-\d+-([a-z0-9-]+)$/i);
+  return m ? m[1].toLowerCase() : null;
+}
+
+/**
+ * Minimal HTML escape so user-supplied copy from `data.json` (title,
+ * eyebrow, body, points) can't break out of an attribute or inject
+ * markup into the synthesized slide HTML. We deliberately don't reach
+ * for a dependency; the character set here is enough for any real
+ * project copy.
+ */
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => {
+    switch (c) {
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '"':
+        return '&quot;';
+      case "'":
+        return '&#39;';
+      default:
+        return c;
+    }
+  });
+}
+
+/**
+ * Build a `<section class="mgf-slide">…</section>` document from a
+ * `data.json` slide entry, using the same `data-field` and class-name
+ * conventions the AI prompt contract uses. The synthesized HTML
+ * therefore (a) matches the same `identifyComponent` regexes for any
+ * registered component and (b) feeds `extractFieldsFromHtml` for
+ * title/body/eyebrow/points if the slide still ends up at the generic
+ * renderer. Without this, seed-bundle projects (which ship no
+ * `slide-NN.html` files) collapse to a single "project name" slide.
+ */
+function synthesizeSlideHtml(s: { data: SlideData }, includePoints: boolean): string {
+  const title = getString(s.data, 'title');
+  const eyebrow = getString(s.data, 'eyebrow');
+  const body = getString(s.data, 'body');
+  const points = includePoints ? getStringArray(s.data, 'points') : [];
+  const parts: string[] = ['<section class="mgf-slide">'];
+  if (eyebrow) {
+    parts.push(`<span class="mgf-eyebrow" data-field="eyebrow">${escapeHtml(eyebrow)}</span>`);
+  }
+  if (title) {
+    // Use h1 for the cover stem, h2 elsewhere — identifyComponent's
+    // cover regex keys off `<h1 data-field="title">`.
+    const tag = componentFromStem(s.data['__stem'] as string | undefined) === 'cover' ? 'h1' : 'h2';
+    parts.push(
+      `<${tag} class="mgf-title" data-field="title">${escapeHtml(title)}</${tag}>`,
+    );
+  }
+  if (body) {
+    parts.push(`<p class="mgf-body" data-field="body">${escapeHtml(body)}</p>`);
+  }
+  if (points.length > 0) {
+    parts.push('<ul class="mgf-list" data-field="points">');
+    for (const p of points) {
+      parts.push(`<li>${escapeHtml(p)}</li>`);
+    }
+    parts.push('</ul>');
+  }
+  parts.push('</section>');
+  return parts.join('\n');
+}
+
+/**
+ * Materialize a synthetic slide `ProjectFile` from a `data.json`
+ * entry. We only synthesize for `layer: 'slide'` because the PPTX
+ * builder walks the slide layer; the other layers are unaffected.
+ */
+function synthesizeSlideFile(
+  s: { stem?: string; id?: number; data: SlideData },
+  idx: number,
+): ProjectFile {
+  const stem = s.stem ?? `slide-${String(idx + 1).padStart(2, '0')}`;
+  const name = `${stem}.html`;
+  const numMatch = stem.match(/^slide-(\d+)/);
+  const sortOrder = numMatch ? parseInt(numMatch[1], 10) : idx;
+  // Stash the stem inside `data` so `synthesizeSlideHtml` can decide
+  // whether to emit an `<h1>` (cover) vs `<h2>` (everything else).
+  const dataWithStem: SlideData = { ...s.data, __stem: stem };
+  return {
+    id: `synth-${stem}`,
+    project_id: '',
+    template_id: null,
+    layer: 'slide',
+    name,
+    extension: 'html',
+    sort_order: sortOrder,
+    content: synthesizeSlideHtml({ data: dataWithStem }, /* includePoints: */ true),
+    storage_url: null,
+    size_bytes: null,
+    created_at: '',
+    updated_at: '',
+  };
+}
+
+/**
  * Build a .pptx file from the project's MGF file set. Returns a
  * `Uint8Array` containing the PPTX bytes (a ZIP archive — same store
  * format our `lib/zip.ts` would produce).
@@ -1674,9 +1866,29 @@ export async function buildPptxPresentation({
   const dataJson = parseDataJson(contentJson);
 
   // Collect slides from data.json + slide files (matched by id).
-  const slideFiles = files
+  let slideFiles: ProjectFile[] = files
     .filter((f) => f.layer === 'slide' && f.content != null)
     .sort((a, b) => a.sort_order - b.sort_order);
+
+  // Seed projects ship `data.json` + `style.css` only — no `slide-NN.html`
+  // files. Without synthesis the export would collapse to a single
+  // near-empty slide with the project name. Materialize a virtual slide
+  // file per `data.json` entry so we walk the same renderer path as a
+  // real AI-generated project.
+  if (slideFiles.length === 0 && dataJson && dataJson.slides.length > 0) {
+    slideFiles = dataJson.slides.map((s, idx) => synthesizeSlideFile(s, idx));
+    // Inject `component` from the slide stem so renderers pick up the
+    // right one even when the synthesized HTML's class set is generic
+    // (e.g. `solution`, `market`, `ask` aren't registered components,
+    // but we still want `problem` / `stats` / `cover` to dispatch).
+    dataJson.slides.forEach((s) => {
+      if (!s.component) {
+        const stem = s.stem ?? (s.data as SlideData | undefined)?.['__stem'] as string | undefined;
+        const inferred = componentFromStem(stem);
+        if (inferred) s.component = inferred;
+      }
+    });
+  }
 
   const pptx = new PptxGenJS();
   pptx.layout = 'LAYOUT_WIDE';
