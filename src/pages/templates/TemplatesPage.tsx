@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import type { Id, OutputType, Template } from '@/types/api';
 import { TemplateGrid } from '@/features/templates/components/TemplateGrid';
 import { useTemplates } from '@/features/templates/hooks/useTemplates';
@@ -98,6 +99,14 @@ export function TemplatesPage() {
         title="Templates"
         subtitle={
           meta?.total ? `${meta.total} templates` : 'Start from a polished template'
+        }
+        actions={
+          <Button asChild size="sm">
+            <Link to="/templates/new">
+              <Plus className="size-4" />
+              New template
+            </Link>
+          </Button>
         }
       />
 

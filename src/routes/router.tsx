@@ -9,6 +9,7 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import EditorPage from '@/pages/editor/EditorPage';
 import { TemplatesPage } from '@/pages/templates/TemplatesPage';
+import { CreateTemplatePage } from '@/pages/templates/CreateTemplatePage';
 import { DocsPage } from '@/pages/docs/DocsPage';
 import AiProvidersPage from '@/pages/settings/AiProvidersPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
@@ -61,6 +62,7 @@ export const router = createBrowserRouter([
           { path: '/resources', element: <ResourcePage /> },
           { path: '/resources/new', element: <CreateResourcePage /> },
           { path: '/resources/:resourceId', element: <ResourceDetailPage /> },
+          { path: '/templates/new', element: <CreateTemplatePage /> },
           { path: '/projects/new/ai', element: <AIGenerateProjectPage /> },
         ],
       },
