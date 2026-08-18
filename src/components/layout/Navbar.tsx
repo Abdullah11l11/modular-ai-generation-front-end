@@ -5,6 +5,7 @@ import { AuthControl } from '@/components/layout/AuthControl';
 const navLinks = [
   { to: '/templates', label: 'Browse' },
   { to: '/resources', label: 'Resources' },
+  { to: '/docs', label: 'Docs' },
 ];
 
 export function Navbar() {

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 const PRODUCT_LINKS = [
   { to: '/templates', label: 'Templates' },
   { to: '/resources', label: 'Resources' },
+  { to: '/docs', label: 'Docs' },
   { to: '/projects/new/ai', label: 'Generate with AI' },
 ];
 

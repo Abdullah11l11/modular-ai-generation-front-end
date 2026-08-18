@@ -9,6 +9,7 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import EditorPage from '@/pages/editor/EditorPage';
 import { TemplatesPage } from '@/pages/templates/TemplatesPage';
+import { DocsPage } from '@/pages/docs/DocsPage';
 import AiProvidersPage from '@/pages/settings/AiProvidersPage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { ResourcePage } from '@/pages/resources/resourcesPage';
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { path: '/', element: <HomeRedirect /> },
+      { path: '/docs', element: <DocsPage /> },
       { path: '/templates', element: <TemplatesPage /> },
       { path: '/templates/:templateId', element: <TemplateDetailPage /> },
       { path: '/users/:userId', element: <PublicProfilePage /> },
