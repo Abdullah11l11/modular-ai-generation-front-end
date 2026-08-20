@@ -499,6 +499,92 @@ For finer control, use inline `style="gap: var(--mgf-space-4, 1rem)"`. Never inl
 `.mgf-text-center` / `-left` / `-right`. For RTL, prefer
 `.mgf-text-start` / `-end` (logical) — added in 2026-08-17.
 
+### 9.2 Sizing, position, and overflow utilities (Tailwind-style)
+
+Beyond spacing and flex, the vocabulary ships a Tailwind-style
+single-purpose utility layer for sizing, position, and overflow. Use
+these instead of inline `width:` / `height:` / `position:` / `overflow:`
+rules. They are part of `BASE_CSS`, so every preview gets them for
+free.
+
+#### Sizing
+
+| Class                  | Maps to                      | Notes                                    |
+| ---------------------- | ---------------------------- | ---------------------------------------- |
+| `.mgf-w-full`          | `width: 100%`                |                                          |
+| `.mgf-h-full`          | `height: 100%`               |                                          |
+| `.mgf-fill`            | both axes 100%               | Shortcut for `.mgf-w-full` + `.mgf-h-full`. |
+| `.mgf-min-w-full`      | `min-width: 100%`            |                                          |
+| `.mgf-min-h-full`      | `min-height: 100%`           |                                          |
+| `.mgf-min-h-screen`    | `min-height: 100vh`          | Vertical fill of the viewport.           |
+| `.mgf-max-w-full`      | `max-width: 100%`            |                                          |
+| `.mgf-max-h-full`      | `max-height: 100%`           |                                          |
+| `.mgf-fit`             | `max-width: 100%; max-height: 100%` | Down-scale only — never enlarges.   |
+| `.mgf-w-screen`        | `width: 100vw`               |                                          |
+| `.mgf-h-screen`        | `height: 100vh`              |                                          |
+| `.mgf-w-auto`          | `width: auto`                |                                          |
+| `.mgf-h-auto`          | `height: auto`               |                                          |
+
+#### Position
+
+| Class                  | Maps to                      |
+| ---------------------- | ---------------------------- |
+| `.mgf-absolute`        | `position: absolute`         |
+| `.mgf-relative`        | `position: relative`         |
+| `.mgf-static`          | `position: static`           |
+| `.mgf-fixed`           | `position: fixed`            |
+| `.mgf-sticky`          | `position: sticky`           |
+| `.mgf-inset-0`         | `inset: 0`                   |
+| `.mgf-inset-x-0`       | `left: 0; right: 0`          |
+| `.mgf-inset-y-0`       | `top: 0; bottom: 0`          |
+| `.mgf-top-0`           | `top: 0`                     |
+| `.mgf-right-0`         | `right: 0`                   |
+| `.mgf-bottom-0`        | `bottom: 0`                  |
+| `.mgf-left-0`          | `left: 0`                    |
+
+Position values use **physical** `top`/`right`/`bottom`/`left`. For
+axis-relative positioning under RTL, write a custom CSS rule using
+logical properties.
+
+#### Overflow
+
+| Class                       | Maps to                          | Notes                            |
+| --------------------------- | -------------------------------- | -------------------------------- |
+| `.mgf-overflow-hidden`      | `overflow: hidden`               | Clip both axes.                  |
+| `.mgf-overflow-auto`        | `overflow: auto`                 | Scrollbars when needed.          |
+| `.mgf-overflow-scroll`      | `overflow: scroll`               | Always-on scrollbars.            |
+| `.mgf-overflow-visible`     | `overflow: visible`              | Default — let content overflow.  |
+| `.mgf-overflow-x-hidden`    | `overflow-x: hidden`             | Useful inside marquees.          |
+| `.mgf-overflow-y-auto`      | `overflow-y: auto`               | Vertical scrollbar when needed.  |
+
+#### The slide-level contract
+
+`section.mgf-slide` defaults to:
+
+- `width: 100%`
+- `max-width: 1280px`
+- `margin: 0 auto`
+- `min-height: 70vh`
+- `display: flex; flex-direction: column; justify-content: center`
+- `overflow: hidden`
+- `position: relative`
+- `box-sizing: border-box`
+- `padding: 2.5rem`
+
+This means:
+
+- `.mgf-fill` on an immediate child fills the slide's content box.
+- `.mgf-min-h-screen` on a child extends it past the slide.
+- `.mgf-overflow-y-auto` on a child scrolls within the slide.
+
+#### Exporter behavior (PPTX / PDF / PNG / JPG)
+
+These utilities have **no effect in PPTX output** — pptxgenjs renders
+fixed-coordinate shapes in inches, so the visual contract is
+"preview fills the wrapper, export uses the renderer's PAD_X /
+PAD_Y". The PPTX renderer in `mgfPptx.ts` reproduces only the
+specific layout primitives (cards, stats, charts) it knows about.
+
 ---
 
 ## 10. Responsive collapse

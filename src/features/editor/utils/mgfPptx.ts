@@ -347,15 +347,29 @@ export function identifyComponent(html: string): string {
     [/mgf-grid-3[\s\S]*?mgf-card|mgf-grid-4[\s\S]*?mgf-card|mgf-feature/, 'features'],
     [/mgf-split-left|mgf-split-right|mgf-media/, 'image-text'],
     [/mgf-badge|mgf-announcement/, 'announcement'],
-    // Cover only when the slide actually carries a display title (h1 +
-    // data-field="title") or one of the large display classes. We
-    // previously matched `mgf-eyebrow` here, but that class is used by
-    // problem/solution/market/ask/closing/etc. too — the broad match
-    // routed every non-cover slide to renderCover, which only knows
-    // about title/subtitle/label/author/date and silently dropped the
-    // body and bullet points. See test `identifyComponent — cover
-    // regex no longer swallows problem` in mgfPptx.test.ts.
-    [/<h1[\s\S]*?data-field=["']title["']|mgf-title-xl|mgf-title-lg/, 'cover'],
+    // Cover only when the slide actually carries a display title
+    // inside an `<h1 data-field="title">` element. We previously
+    // also matched `mgf-title-xl|mgf-title-lg`, but those classes
+    // are NOT exclusive to cover:
+    //
+    //   - `mgf-title-lg` is on every non-cover slide (problem /
+    //     features / stats / image-text / pricing / comparison /
+    //     team / closing / process / faq / timeline / quote) for
+    //     its main `<h2>` title.
+    //   - `mgf-title-xl` is also used on closing/ask slides
+    //     (`slideClosing`, `slideArabicAsk`, `slideArabicClosing`,
+    //     `slideEarthAsk`, `slideEarthClosing`, …) for hero-style
+    //     `<h2>` titles.
+    //
+    // Matching either class routed those slides to `renderCover`,
+    // which only knows about title/subtitle/label/author/date and
+    // silently dropped the body, bullet points, plans, stats,
+    // members, etc. The only thing exclusive to cover is the `<h1>`
+    // tag itself, so the regex now keys on that alone. See tests
+    // `identifyComponent — cover regex does not swallow h2
+    // mgf-title-lg problem slides` and `… h2 mgf-title-xl closing
+    // slides` in mgfPptx.test.ts.
+    [/<h1[\s\S]*?data-field=["']title["']/, 'cover'],
     [/mgf-flex-center|mgf-text-center[\s\S]*?mgf-cta-solid/, 'closing'],
   ];
   for (const [pattern, name] of classMap) {
@@ -474,6 +488,149 @@ function addSlideNumber(slide: Slide, tokens: Tokens, num: string): void {
     align: 'right',
     valign: 'middle',
   });
+}
+
+/**
+ * Render the `.mgf-chapter-num` block — a large accent-filled box
+ * with the slide number inside. Used by hero-style covers that
+ * carry a chapter/section number above the title (e.g. brutalist
+ * pitch decks).
+ */
+function addChapterNum(slide: Slide, tokens: Tokens, num: string, x: number, y: number): void {
+  const w = 1.6;
+  const h = 1.2;
+  // Solid accent background with a hard offset shadow (neo-brutalist).
+  slide.addShape('rect', {
+    x: x + 0.1,
+    y: y + 0.1,
+    w,
+    h,
+    fill: { color: tokens.border },
+    line: { type: 'none' },
+  });
+  slide.addShape('rect', {
+    x,
+    y,
+    w,
+    h,
+    fill: { color: tokens.accent },
+    line: { color: tokens.border, width: 3 },
+  });
+  slide.addText(num, {
+    x,
+    y,
+    w,
+    h,
+    fontFace: tokens.fontDisplay,
+    fontSize: 60,
+    bold: true,
+    color: tokens.textPrimary,
+    align: 'center',
+    valign: 'middle',
+  });
+}
+
+/**
+ * Render the `.mgf-cta-solid` button — a filled pill/box with
+ * bold uppercase text. Used for primary CTAs on hero covers.
+ */
+function addCtaSolid(
+  slide: Slide,
+  tokens: Tokens,
+  text: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): void {
+  // Hard offset shadow underneath the button.
+  slide.addShape('rect', {
+    x: x + 0.08,
+    y: y + 0.08,
+    w,
+    h,
+    fill: { color: tokens.border },
+    line: { type: 'none' },
+  });
+  slide.addShape('rect', {
+    x,
+    y,
+    w,
+    h,
+    fill: { color: tokens.textPrimary },
+    line: { color: tokens.border, width: 2 },
+  });
+  slide.addText(text.toUpperCase(), {
+    x,
+    y,
+    w,
+    h,
+    fontFace: tokens.fontDisplay,
+    fontSize: 13,
+    bold: true,
+    color: tokens.bg,
+    align: 'center',
+    valign: 'middle',
+    charSpacing: 2,
+  });
+}
+
+/**
+ * Render the `.mgf-cta` link — underlined bold uppercase text.
+ * Used for secondary CTAs alongside a primary button.
+ */
+function addCtaText(
+  slide: Slide,
+  tokens: Tokens,
+  text: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): void {
+  slide.addText(text.toUpperCase(), {
+    x,
+    y,
+    w,
+    h,
+    fontFace: tokens.fontDisplay,
+    fontSize: 13,
+    bold: true,
+    color: tokens.textPrimary,
+    align: 'left',
+    valign: 'middle',
+    underline: { style: 'sng', color: tokens.textPrimary },
+  });
+}
+
+/**
+ * Build an array of objects from a `data` blob that uses indexed
+ * field names instead of a structured array. For example, a
+ * deck that ships `{ feature_1_title, feature_1_desc,
+ * feature_2_title, feature_2_desc, ... }` produces
+ * `[{ title, desc }, { title, desc }, ...]` when called with
+ * `prefix = "feature"`. Used by `renderFeatures` /
+ * `renderStats` / `renderProblem` to support deck-specific data
+ * shapes that don't conform to the standard `features[]` /
+ * `stats[]` / `points[]` arrays.
+ */
+function extractNumberedFields(
+  data: SlideData,
+  prefix: string,
+): Array<Record<string, string>> {
+  const out: Array<Record<string, string>> = [];
+  const re = new RegExp(`^${prefix}_(\\d+)_(.+)$`);
+  for (const key of Object.keys(data)) {
+    const m = key.match(re);
+    if (!m) continue;
+    const idx = parseInt(m[1], 10) - 1;
+    const field = m[2];
+    const value = data[key];
+    if (typeof value !== 'string') continue;
+    out[idx] = out[idx] || {};
+    out[idx][field] = value;
+  }
+  return out.filter(Boolean);
 }
 
 function addCard(
@@ -597,13 +754,26 @@ function renderCover(slide: Slide, data: SlideData, tokens: Tokens, idx: number)
   const label = getString(data, 'label');
   const author = getString(data, 'author');
   const date = getString(data, 'date');
+  const eyebrow = getString(data, 'eyebrow');
+  const chapterNum = getString(data, 'id');
+  const primaryCta = getString(data, 'primary_cta');
+  const secondaryCta = getString(data, 'secondary_cta');
 
   let cy = tokens.padY;
-  if (label) {
-    addEyebrow(slide, tokens, label.toUpperCase(), tokens.padX, cy, 6);
+  // Hero-style covers (e.g. brutalist launch decks) carry an
+  // eyebrow at the top; classic pitch covers use `label` for the
+  // same role. Both share the eyebrow + accent-bar treatment.
+  const eyebrowText = eyebrow || label;
+  if (eyebrowText) {
+    addEyebrow(slide, tokens, eyebrowText.toUpperCase(), tokens.padX, cy, 6);
     cy += 0.35;
     addAccentBar(slide, tokens, tokens.padX, cy);
     cy += 0.25;
+  }
+  // Optional chapter / section number block above the title.
+  if (chapterNum) {
+    addChapterNum(slide, tokens, chapterNum, tokens.padX, cy);
+    cy += 1.4;
   }
   slide.addText(title, {
     x: tokens.padX,
@@ -620,6 +790,19 @@ function renderCover(slide: Slide, data: SlideData, tokens: Tokens, idx: number)
   if (subtitle) {
     addSubtitle(slide, tokens, subtitle, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX);
     cy += 0.7;
+  }
+  // Primary CTA as a solid button, secondary CTA as an inline link
+  // next to it. Both are optional; absent fields simply leave the
+  // button row empty.
+  if (primaryCta || secondaryCta) {
+    let cx = tokens.padX;
+    if (primaryCta) {
+      addCtaSolid(slide, tokens, primaryCta, cx, cy, 2.4, 0.55);
+      cx += 2.6;
+    }
+    if (secondaryCta) {
+      addCtaText(slide, tokens, secondaryCta, cx, cy + 0.05, 2.4, 0.45);
+    }
   }
   if (author || date) {
     const meta = [author, date].filter(Boolean).join('  ·  ');
@@ -641,7 +824,14 @@ function renderProblem(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const body = getString(data, 'body');
-  const points = getStringArray(data, 'points');
+  // Standard shape: `data.points` is an array. Brutalist-style decks
+  // ship indexed fields instead (`pain_1_title`, `pain_1_body`,
+  // …) — synthesize an array of point strings from those when the
+  // standard array is missing.
+  const points =
+    getStringArray(data, 'points').length > 0
+      ? getStringArray(data, 'points')
+      : extractNumberedFields(data, 'pain').map((p) => p.body ?? p.title ?? '').filter(Boolean);
 
   let cy = tokens.padY;
   renderEyebrow(slide, tokens, 'THE PROBLEM', data);
@@ -674,7 +864,19 @@ function renderFeatures(slide: Slide, data: SlideData, tokens: Tokens, idx: numb
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const subtitle = getString(data, 'subtitle');
-  const features = getArray<FeatureItem>(data, 'features');
+  const lede = getString(data, 'lede');
+  // Standard shape: `data.features` is an array. Some decks ship
+  // indexed fields instead — `feature_1_title`, `feature_1_desc`,
+  // `feature_2_title`, … — so synthesize an array from those when
+  // the standard array is missing.
+  const features =
+    getArray<FeatureItem>(data, 'features').length > 0
+      ? getArray<FeatureItem>(data, 'features')
+      : extractNumberedFields(data, 'feature').map((f) => ({
+          icon: f.icon,
+          title: f.title,
+          desc: f.desc ?? f.body ?? f.description,
+        }));
 
   let cy = tokens.padY;
   renderEyebrow(slide, tokens, 'THE SOLUTION', data);
@@ -684,45 +886,56 @@ function renderFeatures(slide: Slide, data: SlideData, tokens: Tokens, idx: numb
   cy += 0.3;
   addTitle(slide, tokens, title, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX);
   cy += 1.0;
-  if (subtitle) {
-    addSubtitle(slide, tokens, subtitle, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX);
+  // `subtitle` is the canonical field; `lede` is the brutalist
+  // alternative. Render whichever is present.
+  const subtitleText = subtitle || lede;
+  if (subtitleText) {
+    addSubtitle(slide, tokens, subtitleText, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX);
     cy += 0.6;
   }
+  // Up to 6 features (3 columns × 2 rows). The brutalist deck
+  // ships 6 features in a 3-up grid; the standard pitch carries 3.
   const cardY = cy;
-  const cardH = 2.6;
+  const cardH = features.length > 3 ? 1.4 : 2.6;
   const gap = 0.25;
   const cardW = (SLIDE_W_IN - 2 * tokens.padX - gap * 2) / 3;
-  features.slice(0, 3).forEach((f, i) => {
-    const x = tokens.padX + i * (cardW + gap);
-    addCard(slide, tokens, x, cardY, cardW, cardH);
+  features.slice(0, 6).forEach((f, i) => {
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const x = tokens.padX + col * (cardW + gap);
+    const y = cardY + row * (cardH + gap);
+    addCard(slide, tokens, x, y, cardW, cardH);
     if (f.icon) {
       slide.addText(f.icon, {
         x: x + 0.2,
-        y: cardY + 0.15,
-        w: 1,
-        h: 0.5,
-        fontSize: 24,
+        y: y + 0.1,
+        w: 0.8,
+        h: 0.35,
+        fontFace: tokens.fontDisplay,
+        fontSize: 18,
+        bold: true,
+        color: tokens.textPrimary,
         valign: 'top',
       });
     }
     slide.addText(f.title ?? '', {
       x: x + 0.2,
-      y: cardY + 0.7,
+      y: y + (f.icon ? 0.5 : 0.2),
       w: cardW - 0.4,
-      h: 0.4,
+      h: 0.3,
       fontFace: tokens.fontDisplay,
-      fontSize: 14,
+      fontSize: 12,
       bold: true,
       color: tokens.textPrimary,
       valign: 'top',
     });
     slide.addText(f.desc ?? '', {
       x: x + 0.2,
-      y: cardY + 1.1,
+      y: y + (f.icon ? 0.85 : 0.55),
       w: cardW - 0.4,
-      h: 1.4,
+      h: cardH - (f.icon ? 0.95 : 0.65),
       fontFace: tokens.fontBody,
-      fontSize: 11,
+      fontSize: 9,
       color: tokens.textSecondary,
       valign: 'top',
     });
@@ -733,7 +946,17 @@ function renderFeatures(slide: Slide, data: SlideData, tokens: Tokens, idx: numb
 function renderStats(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
-  const stats = getArray<StatItem>(data, 'stats');
+  // Standard shape: `data.stats` is an array. Brutalist-style decks
+  // ship indexed fields instead (`stat_1_value`, `stat_1_label`,
+  // …) — synthesize an array from those when the standard array
+  // is missing so the PPTX still renders every stat tile.
+  const stats =
+    getArray<StatItem>(data, 'stats').length > 0
+      ? getArray<StatItem>(data, 'stats')
+      : extractNumberedFields(data, 'stat').map((s) => ({
+          value: s.value,
+          label: s.label,
+        }));
   const caption = getString(data, 'caption');
 
   let cy = tokens.padY;
@@ -1109,13 +1332,30 @@ function renderTeam(slide: Slide, data: SlideData, tokens: Tokens, idx: number):
 function renderClosing(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
-  const body = getString(data, 'body');
-  const cta = getString(data, 'cta');
+  // `lede` is the brutalist alternative to the standard `body`.
+  const body = getString(data, 'body') || getString(data, 'lede');
+  // `primary_cta` is the brutalist alternative to the standard
+  // `cta` — both share the same solid-button row.
+  const cta = getString(data, 'cta') || getString(data, 'primary_cta');
+  // `contact_label` is a brutalist-only contact line (e.g.
+  // `hello@konkret.app`) shown beneath the CTA.
+  const contactLabel = getString(data, 'contact_label');
+  // `eyebrow` overrides the hard-coded "THE ASK" so brutalist
+  // closings can carry their own (e.g. "Stop planning. Start
+  // shipping.").
+  const eyebrow = getString(data, 'eyebrow');
 
   const cx = SLIDE_W_IN / 2;
   const cy = SLIDE_H_IN / 2;
 
-  addEyebrow(slide, tokens, 'THE ASK', cx - 2, cy - 2.0, 4);
+  addEyebrow(
+    slide,
+    tokens,
+    (eyebrow || 'THE ASK').toUpperCase(),
+    cx - 2,
+    cy - 2.0,
+    4,
+  );
   addAccentBar(slide, tokens, cx - ACCENT_BAR_W / 2, cy - 1.55);
   slide.addText(title, {
     x: cx - 4,
@@ -1163,6 +1403,19 @@ function renderClosing(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
       color: tokens.textInverse,
       align: 'center',
       valign: 'middle',
+    });
+  }
+  if (contactLabel) {
+    slide.addText(contactLabel, {
+      x: cx - 3,
+      y: cy + 2.2,
+      w: 6,
+      h: 0.3,
+      fontFace: tokens.fontBody,
+      fontSize: 11,
+      color: tokens.textSecondary,
+      align: 'center',
+      valign: 'top',
     });
   }
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
@@ -1749,6 +2002,85 @@ function componentFromStem(stem: string | undefined): string | null {
 }
 
 /**
+ * Inspect the data shape of a slide and pick the most specific
+ * renderer. Used as a fallback when neither HTML identification nor
+ * the persisted `data.json.component` (or stem-derived component)
+ * picks a renderer — the seed-bundle shape in particular has stems
+ * like `slide-02-by-the-numbers` and `slide-05-tradeoffs` whose
+ * suffixes don't match any registered component, but whose data
+ * carries a `stats[]` array. Without this fallback those slides
+ * were routed to `renderGeneric` and lost every stat / bullet /
+ * feature. The rules are ordered most-specific first so a richer
+ * shape never loses to a less specific one.
+ *
+ * Returns `null` when the data doesn't carry any renderer-shaped
+ * payload, so the caller can fall back to the generic renderer.
+ */
+function inferComponentFromData(data: SlideData): string | null {
+  if (!data || typeof data !== 'object') return null;
+
+  // The `image` field is the strongest "this is an image-text slide"
+  // signal, even if title is also present. Check it first so a
+  // mixed-up payload (image + stats) still routes to image-text.
+  if (typeof data.image === 'string' && data.image.trim()) return 'image-text';
+
+  // Indexed-field shapes (brutalist decks): `stat_N_*`, `feature_N_*`,
+  // `pain_N_*` — checked before the array shapes so we don't
+  // misclassify a brutalist `feature_N_title` payload as a generic
+  // `features[]` problem slide.
+  if (hasIndexedFields(data, 'stat')) return 'stats';
+  if (hasIndexedFields(data, 'feature')) return 'features';
+  if (hasIndexedFields(data, 'pain')) return 'problem';
+
+  // Array shapes — most specific first.
+  if (Array.isArray(data.stats) && data.stats.length > 0) return 'stats';
+  if (Array.isArray(data.features) && data.features.length > 0) return 'features';
+  if (Array.isArray(data.points) && data.points.length > 0) return 'problem';
+  if (Array.isArray(data.bullets) && data.bullets.length > 0) return 'problem';
+  if (Array.isArray(data.plans) && data.plans.length > 0) return 'pricing';
+  if (Array.isArray(data.tiers) && data.tiers.length > 0) return 'pricing';
+  if (Array.isArray(data.members) && data.members.length > 0) return 'team';
+  if (Array.isArray(data.steps) && data.steps.length > 0) return 'process';
+  if (Array.isArray(data.left_items) && Array.isArray(data.right_items)) {
+    return 'comparison';
+  }
+
+  // `items[]` is overloaded (faq / timeline / process). Inspect the
+  // first entry's keys to dispatch.
+  if (Array.isArray(data.items) && data.items.length > 0) {
+    const first = data.items[0];
+    if (first && typeof first === 'object') {
+      if ('q' in first && 'a' in first) return 'faq';
+      if ('date' in first && 'headline' in first) return 'timeline';
+    }
+    return 'process';
+  }
+
+  // Quote / testimonial — testimonial preferentially when a role or
+  // company is also present (those fields never appear on a plain
+  // quote slide).
+  if (typeof data.quote === 'string' && data.quote.trim()) {
+    if (typeof data.role === 'string' || typeof data.company === 'string') {
+      return 'testimonial';
+    }
+    return 'quote';
+  }
+
+  return null;
+}
+
+/**
+ * Tiny helper for `inferComponentFromData`: does this data blob carry
+ * any `prefix_N_*` indexed-field key? Used to dispatch brutalist
+ * decks (which ship `feature_1_title`, `stat_1_value`, `pain_1_body`)
+ * to the right renderer when there's no array to inspect.
+ */
+function hasIndexedFields(data: SlideData, prefix: string): boolean {
+  const re = new RegExp(`^${prefix}_\\d+_`);
+  return Object.keys(data).some((k) => re.test(k));
+}
+
+/**
  * Minimal HTML escape so user-supplied copy from `data.json` (title,
  * eyebrow, body, points) can't break out of an attribute or inject
  * markup into the synthesized slide HTML. We deliberately don't reach
@@ -1848,6 +2180,72 @@ function synthesizeSlideFile(
 }
 
 /**
+ * Resolve the component name for one slide, preferring HTML-based
+ * identification (`<!-- Component: … -->` marker + class regexes)
+ * over the `data.json` field. HTML is the ground truth — the comment
+ * and class shapes survive every pipeline step, while `data.json`'s
+ * `component` field is metadata that can drift out of sync (e.g. a
+ * previous regeneration writing `cover` for every slide). When the
+ * two disagree, log so the user can repair the persisted `data.json`
+ * without render output silently breaking.
+ *
+ * Fallback chain when HTML is generic:
+ *   1. `data.json.component` — only if it resolves to a registered
+ *      renderer. A stem-stuffed suffix like `by-the-numbers` is
+ *      deliberately not honored (the synthesizer only injects known
+ *      components now), and a stale user value like `cover` on a
+ *      stats slide would still cause silent drops.
+ *   2. Data-shape inference — the finale. Looks at the actual data
+ *      fields (`stats[]`, `feature_N_*`, `points[]`, …) and dispatches
+ *      to the matching renderer. This is what makes every seed-bundle
+ *      slide land on a content-aware renderer rather than the generic
+ *      fallback.
+ */
+function resolveComponent(
+  fileName: string,
+  fromJson: { component?: string } | undefined,
+  html: string,
+  data: SlideData,
+): string {
+  const htmlComponent = identifyComponent(html);
+  const fromJsonComponent = fromJson?.component;
+
+  if (htmlComponent !== 'generic') {
+    // HTML identified a specific component — it wins.
+    if (fromJsonComponent && fromJsonComponent !== htmlComponent) {
+      console.warn(
+        `[mgfPptx] data.json component "${fromJsonComponent}" disagrees with ` +
+          `HTML-detected "${htmlComponent}" for slide "${fileName}". ` +
+          `Using HTML; repair data.json to silence this.`,
+      );
+    }
+    return htmlComponent;
+  }
+  // HTML didn't identify anything specific; data.json is the only
+  // explicit signal. Honor it only when it maps to a registered
+  // renderer — otherwise we'd silently fall through to a component
+  // that doesn't exist.
+  if (fromJsonComponent && isRegisteredComponent(fromJsonComponent)) {
+    return fromJsonComponent;
+  }
+  // Data-shape inference: the most specific shape wins. Returns
+  // null when the data is bare (eyebrow + title + body) and the
+  // generic renderer is the right call.
+  const inferred = inferComponentFromData(data);
+  if (inferred) return inferred;
+  return htmlComponent;
+}
+
+/**
+ * Cheap lookup: does the component name map to a registered
+ * renderer? Used by `resolveComponent` to refuse stem suffixes
+ * like `by-the-numbers` that aren't real components.
+ */
+function isRegisteredComponent(component: string): boolean {
+  return findRenderer(component) !== COMPONENT_RENDERERS.generic;
+}
+
+/**
  * Build a .pptx file from the project's MGF file set. Returns a
  * `Uint8Array` containing the PPTX bytes (a ZIP archive — same store
  * format our `lib/zip.ts` would produce).
@@ -1879,13 +2277,21 @@ export async function buildPptxPresentation({
     slideFiles = dataJson.slides.map((s, idx) => synthesizeSlideFile(s, idx));
     // Inject `component` from the slide stem so renderers pick up the
     // right one even when the synthesized HTML's class set is generic
-    // (e.g. `solution`, `market`, `ask` aren't registered components,
-    // but we still want `problem` / `stats` / `cover` to dispatch).
+    // (e.g. `cover` / `problem` / `stats` / `features` / `closing`
+    // are registered components, but `by-the-numbers` / `the-loop`
+    // / `outcomes` / `tradeoffs` / `market` / `ask` / `thanks` /
+    // `traction` / `solution` / `product` / `further-reading` are
+    // not — those slides fall through to data-shape inference in
+    // `resolveComponent`). Only stuff the stem into `s.component`
+    // when it maps to a registered renderer, otherwise leave it
+    // unset so the inference step can pick a real component.
     dataJson.slides.forEach((s) => {
       if (!s.component) {
         const stem = s.stem ?? (s.data as SlideData | undefined)?.['__stem'] as string | undefined;
-        const inferred = componentFromStem(stem);
-        if (inferred) s.component = inferred;
+        const candidate = componentFromStem(stem);
+        if (candidate && isRegisteredComponent(candidate)) {
+          s.component = candidate;
+        }
       }
     });
   }
@@ -1912,8 +2318,8 @@ export async function buildPptxPresentation({
       }
       return n === i;
     });
-    const component = fromJson?.component ?? identifyComponent(html);
     const data = fromJson?.data ?? extractFieldsFromHtml(html);
+    const component = resolveComponent(file.name, fromJson, html, data);
 
     const slide = pptx.addSlide();
     try {

@@ -446,6 +446,80 @@ visual primitive on their own.
 | `mgf-gap-sm` / `-md` / `-lg`   | Flex/grid gap scale.                 |
 | `mgf-flex` / `-col` / `-center` / `-between` / `-start` / `-wrap` | Flex utilities. |
 
+## Sizing, position, and overflow utilities (Tailwind-style)
+
+Single-purpose utility classes that map 1:1 to their Tailwind
+counterparts. They are part of `BASE_CSS` (always available, no
+project CSS required) and are the recommended way to size a slide,
+fill its parent, pin a child to an edge, or contain overflow. Use
+these instead of inline `width:` / `height:` / `position:` rules —
+they are the only sizing primitives the PPTX renderer ignores
+intentionally (pptxgenjs works in fixed inches).
+
+### Sizing
+
+| Class                       | Notes                                              |
+| --------------------------- | -------------------------------------------------- |
+| `mgf-w-full`                | `width: 100%`.                                     |
+| `mgf-h-full`                | `height: 100%`.                                    |
+| `mgf-fill`                  | Both axes: `width: 100%; height: 100%`.            |
+| `mgf-min-w-full`            | `min-width: 100%`.                                 |
+| `mgf-min-h-full`            | `min-height: 100%`.                                |
+| `mgf-min-h-screen`          | `min-height: 100vh`. Slide-level vertical fill.    |
+| `mgf-max-w-full`            | `max-width: 100%`.                                 |
+| `mgf-max-h-full`            | `max-height: 100%`.                                |
+| `mgf-fit`                   | `max-width: 100%; max-height: 100%` (down-scale only). |
+| `mgf-w-screen`              | `width: 100vw`.                                    |
+| `mgf-h-screen`              | `height: 100vh`.                                   |
+| `mgf-w-auto`                | `width: auto`.                                     |
+| `mgf-h-auto`                | `height: auto`.                                    |
+
+### Position
+
+| Class                       | Notes                                              |
+| --------------------------- | -------------------------------------------------- |
+| `mgf-absolute`              | `position: absolute`.                              |
+| `mgf-relative`              | `position: relative`.                              |
+| `mgf-static`                | `position: static`.                                |
+| `mgf-fixed`                 | `position: fixed`.                                 |
+| `mgf-sticky`                | `position: sticky`.                                |
+| `mgf-inset-0`               | `inset: 0` (all four edges).                       |
+| `mgf-inset-x-0`             | `left: 0; right: 0`.                               |
+| `mgf-inset-y-0`             | `top: 0; bottom: 0`.                               |
+| `mgf-top-0`                 | `top: 0`.                                          |
+| `mgf-right-0`               | `right: 0`.                                        |
+| `mgf-bottom-0`              | `bottom: 0`.                                       |
+| `mgf-left-0`                | `left: 0`.                                         |
+
+Position values use **physical** `top`/`right`/`bottom`/`left` so
+they work the same in LTR and RTL. If you need axis-relative
+positioning, prefer logical properties via custom CSS.
+
+### Overflow
+
+| Class                       | Notes                                              |
+| --------------------------- | -------------------------------------------------- |
+| `mgf-overflow-hidden`       | Clip overflow in both axes.                        |
+| `mgf-overflow-auto`         | Auto scrollbars when needed.                       |
+| `mgf-overflow-scroll`       | Always-on scrollbars.                              |
+| `mgf-overflow-visible`      | Default — let content overflow.                    |
+| `mgf-overflow-x-hidden`     | Clip horizontal overflow (useful for marquees).    |
+| `mgf-overflow-y-auto`       | Vertical scrollbar when needed.                    |
+
+### Notes for exporters
+
+- **Browser preview**: utilities apply normally; `section.mgf-slide`
+  defaults to `width: 100%; max-width: 1280px; min-height: 70vh;
+  overflow: hidden; box-sizing: border-box`, so a `mgf-fill` child
+  fills the slide and a `mgf-overflow-y-auto` child scrolls within
+  it.
+- **PPTX export**: utilities have **no effect**. pptxgenjs renders
+  fixed-coordinate shapes in inches, so the visual contract is
+  "preview fills the wrapper, export uses the renderer's PAD_X /
+  PAD_Y". If a layout depends on a specific utility for visual
+  correctness, the renderer in `mgfPptx.ts` must reproduce it
+  explicitly (see `renderCard`, `renderStat`, etc.).
+
 ## Website (scrollable page archetype)
 
 Used in the `website` archetype only. Each `slide-NN.html` is a

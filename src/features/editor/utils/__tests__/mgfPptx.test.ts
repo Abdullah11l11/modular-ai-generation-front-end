@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   SLIDE_W_IN,
   SLIDE_H_IN,
@@ -131,14 +131,6 @@ describe('identifyComponent — multi-line regression', () => {
     expect(identifyComponent(html)).toBe('features');
   });
 
-  it('does not over-match cover for closing-only shapes', () => {
-    // Both `closing` and `cover` patterns match `mgf-title-xl`, but
-    // only `cover` adds `mgf-eyebrow`. Without the reordering fix,
-    // every cover slide was classified as `closing` and rendered
-    // with the wrong shape set.
-    expect(identifyComponent('<div class="mgf-eyebrow mgf-title-xl"></div>')).toBe('cover');
-  });
-
   it('still classifies a true closing slide as closing', () => {
     expect(identifyComponent('<div class="mgf-flex-center mgf-cta-solid"></div>')).toBe('closing');
   });
@@ -269,10 +261,518 @@ describe('buildPptxPresentation — dispatcher safety', () => {
   });
 });
 
+describe('buildPptxPresentation — cover renders all hero fields', () => {
+  // Regression: renderCover previously read only
+  // `title / subtitle / label / author / date` and silently dropped
+  // everything else. Hero-style covers (e.g. brutalist launch
+  // decks) carry `eyebrow`, `id` (chapter-num), `primary_cta`, and
+  // `secondary_cta` — those now render as accent-bar eyebrow,
+  // chapter-num block, solid CTA button, and inline CTA link. We
+  // assert byte-count growth to prove each field contributes to
+  // the output rather than being silently dropped.
+  const baseFiles = (data: Record<string, unknown>): ProjectFile[] => [
+    file({ layer: 'style', name: 'style.css', content: ':root{--mgf-color-bg:#FBF7EE;--mgf-color-accent:#FF3DAA;--mgf-color-text-primary:#0A0A0A;}' }),
+    file({
+      layer: 'content',
+      name: 'data.json',
+      content: JSON.stringify({ slides: [{ id: 1, component: 'cover', data }] }),
+    }),
+    file({
+      layer: 'slide',
+      name: 'slide-01.html',
+      content:
+        '<section class="mgf-slide">' +
+        '<h1 class="mgf-title-xl" data-field="title">KONKRET</h1>' +
+        '</section>',
+    }),
+  ];
+
+  it('renders a minimal cover (title only)', async () => {
+    const bytes = await buildPptxPresentation({
+      files: baseFiles({ title: 'T' }),
+      projectName: 'Minimal',
+    });
+    expect(bytes.byteLength).toBeGreaterThan(2000);
+  });
+
+  it('renders eyebrow + chapter-num + subtitle + CTAs (full hero cover)', async () => {
+    const heroFiles = baseFiles({
+      eyebrow: '2026 LAUNCH DECK',
+      id: '01',
+      title: 'KONKRET',
+      subtitle: 'The productivity app that does not lie to you.',
+      primary_cta: 'Get Early Access',
+      secondary_cta: 'Watch the demo',
+    });
+    const minimalFiles = baseFiles({ title: 'T' });
+    const [heroBytes, minimalBytes] = await Promise.all([
+      buildPptxPresentation({ files: heroFiles, projectName: 'Hero' }),
+      buildPptxPresentation({ files: minimalFiles, projectName: 'Minimal' }),
+    ]);
+    // Each new field adds at least one shape / text element, so the
+    // hero output must be measurably larger than the minimal cover.
+    expect(heroBytes.byteLength).toBeGreaterThan(minimalBytes.byteLength + 500);
+  });
+});
+
 describe('buildPptxPresentation — dimensions', () => {
   it('exports a 16:9 PPTX (LAYOUT_WIDE)', () => {
     // Sanity: the slide dimensions the rest of the pipeline assumes.
     expect(SLIDE_W_IN / SLIDE_H_IN).toBeCloseTo(16 / 9, 2);
+  });
+});
+
+describe('buildPptxPresentation — indexed-field data shapes', () => {
+  // Regression: brutalist-style decks (e.g. KONKRET launch deck)
+  // ship per-slide data as indexed fields like
+  // `feature_1_title`, `feature_1_desc`, `pain_1_body`,
+  // `stat_1_value`, `stat_1_label` — NOT as the standard
+  // `features[]` / `points[]` / `stats[]` arrays. The renderers
+  // previously read only the array form and dropped every
+  // indexed field, so the PPTX was a wall of titles. We now
+  // synthesize the array via `extractNumberedFields` whenever the
+  // array is missing. These tests prove each renderer emits
+  // measurably more bytes when indexed fields are present.
+  const buildFiles = (component: string, data: Record<string, unknown>): ProjectFile[] => [
+    file({ layer: 'style', name: 'style.css', content: ':root{--mgf-color-bg:#FBF7EE;--mgf-color-accent:#FF3DAA;--mgf-color-text-primary:#0A0A0A;}' }),
+    file({
+      layer: 'content',
+      name: 'data.json',
+      content: JSON.stringify({ slides: [{ id: 1, component, data }] }),
+    }),
+    file({ layer: 'slide', name: 'slide-01.html', content: '<section class="mgf-slide"></section>' }),
+  ];
+
+  it('renderFeatures renders 6 features from feature_N_* fields', async () => {
+    const indexed = buildFiles('features', {
+      eyebrow: 'The Fix',
+      title: 'Six brutal features',
+      lede: 'We cut the rest.',
+      feature_1_icon: 'Aa', feature_1_title: 'Plain text', feature_1_desc: 'Markdown in. Markdown out.',
+      feature_2_icon: 'DB', feature_2_title: 'Local-first', feature_2_desc: 'Your data lives on your disk.',
+      feature_3_icon: 'NO', feature_3_title: 'Zero pings', feature_3_desc: 'If we ping you, something is on fire.',
+      feature_4_icon: 'K_', feature_4_title: 'Keyboard complete', feature_4_desc: 'Every action has a keybinding.',
+      feature_5_icon: 'IO', feature_5_title: 'Open formats', feature_5_desc: 'Export to plain markdown and CSV.',
+      feature_6_icon: '$1', feature_6_title: 'Pay once', feature_6_desc: 'No subscription. No Pro tier.',
+    });
+    const empty = buildFiles('features', { title: 'T' });
+    const [indexedBytes, emptyBytes] = await Promise.all([
+      buildPptxPresentation({ files: indexed, projectName: 'Hero' }),
+      buildPptxPresentation({ files: empty, projectName: 'Empty' }),
+    ]);
+    expect(indexedBytes.byteLength).toBeGreaterThan(emptyBytes.byteLength + 800);
+  });
+
+  it('renderStats renders 4 stats from stat_N_* fields', async () => {
+    const indexed = buildFiles('stats', {
+      eyebrow: 'By the Numbers',
+      title: 'KONKRET ships where others stall',
+      stat_1_value: '3.2x', stat_1_label: 'Faster than the category leader',
+      stat_2_value: '0 MB', stat_2_label: 'Of telemetry we collect',
+      stat_3_value: '98%', stat_3_label: 'Still active at day 30',
+      stat_4_value: '$49', stat_4_label: 'One-time price',
+    });
+    const empty = buildFiles('stats', { title: 'T' });
+    const [indexedBytes, emptyBytes] = await Promise.all([
+      buildPptxPresentation({ files: indexed, projectName: 'Hero' }),
+      buildPptxPresentation({ files: empty, projectName: 'Empty' }),
+    ]);
+    expect(indexedBytes.byteLength).toBeGreaterThan(emptyBytes.byteLength + 600);
+  });
+
+  it('renderProblem renders pain_N_* as bullet points', async () => {
+    const indexed = buildFiles('problem', {
+      eyebrow: 'The Problem',
+      title: 'Every productivity app is the same lukewarm soup',
+      body: 'You signed up for focus. You got notifications.',
+      pain_1_title: 'Bloat', pain_1_body: '50 plus features. You use 4.',
+      pain_2_title: 'Drama', pain_2_body: 'Streaks that shame you.',
+      pain_3_title: 'Drag', pain_3_body: 'Onboarding tours that drag on.',
+    });
+    const empty = buildFiles('problem', { title: 'T' });
+    const [indexedBytes, emptyBytes] = await Promise.all([
+      buildPptxPresentation({ files: indexed, projectName: 'Hero' }),
+      buildPptxPresentation({ files: empty, projectName: 'Empty' }),
+    ]);
+    expect(indexedBytes.byteLength).toBeGreaterThan(emptyBytes.byteLength + 400);
+  });
+
+  it('renderClosing renders primary_cta + contact_label', async () => {
+    const indexed = buildFiles('closing', {
+      eyebrow: 'Stop planning. Start shipping.',
+      title: 'Join the brutalist beta.',
+      lede: 'We are shipping the first 1,000 seats on December 1, 2026.',
+      primary_cta: 'Reserve a seat',
+      contact_label: 'hello@konkret.app',
+    });
+    const empty = buildFiles('closing', { title: 'T' });
+    const [indexedBytes, emptyBytes] = await Promise.all([
+      buildPptxPresentation({ files: indexed, projectName: 'Hero' }),
+      buildPptxPresentation({ files: empty, projectName: 'Empty' }),
+    ]);
+    expect(indexedBytes.byteLength).toBeGreaterThan(emptyBytes.byteLength + 400);
+  });
+});
+
+describe('buildPptxPresentation — data-shape inference (root-cause fix)', () => {
+  // Regression: when a slide's stem doesn't end in a recognized
+  // component name (e.g. `slide-02-by-the-numbers`,
+  // `slide-05-tradeoffs`, `slide-06-market`, `slide-03-product`,
+  // `slide-05-thanks`), the synthesizer used to stuff the suffix
+  // into `data.json.slides[].component`. The renderer then routed
+  // those slides to `renderGeneric` and silently dropped every
+  // rich array (`stats[]`, `features[]`, `points[]`, …). The
+  // structural fix: `resolveComponent` now inspects the data shape
+  // and dispatches to the matching renderer as a final fallback.
+  //
+  // Each test below builds a slide WITHOUT a `component` field
+  // (forcing inference) and WITHOUT a registered stem suffix,
+  // then asserts the byte count proves the right renderer ran.
+  const buildSeedFiles = (data: Record<string, unknown>): ProjectFile[] => [
+    file({ layer: 'style', name: 'style.css', content: ':root{--mgf-color-bg:#FBF7EE;--mgf-color-accent:#FF3DAA;--mgf-color-text-primary:#0A0A0A;}' }),
+    file({
+      layer: 'content',
+      name: 'data.json',
+      content: JSON.stringify({
+        slides: [
+          // Stem whose suffix is NOT a registered component.
+          // Without inference this would render as a generic
+          // title+body slide and lose every array.
+          { stem: 'slide-02-by-the-numbers', data },
+        ],
+      }),
+    }),
+  ];
+
+  it('infers stats from stats[] and renders the tiles', async () => {
+    const rich = buildSeedFiles({
+      eyebrow: 'By the Numbers',
+      title: 'What 2025 looked like',
+      stats: [
+        { value: '1,240', label: 'scholarships funded' },
+        { value: '37', label: 'partner schools' },
+        { value: '$4.8M', label: 'disbursed in grants' },
+        { value: '92%', label: 'enrolled' },
+      ],
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    // 4 stat tiles = 4 addText + 4 addShape calls. Each contributes
+    // measurably more bytes than the generic renderer.
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 600);
+  });
+
+  it('infers features from features[] and renders the cards', async () => {
+    const rich = buildSeedFiles({
+      eyebrow: 'What you get',
+      title: 'Three things',
+      features: [
+        { icon: 'A', title: 'Plain text', desc: 'Markdown in. Markdown out.' },
+        { icon: 'B', title: 'Local-first', desc: 'Your data lives on your disk.' },
+        { icon: 'C', title: 'Open formats', desc: 'Export anywhere.' },
+      ],
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 500);
+  });
+
+  it('infers problem from points[] (and bullets[]) and renders bullets', async () => {
+    const rich = buildSeedFiles({
+      eyebrow: 'Problem',
+      title: 'SMBs locked out',
+      body: '70% are declined.',
+      points: [
+        '78% decline rate for sub-$500K requests',
+        '$220B unmet demand',
+        'Manual underwriting does not scale',
+      ],
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 400);
+  });
+
+  it('infers pricing from plans[]', async () => {
+    const rich = buildSeedFiles({
+      title: 'Plans',
+      plans: [
+        { name: 'Hobby', price: '$0', period: '/mo', features: ['5 GB / month'] },
+        { name: 'Team', price: '$49', period: '/mo', features: ['100 GB included'] },
+        { name: 'Enterprise', price: 'Custom', period: '', features: ['Unlimited'] },
+      ],
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 700);
+  });
+
+  it('infers pricing from tiers[] (alternate name)', async () => {
+    const rich = buildSeedFiles({
+      title: 'Plans',
+      tiers: [
+        { name: 'Hobby', price: '$0', period: '/mo', bullets: ['5 GB'] },
+        { name: 'Team', price: '$49', period: '/mo', bullets: ['100 GB'] },
+        { name: 'Enterprise', price: 'Custom', period: '', bullets: ['Unlimited'] },
+      ],
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 700);
+  });
+
+  it('infers team from members[]', async () => {
+    const rich = buildSeedFiles({
+      title: 'Team',
+      members: [
+        { name: 'Alice', role: 'CEO', bio: 'Built two startups.' },
+        { name: 'Bob', role: 'CTO', bio: 'Ex-Google.' },
+        { name: 'Carol', role: 'CFO', bio: 'Public-company veteran.' },
+      ],
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 500);
+  });
+
+  it('infers faq from items[] with q/a keys', async () => {
+    const rich = buildSeedFiles({
+      title: 'Common questions',
+      items: [
+        { q: 'Do you ship internationally?', a: 'Yes — to 32 countries.' },
+        { q: 'Can I cancel anytime?', a: 'Yes, one click.' },
+      ],
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 300);
+  });
+
+  it('infers timeline from items[] with date/headline keys', async () => {
+    const rich = buildSeedFiles({
+      title: 'Timeline',
+      items: [
+        { date: '2024 Q1', headline: 'Founded', desc: 'Two co-founders.' },
+        { date: '2024 Q3', headline: 'Seed', desc: 'Raised $2M.' },
+        { date: '2025 Q1', headline: 'Launch', desc: 'Public release.' },
+      ],
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 500);
+  });
+
+  it('infers process from items[] without q/a or date/headline', async () => {
+    const rich = buildSeedFiles({
+      title: 'Steps',
+      items: [
+        { num: '01', title: 'Sign up', desc: 'Free tier.' },
+        { num: '02', title: 'Install', desc: 'One command.' },
+      ],
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 400);
+  });
+
+  it('infers process from steps[] (alternate name)', async () => {
+    const rich = buildSeedFiles({
+      title: 'Steps',
+      steps: [
+        { num: '01', title: 'Sign up', desc: 'Free tier.' },
+        { num: '02', title: 'Install', desc: 'One command.' },
+      ],
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 400);
+  });
+
+  it('infers comparison from left_items[] + right_items[]', async () => {
+    const rich = buildSeedFiles({
+      title: 'Us vs them',
+      left_header: 'Them',
+      right_header: 'Us',
+      left_items: ['Manual', 'Slow', 'Expensive'],
+      right_items: ['Automated', '60s', 'Per-GB'],
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 500);
+  });
+
+  it('infers testimonial from quote + role/company', async () => {
+    const rich = buildSeedFiles({
+      title: 'Testimonial',
+      quote: 'Folio made the new identity feel inevitable.',
+      author: 'Daniela Ortiz',
+      role: 'Director',
+      company: 'Casa Moderno',
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 400);
+  });
+
+  it('infers quote from quote alone (no role/company)', async () => {
+    const rich = buildSeedFiles({
+      title: 'Quote',
+      quote: 'The starter kit replaced three things I had been over-paying for.',
+      author: 'Tomás',
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 300);
+  });
+
+  it('infers image-text from image data URI', async () => {
+    const dataUri =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAfbLI3wAAAABJRU5ErkJggg==';
+    const rich = buildSeedFiles({
+      title: 'Picture story',
+      body: 'Caption.',
+      image: dataUri,
+      layout: 'left',
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 1000);
+  });
+
+  it('infers stats from stat_N_* indexed fields (no array)', async () => {
+    const rich = buildSeedFiles({
+      title: 'Stats',
+      stat_1_value: '1,240', stat_1_label: 'scholarships funded',
+      stat_2_value: '37', stat_2_label: 'partner schools',
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 400);
+  });
+
+  it('infers features from feature_N_* indexed fields (no array)', async () => {
+    const rich = buildSeedFiles({
+      title: 'Features',
+      feature_1_title: 'Plain text', feature_1_desc: 'Markdown in.',
+      feature_2_title: 'Local-first', feature_2_desc: 'Your data.',
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 400);
+  });
+
+  it('infers problem from pain_N_* indexed fields (no array)', async () => {
+    const rich = buildSeedFiles({
+      title: 'Problem',
+      body: 'Apps stall.',
+      pain_1_title: 'Bloat', pain_1_body: '50 plus features.',
+      pain_2_title: 'Drama', pain_2_body: 'Streaks.',
+    });
+    const bare = buildSeedFiles({ title: 'T' });
+    const [richBytes, bareBytes] = await Promise.all([
+      buildPptxPresentation({ files: rich, projectName: 'R' }),
+      buildPptxPresentation({ files: bare, projectName: 'B' }),
+    ]);
+    expect(richBytes.byteLength).toBeGreaterThan(bareBytes.byteLength + 300);
+  });
+
+  it('a real seed-bundle data.json renders rich content for every slide', async () => {
+    // End-to-end: the actual annual-report seed data.json has 6
+    // slides, 2 of which carry `stats[]` under stems
+    // `slide-02-by-the-numbers` and `slide-04-outcomes`. Without
+    // data-shape inference those slides collapsed to a generic
+    // title+body. With it, each stat tile renders and the deck
+    // exceeds the byte count of a single bare cover.
+    const seedDataJson = JSON.stringify({
+      _meta: { project: 'Atlas Foundation — 2025 impact report' },
+      slides: [
+        { stem: 'slide-01-cover', data: { title: 'Atlas Foundation', subtitle: '2025 impact at a glance' } },
+        {
+          stem: 'slide-02-by-the-numbers',
+          data: {
+            eyebrow: 'By the numbers',
+            title: 'What 2025 looked like',
+            stats: [
+              { value: '1,240', label: 'scholarships funded' },
+              { value: '37', label: 'partner schools' },
+              { value: '$4.8M', label: 'disbursed in grants' },
+              { value: '92%', label: 'still enrolled' },
+            ],
+          },
+        },
+        { stem: 'slide-03-where', data: { title: '37 schools across 4 regions', body: 'Atlas concentrates…' } },
+        {
+          stem: 'slide-04-outcomes',
+          data: {
+            eyebrow: 'Outcomes',
+            title: 'The numbers that matter most',
+            stats: [
+              { value: '78%', label: 'finish secondary' },
+              { value: '31%', label: 'go on to tertiary' },
+              { value: '1.4x', label: 'earnings uplift' },
+            ],
+          },
+        },
+        { stem: 'slide-05-finance', data: { title: 'Every dollar accounted for', body: '86¢ to scholars.' } },
+        { stem: 'slide-06-thanks', data: { title: 'To our 1,800 donors', body: 'Thank you.' } },
+      ],
+    });
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: ':root{--mgf-color-bg:#FBF7EE;--mgf-color-accent:#FF3DAA;--mgf-color-text-primary:#0A0A0A;}' }),
+      file({ layer: 'content', name: 'data.json', content: seedDataJson }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'Atlas' });
+    // 6 slides × multiple text/shape elements each must clear 8KB.
+    // Pre-fix this was ~3KB because only the title was rendered.
+    expect(bytes.byteLength).toBeGreaterThan(8000);
   });
 });
 
@@ -286,8 +786,14 @@ describe('identifyComponent — cover regex no longer swallows problem', () => {
     ).toBe('cover');
   });
 
-  it('still classifies mgf-title-xl as cover', () => {
-    expect(identifyComponent('<div class="mgf-eyebrow mgf-title-xl"></div>')).toBe('cover');
+  it('still classifies <h1 class="mgf-title-xl" data-field="title"> as cover', () => {
+    // The actual cover-slide shape: an <h1> with data-field="title"
+    // and the `mgf-title-xl` class. Cover is now identified by the
+    // <h1> tag alone — the class is not used in the regex because
+    // closing/ask slides also use `mgf-title-xl`.
+    expect(
+      identifyComponent('<h1 class="mgf-title-xl" data-field="title">Project</h1>'),
+    ).toBe('cover');
   });
 
   it('does NOT classify a problem slide (eyebrow + h2 title) as cover', () => {
@@ -297,6 +803,71 @@ describe('identifyComponent — cover regex no longer swallows problem', () => {
           '<span class="mgf-eyebrow" data-field="eyebrow">Problem</span>' +
           '<h2 class="mgf-title" data-field="title">SMBs locked out</h2>' +
           '<p class="mgf-body" data-field="body">70% of applications are declined.</p>' +
+          '</section>',
+      ),
+    ).not.toBe('cover');
+  });
+
+  it('does NOT classify the seeded problem slide shape (<h2 class="mgf-title-lg">) as cover', () => {
+    // Regression: the previous "fix" swapped `mgf-eyebrow` for
+    // `mgf-title-xl|mgf-title-lg` in the cover regex. `mgf-title-lg`
+    // is used on EVERY non-cover slide for its main title — see
+    // `slideProblem()`, `slideFeatures()`, `slideStats()`,
+    // `slideStatsThreeUp()` in MgfFileBuilders. With the broad
+    // match, every non-cover slide still routed to renderCover and
+    // lost its body and bullet points. This test mirrors the exact
+    // seeded HTML for slide-02.
+    expect(
+      identifyComponent(
+        '<section class="mgf-slide">' +
+          '<p class="mgf-eyebrow">The Problem</p>' +
+          '<div class="mgf-accent-bar mgf-mt-sm"></div>' +
+          '<h2 class="mgf-title-lg mgf-mt-md" data-field="title">Problem title</h2>' +
+          '<p class="mgf-body mgf-mt-md" data-field="body">Body text.</p>' +
+          '<ul class="mgf-list mgf-mt-lg" data-field="points">' +
+          '<li>First point</li><li>Second point</li><li>Third point</li>' +
+          '</ul>' +
+          '<p class="mgf-slide-number" data-field="id">02</p>' +
+          '</section>',
+      ),
+    ).not.toBe('cover');
+  });
+
+  it('does NOT classify the seeded features slide shape as cover', () => {
+    // Same root cause — features uses `<h2 class="mgf-title-lg">` for
+    // its title plus `mgf-grid-3` + `mgf-card` for the grid. The
+    // `mgf-grid-3.*mgf-card` pattern should still match first, but
+    // without it the cover regex would steal the classification.
+    expect(
+      identifyComponent(
+        '<section class="mgf-slide">' +
+          '<p class="mgf-eyebrow">The Solution</p>' +
+          '<h2 class="mgf-title-lg mgf-mt-md" data-field="title">Solution title</h2>' +
+          '<div class="mgf-grid-3 mgf-mt-lg" data-field="features">' +
+          '<div class="mgf-card"><div class="mgf-feature-icon">⚡</div></div>' +
+          '<div class="mgf-card"><div class="mgf-feature-icon">🔗</div></div>' +
+          '<div class="mgf-card"><div class="mgf-feature-icon">📊</div></div>' +
+          '</div>' +
+          '</section>',
+      ),
+    ).toBe('features');
+  });
+
+  it('does NOT classify <h2 class="mgf-title-xl"> closing/ask shape as cover', () => {
+    // Regression: closing/ask slides use <h2 class="mgf-title-xl">
+    // for a hero-style title (see slideClosing, slideArabicAsk,
+    // slideArabicClosing, slideEarthAsk, slideEarthClosing in
+    // MgfFileBuilders). The cover regex used to match the class and
+    // route them to renderCover, silently dropping body, cta, cta_url,
+    // footer. The cover regex now keys on <h1> alone.
+    expect(
+      identifyComponent(
+        '<section class="mgf-slide">' +
+          '<p class="mgf-eyebrow">The Ask</p>' +
+          '<div class="mgf-accent-bar mgf-mt-sm"></div>' +
+          '<h2 class="mgf-title-xl mgf-mt-md" data-field="title">Raising $XM</h2>' +
+          '<p class="mgf-subtitle mgf-mt-md" data-field="body">Use-of-funds paragraph.</p>' +
+          '<p class="mgf-slide-number" data-field="id">10</p>' +
           '</section>',
       ),
     ).not.toBe('cover');
@@ -312,6 +883,97 @@ describe('identifyComponent — cover regex no longer swallows problem', () => {
           '</section>',
       ),
     ).toBe('closing');
+  });
+});
+
+describe('buildPptxPresentation — data.json vs HTML component disagreement', () => {
+  // Regression: PPTX previously trusted `data.json.slides[].component`
+  // *first*, so a project whose data.json was overwritten without
+  // updating per-slide components (e.g. every entry stuck on
+  // `component: "cover"`) routed every slide to `renderCover` and
+  // silently dropped body/bullets/points. The fix prefers the
+  // HTML-detected component and warns on disagreement so the user
+  // can repair the persisted data.json.
+  it('prefers HTML-detected component when data.json disagrees (and warns)', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const files: ProjectFile[] = [
+        file({ layer: 'style', name: 'style.css', content: ':root{--mgf-color-bg:#0b0f17;--mgf-color-accent:#22d3ee;}' }),
+        file({
+          layer: 'content',
+          name: 'data.json',
+          content: JSON.stringify({
+            slides: [{
+              id: 1,
+              // The bug: data.json says "cover" but HTML is a
+              // features slide. Before the fix this routed to
+              // renderCover and dropped the grid.
+              component: 'cover',
+              data: { title: 'Cover-ish title' },
+            }],
+          }),
+        }),
+        file({
+          layer: 'slide',
+          name: 'slide-01.html',
+          content:
+            '<section class="mgf-slide">' +
+            '<h2 class="mgf-title-lg mgf-mt-md" data-field="title">Features title</h2>' +
+            '<div class="mgf-grid-3 mgf-mt-lg" data-field="features">' +
+            '<div class="mgf-card">A</div>' +
+            '<div class="mgf-card">B</div>' +
+            '<div class="mgf-card">C</div>' +
+            '</div>' +
+            '</section>',
+        }),
+      ];
+      const bytes = await buildPptxPresentation({ files, projectName: 'Disagree' });
+      expect(bytes.byteLength).toBeGreaterThan(2000);
+      // The disagreement warning must have fired with both names.
+      const calls = warnSpy.mock.calls.map((c) => c.join(' ')).join('\n');
+      expect(calls).toContain('data.json component "cover"');
+      expect(calls).toContain('HTML-detected "features"');
+      expect(calls).toContain('slide-01.html');
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it('does NOT warn when data.json component matches HTML', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const files: ProjectFile[] = [
+        file({ layer: 'style', name: 'style.css', content: ':root{--mgf-color-bg:#0b0f17;}' }),
+        file({
+          layer: 'content',
+          name: 'data.json',
+          content: JSON.stringify({
+            slides: [{
+              id: 1,
+              component: 'features',
+              data: { title: 'T' },
+            }],
+          }),
+        }),
+        file({
+          layer: 'slide',
+          name: 'slide-01.html',
+          content:
+            '<div class="mgf-grid-3">' +
+            '<div class="mgf-card">A</div>' +
+            '<div class="mgf-card">B</div>' +
+            '<div class="mgf-card">C</div>' +
+            '</div>',
+        }),
+      ];
+      await buildPptxPresentation({ files, projectName: 'Agree' });
+      const disagreeCalls = warnSpy.mock.calls.filter((c) =>
+        c.some((arg) => typeof arg === 'string' && arg.includes('data.json component')),
+      );
+      expect(disagreeCalls).toHaveLength(0);
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 });
 

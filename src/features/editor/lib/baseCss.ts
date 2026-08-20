@@ -28,7 +28,8 @@
  * 16. Modifiers (mgf-glass, mgf-neo, mgf-brutal-border, mgf-grain, etc.)
  * 17. Website archetype (scrollable single-page)
  * 18. Responsive collapse
- * 19. RTL flips
+ * 19. Sizing utilities (Tailwind-like fill/fit/inset/overflow)
+ * 20. RTL flips
  */
 
 export const BASE_CSS = `
@@ -122,12 +123,16 @@ html, body {
 }
 section.mgf-slide {
   padding: 2.5rem;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
   min-height: 70vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   overflow: hidden;
   position: relative;
+  box-sizing: border-box;
 }
 .mgf-slide-size-16x9    { aspect-ratio: 16 / 9; min-height: auto; }
 .mgf-slide-size-4x3     { aspect-ratio: 4 / 3;  min-height: auto; }
@@ -1566,7 +1571,50 @@ section.mgf-slide {
   .mgf-bento-item { grid-column: span 1; }
 }
 
-/* ── 19. RTL directional flips ───────────────────────────────────
+/* ── 19. Sizing utilities (Tailwind-like fill/fit/inset/overflow) ─
+   Slide content can use these to fill the slide canvas instead of
+   hard-coded px sizes. Works in the editor preview. PPTX export
+   ignores them — pptxgenjs paints at fixed inches per renderer —
+   so the visual contract is: preview fills the wrapper, export uses
+   each renderer's PAD_X / PAD_Y. Pair mgf-fill with mgf-flex to
+   make a child fill the slide and center its content. ─────── */
+.mgf-w-full        { width: 100%; }
+.mgf-h-full        { height: 100%; }
+.mgf-fill          { width: 100%; height: 100%; }
+.mgf-min-w-full    { min-width: 100%; }
+.mgf-min-h-full    { min-height: 100%; }
+.mgf-min-h-screen  { min-height: 100vh; }
+.mgf-max-w-full    { max-width: 100%; }
+.mgf-max-h-full    { max-height: 100%; }
+.mgf-fit           { max-width: 100%; max-height: 100%; }
+.mgf-w-screen      { width: 100vw; }
+.mgf-h-screen      { height: 100vh; }
+.mgf-w-auto        { width: auto; }
+.mgf-h-auto        { height: auto; }
+
+/* Position (Tailwind-style absolute + inset) */
+.mgf-absolute      { position: absolute; }
+.mgf-relative      { position: relative; }
+.mgf-static        { position: static; }
+.mgf-fixed         { position: fixed; }
+.mgf-sticky        { position: sticky; }
+.mgf-inset-0       { top: 0; right: 0; bottom: 0; left: 0; }
+.mgf-inset-x-0     { left: 0; right: 0; }
+.mgf-inset-y-0     { top: 0; bottom: 0; }
+.mgf-top-0         { top: 0; }
+.mgf-right-0       { right: 0; }
+.mgf-bottom-0      { bottom: 0; }
+.mgf-left-0        { left: 0; }
+
+/* Overflow */
+.mgf-overflow-hidden  { overflow: hidden; }
+.mgf-overflow-auto    { overflow: auto; }
+.mgf-overflow-scroll  { overflow: scroll; }
+.mgf-overflow-visible { overflow: visible; }
+.mgf-overflow-x-hidden { overflow-x: hidden; }
+.mgf-overflow-y-auto   { overflow-y: auto; }
+
+/* ── 20. RTL directional flips ───────────────────────────────────
    Modern CSS uses logical properties (margin-inline-start, padding-
    block, etc.) so most layouts mirror for free. The handful of
    rules below still use physical (left/right) properties and need
