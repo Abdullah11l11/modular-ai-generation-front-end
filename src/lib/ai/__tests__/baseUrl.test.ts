@@ -1,0 +1,59 @@
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  clearBaseUrl,
+  clearBaseUrlOverride,
+  DEFAULT_MINIMAX_BASE_URL,
+  DEFAULT_LMSTUDIO_BASE_URL,
+  getEffectiveBaseUrl,
+  isLocalBaseUrl,
+  setBaseUrl,
+  setBaseUrlOverride,
+} from '../baseUrl';
+
+describe('baseUrl helpers', () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => localStorage.clear());
+
+  it('returns the MiniMax default when no override is set', () => {
+    expect(getEffectiveBaseUrl('minimax')).toBe(DEFAULT_MINIMAX_BASE_URL);
+    expect(DEFAULT_MINIMAX_BASE_URL).toMatch(/^https:\/\/api\.minimax\.io\/anthropic$/);
+  });
+
+  it('returns the LM Studio default when no override is set', () => {
+    expect(getEffectiveBaseUrl('lmstudio')).toBe(DEFAULT_LMSTUDIO_BASE_URL);
+    expect(DEFAULT_LMSTUDIO_BASE_URL).toMatch(/^http:\/\/localhost:1234$/);
+  });
+
+  it('user override wins over the default for minimax', () => {
+    setBaseUrlOverride('minimax', 'https://my-proxy.test/v1');
+    expect(getEffectiveBaseUrl('minimax')).toBe('https://my-proxy.test/v1');
+  });
+
+  it('user override wins over the default for lmstudio', () => {
+    setBaseUrlOverride('lmstudio', 'http://192.168.1.10:1234/v1/chat/completions');
+    expect(getEffectiveBaseUrl('lmstudio')).toBe('http://192.168.1.10:1234/v1/chat/completions');
+  });
+
+  it('clearBaseUrlOverride falls back to the default', () => {
+    setBaseUrlOverride('minimax', 'https://override.test');
+    clearBaseUrlOverride('minimax');
+    expect(getEffectiveBaseUrl('minimax')).toBe(DEFAULT_MINIMAX_BASE_URL);
+  });
+
+  it('clearBaseUrl also clears the override', () => {
+    setBaseUrl('lmstudio', 'http://override.test');
+    clearBaseUrl('lmstudio');
+    expect(getEffectiveBaseUrl('lmstudio')).toBe(DEFAULT_LMSTUDIO_BASE_URL);
+  });
+
+  it('isLocalBaseUrl detects loopback hosts', () => {
+    expect(isLocalBaseUrl('http://localhost:1234')).toBe(true);
+    expect(isLocalBaseUrl('http://127.0.0.1:1234')).toBe(true);
+    expect(isLocalBaseUrl('http://127.0.0.1:1234/v1')).toBe(true);
+    expect(isLocalBaseUrl('http://localhost')).toBe(true);
+    expect(isLocalBaseUrl('http://192.168.1.10:1234')).toBe(false);
+    expect(isLocalBaseUrl('http://example.com')).toBe(false);
+  });
+});
+
+

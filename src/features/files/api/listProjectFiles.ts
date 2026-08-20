@@ -1,5 +1,9 @@
 import { apiClient } from '@/lib/api/client';
-import type { Id, PaginatedResponse, ProjectFile } from '@/types/api';
+import type { Id, ProjectFile } from '@/types/api';
+
+type FilesListResponse = {
+  data: ProjectFile[];
+};
 
 export const listProjectFiles = (projectId: Id) =>
-  apiClient.get<PaginatedResponse<ProjectFile>>(`projects/${projectId}/files`);
+  apiClient.get<FilesListResponse>(`projects/${projectId}/files`);

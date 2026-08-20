@@ -7,10 +7,21 @@ import RegisterPage from '@/pages/auth/Register';
 import { PublicProfilePage } from '@/pages/PublicProfilePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
-import { EditorPage } from '@/features/editor/components/EditorPage';
+import EditorPage from '@/pages/editor/EditorPage';
+import { TemplatesPage } from '@/pages/templates/TemplatesPage';
+import { CreateTemplatePage } from '@/pages/templates/CreateTemplatePage';
+import { DocsPage } from '@/pages/docs/DocsPage';
+import { SkillPage } from '@/pages/skill/SkillPage';
+import AiProvidersPage from '@/pages/settings/AiProvidersPage';
+import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { ResourcePage } from '@/pages/resources/resourcesPage';
 import { ResourceDetailPage } from '@/pages/resources/ResourceDetailPage';
+import { CreateResourcePage } from '@/pages/resources/CreateResourcePage';
+import { AIGenerateProjectPage } from '@/pages/newProject/AIGenerateProjectPage';
 import AdminPage from '@/pages/admin/AdminPage';
+import { ProfileRedirect } from '@/routes/ProfileRedirect';
+import { TemplateDetailPage } from '@/pages/templates/TemplateDetailPage';
+import { HomeRedirect } from '@/routes/HomeRedirect';
 
 export const router = createBrowserRouter([
   {
@@ -32,9 +43,10 @@ export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      { path: '/', element: <></> },
+      { path: '/', element: <HomeRedirect /> },
+      { path: '/docs', element: <DocsPage /> },
       { path: '/templates', element: <TemplatesPage /> },
-      { path: '/templates/:templateId', element: <></> },
+      { path: '/templates/:templateId', element: <TemplateDetailPage /> },
       { path: '/users/:userId', element: <PublicProfilePage /> },
     ],
   },
@@ -45,10 +57,15 @@ export const router = createBrowserRouter([
         element: <RootLayout />,
         children: [
           { path: '/dashboard', element: <DashboardPage /> },
-          { path: '/settings', element: <></> },
+          { path: '/me', element: <ProfileRedirect /> },
+          { path: '/settings', element: <SettingsPage /> },
+          { path: '/settings/ai-providers', element: <AiProvidersPage /> },
           { path: '/resources', element: <ResourcePage /> },
-          { path: '/resources/new', element: <></> },
+          { path: '/resources/new', element: <CreateResourcePage /> },
           { path: '/resources/:resourceId', element: <ResourceDetailPage /> },
+          { path: '/templates/new', element: <CreateTemplatePage /> },
+          { path: '/skill', element: <SkillPage /> },
+          { path: '/projects/new/ai', element: <AIGenerateProjectPage /> },
         ],
       },
     ],

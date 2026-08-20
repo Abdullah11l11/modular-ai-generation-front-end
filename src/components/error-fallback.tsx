@@ -7,7 +7,7 @@ type ErrorFallbackProps = {
 
 export function ErrorFallback({ error, reset }: ErrorFallbackProps) {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
+    <div className="flex min-h-[60vh] flex-col w-screen items-center justify-center gap-4 px-4 text-center">
       <div className="flex size-12 items-center justify-center rounded-xl bg-(--cy-d) text-(--cy)">
         <svg
           width="20"

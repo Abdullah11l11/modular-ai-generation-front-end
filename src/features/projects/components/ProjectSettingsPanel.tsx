@@ -1,238 +1,189 @@
-import { useEffect } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useProject } from '@/features/projects/hooks/useProject';
-import { useUpdateProject } from '@/features/projects/hooks/useUpdateProject';
-import {
-  Field,
-  FieldLabel,
-  FieldGroup,
-  FieldContent,
-  FieldError,
-  FieldDescription,
-} from '@/components/ui/field';
+import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TagInput } from '@/components/ui/tag-input';
-import { Loader2Icon } from 'lucide-react';
-import type { Id } from '@/types/api';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { useUpdateProject } from '@/features/projects/hooks/useUpdateProject';
+import { useTypes } from '@/features/types/hooks/useTypes';
+import type { Project, Direction } from '@/types/api';
+import { ApiError } from '@/lib/api/client';
 
-type ProjectSettingsPanelProps = {
-  projectId: Id;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+type FormValues = {
+  name: string;
+  description: string;
+  status: 'draft' | 'published' | 'archived';
+  visibility: 'public' | 'private' | 'unlisted';
+  type_id: string;
+  direction: Direction;
+  tags: string[];
 };
 
-export function ProjectSettingsPanel({ projectId, open, onOpenChange }: ProjectSettingsPanelProps) {
-  const { data: project, isLoading: projectLoading } = useProject(projectId);
-  const updateProject = useUpdateProject();
+type ProjectSettingsPanelProps = {
+  project: Project;
+  onSaved: () => void;
+};
+
+export function ProjectSettingsPanel({ project, onSaved }: ProjectSettingsPanelProps) {
+  const { data: types } = useTypes();
+  const { mutate, isPending, error: mutationError } = useUpdateProject();
 
   const {
     register,
     handleSubmit,
-    control,
     setValue,
-    reset,
-    formState: { errors, isDirty, isSubmitting },
-  } = useForm<ProjectSettingsFormValues>({
-    resolver: zodResolver(projectSettingsSchema),
+    watch,
+    setError,
+    formState: { errors },
+  } = useForm<FormValues>({
     defaultValues: {
-      name: '',
-      description: '',
-      status: 'draft',
-      visibility: 'private',
-      tags: [],
-      direction: 'ltr',
+      name: project.name,
+      description: project.description ?? '',
+      status: project.status,
+      visibility: project.visibility,
+      type_id: project.type?.id ?? '',
+      direction: project.direction,
+      tags: project.tags,
     },
   });
 
-  useEffect(() => {
-    if (project) {
-      reset({
-        name: project.name,
-        description: project.description ?? '',
-        status: project.status,
-        visibility: project.visibility,
-        tags: project.tags,
-        direction: project.direction,
-      });
-    }
-  }, [project, reset]);
+  const watchTags = watch('tags');
 
-  const tags = useWatch({ control, name: 'tags' }) ?? [];
-  const currentStatus = useWatch({ control, name: 'status' });
-  const visibility = useWatch({ control, name: 'visibility' });
-  const direction = useWatch({ control, name: 'direction' });
-
-  const onSubmit = async (data: ProjectSettingsFormValues) => {
-    await updateProject.mutateAsync(
-      { projectId, payload: { ...data, description: data.description || null } },
-      { onSuccess: () => onOpenChange(false) },
-    );
-  };
-
-  if (projectLoading) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Project Settings</DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center justify-center py-8">
-            <Loader2Icon className="size-5 animate-spin text-(--t3)" />
-          </div>
-        </DialogContent>
-      </Dialog>
+  function onSubmit(data: FormValues) {
+    mutate(
+      {
+        projectId: project.id,
+        payload: {
+          name: data.name,
+          description: data.description || null,
+          status: data.status,
+          visibility: data.visibility,
+          type_id: data.type_id,
+          direction: data.direction,
+          tags: data.tags,
+        },
+      },
+      {
+        onSuccess: () => {
+          onSaved();
+        },
+        onError: (err) => {
+          if (err instanceof ApiError && err.status === 422) {
+            const details = err.details as Record<string, string[]>;
+            if (details?.errors) {
+              for (const [field, messages] of Object.entries(details.errors)) {
+                setError(field as keyof FormValues, {
+                  message: Array.isArray(messages) ? messages[0] : messages,
+                });
+              }
+            }
+          }
+        },
+      },
     );
   }
-
-  if (!project) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Project Settings</DialogTitle>
-            <DialogDescription>Project not found.</DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  const statusNote =
-    currentStatus === 'published' && project.status === 'draft'
-      ? 'Published projects are visible to others.'
-      : null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Project Settings</DialogTitle>
-          <DialogDescription>
-            Edit metadata for <span className="font-medium text-(--t1)">{project.name}</span>.
-          </DialogDescription>
-        </DialogHeader>
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="name">Name</FieldLabel>
+          <Input id="name" {...register('name', { required: 'Name is required' })} />
+          {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name.message}</p>}
+        </Field>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-          <FieldGroup>
-            <Field>
-              <FieldLabel>Type</FieldLabel>
-              <FieldContent>
-                <Input value={project.type?.name ?? '—'} disabled className="text-(--t2)" />
-              </FieldContent>
-            </Field>
+        <Field>
+          <FieldLabel htmlFor="description">Description</FieldLabel>
+          <Textarea id="description" {...register('description')} className="min-h-20 resize-none" />
+        </Field>
 
-            <Field>
-              <FieldLabel>Name</FieldLabel>
-              <FieldContent>
-                <Input {...register('name')} placeholder="My project" />
-                <FieldError errors={errors.name && [{ message: errors.name.message }]} />
-              </FieldContent>
-            </Field>
+        <Field>
+          <FieldLabel htmlFor="type">Type</FieldLabel>
+          <Select
+            value={watch('type_id')}
+            onValueChange={(val) => setValue('type_id', val, { shouldValidate: true })}
+          >
+            <SelectTrigger id="type" className="w-full">
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              {types?.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
 
-            <Field>
-              <FieldLabel>Description</FieldLabel>
-              <FieldContent>
-                <Textarea {...register('description')} placeholder="Optional description" />
-              </FieldContent>
-            </Field>
+        <Field>
+          <FieldLabel htmlFor="status">Status</FieldLabel>
+          <Select
+            value={watch('status')}
+            onValueChange={(val) => setValue('status', val as FormValues['status'], { shouldValidate: true })}
+          >
+            <SelectTrigger id="status" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+              <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
 
-            <Field>
-              <FieldLabel>Status</FieldLabel>
-              <FieldContent>
-                <Select
-                  value={currentStatus}
-                  onValueChange={(v) => setValue('status', v as FormValues['status'])}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
-                  </SelectContent>
-                </Select>
-                {statusNote && <FieldDescription>{statusNote}</FieldDescription>}
-              </FieldContent>
-            </Field>
+        <Field>
+          <FieldLabel htmlFor="visibility">Visibility</FieldLabel>
+          <Select
+            value={watch('visibility')}
+            onValueChange={(val) => setValue('visibility', val as FormValues['visibility'], { shouldValidate: true })}
+          >
+            <SelectTrigger id="visibility" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="public">Public</SelectItem>
+              <SelectItem value="private">Private</SelectItem>
+              <SelectItem value="unlisted">Unlisted</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
 
-            <Field>
-              <FieldLabel>Visibility</FieldLabel>
-              <FieldContent>
-                <Select
-                  value={visibility}
-                  onValueChange={(v) => setValue('visibility', v as FormValues['visibility'])}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="public">Public</SelectItem>
-                    <SelectItem value="private">Private</SelectItem>
-                    <SelectItem value="unlisted">Unlisted</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FieldContent>
-            </Field>
+        <Field>
+          <FieldLabel htmlFor="direction">Direction</FieldLabel>
+          <Select
+            value={watch('direction')}
+            onValueChange={(val) => setValue('direction', val as Direction, { shouldValidate: true })}
+          >
+            <SelectTrigger id="direction" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ltr">LTR</SelectItem>
+              <SelectItem value="rtl">RTL</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
 
-            <Field>
-              <FieldLabel>Direction</FieldLabel>
-              <FieldContent>
-                <Select
-                  value={direction}
-                  onValueChange={(v) => setValue('direction', v as FormValues['direction'])}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ltr">LTR</SelectItem>
-                    <SelectItem value="rtl">RTL</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FieldContent>
-            </Field>
+        <Field>
+          <FieldLabel htmlFor="tags">Tags</FieldLabel>
+          <TagInput
+            id="tags"
+            value={watchTags}
+            onChange={(tags) => setValue('tags', tags)}
+          />
+        </Field>
 
-            <Field>
-              <FieldLabel>Tags</FieldLabel>
-              <FieldContent>
-                <TagInput
-                  value={tags}
-                  onChange={(v) => setValue('tags', v)}
-                  placeholder="Add tag and press Enter"
-                />
-              </FieldContent>
-            </Field>
-          </FieldGroup>
+        {mutationError && !(mutationError instanceof ApiError && mutationError.status === 422) && (
+          <p className="text-xs text-destructive">{mutationError.message}</p>
+        )}
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="accent" disabled={isSubmitting || !isDirty}>
-              {isSubmitting && <Loader2Icon className="size-3.5 animate-spin" />}
-              Save changes
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="submit" variant="accent" disabled={isPending}>
+            {isPending ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </FieldGroup>
+    </form>
   );
 }

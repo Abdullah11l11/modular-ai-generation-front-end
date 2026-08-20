@@ -1,0 +1,67 @@
+{
+  "_meta": {
+    "project": "Loamgrid — direct-air capture, hot climates",
+    "audience": "Climate Series A — strategic and financial investors",
+    "brand_voice": "grounded, scientific, long-term",
+    "output_target": "presentation-deck",
+    "total_slides": 6,
+    "language": "en",
+    "direction": "ltr"
+  },
+  "slides": [
+    {
+      "stem": "slide-01-cover",
+      "data": {
+        "title": "Loamgrid",
+        "subtitle": "Direct-air capture that works at 45°C",
+        "author": "Loamgrid team",
+        "date": "Series A — 2026"
+      }
+    },
+    {
+      "stem": "slide-02-why-now",
+      "data": {
+        "eyebrow": "Why now",
+        "title": "Carbon removal is finally a market",
+        "body": "Voluntary carbon markets crossed $2B in 2024 and the IRA-equivalent credits in MENA are finally pricing permanence at the level DAC needs."
+      }
+    },
+    {
+      "stem": "slide-03-product",
+      "data": {
+        "eyebrow": "Product",
+        "title": "A sorbent tuned for the desert",
+        "body": "Our metal-organic-framework sorbent regenerates at 90°C — well below the wet-bulb threshold — and pulls CO₂ at $180/ton today, on a path to under $80."
+      }
+    },
+    {
+      "stem": "slide-04-numbers",
+      "data": {
+        "eyebrow": "Numbers",
+        "title": "What the pilot proved",
+        "stats": [
+          { "value": "1,200 t/yr", "label": "current capture capacity" },
+          { "value": "$180", "label": "cost per ton, today" },
+          { "value": "98%", "label": "sorbent durability over 1,200 cycles" },
+          { "value": "2 sites", "label": "operating in the Gulf" }
+        ]
+      }
+    },
+    {
+      "stem": "slide-05-ask",
+      "data": {
+        "eyebrow": "Ask",
+        "title": "Raising $25M Series A",
+        "body": "To commission two 10,000 t/yr plants and to lock in 10-year offtake agreements with regional cement and steel producers."
+      }
+    },
+    {
+      "stem": "slide-06-closing",
+      "data": {
+        "eyebrow": "Contact",
+        "title": "Let's talk",
+        "cta": "partners@loamgrid.energy"
+      }
+    }
+  ]
+}

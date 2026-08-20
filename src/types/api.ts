@@ -162,12 +162,16 @@ export type Comment = {
   id: Id;
   user_id: Id;
   author?: UserSummary;
-  content: string;
+  body: string;
   created_at: string;
   updated_at: string;
 };
 
-export type ToggleResponse = {
-  active: boolean;
-  count: number;
+export type UpvoteResponse = {
+  upvoted: boolean;
+  upvote_count: number;
+};
+
+export type BookmarkResponse = {
+  bookmarked: boolean;
 };

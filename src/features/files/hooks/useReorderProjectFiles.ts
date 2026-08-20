@@ -1,7 +1,4 @@
-import {
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { reorderProjectFiles } from '@/features/files/api/reorderProjectFiles';
 
@@ -17,10 +14,7 @@ export function useReorderProjectFiles(projectId: string) {
       }),
 
     onSuccess: (files) => {
-      queryClient.setQueryData(
-        ['project-files', projectId],
-        files,
-      );
+      queryClient.setQueryData(['project-files', projectId], files);
     },
   });
 }

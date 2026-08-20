@@ -2,6 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import type { Project } from '@/types/api';
 import { Badge } from '@/components/ui/badge';
 import { ProjectCardActions } from '@/features/projects/components/ProjectCardActions';
+import { ForkedFromLine } from '@/features/projects/components/ForkedFromLine';
+import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
+import { FirstSlidePreview } from '@/features/templates/components/FirstSlidePreview';
 
 const statusConfig: Record<
   Project['status'],
@@ -18,14 +21,14 @@ const statusConfig: Record<
 
 type ProjectCardProps = {
   project: Project;
-  onDeleteRequest: (project: Project) => void;
+  onDeleteRequest?: (project: Project) => void;
 };
 
 export function ProjectCard({ project, onDeleteRequest }: ProjectCardProps) {
   const navigate = useNavigate();
   const status = statusConfig[project.status];
-  const initial = project.name.charAt(0).toUpperCase();
   const typeName = project.type?.name ?? 'Untyped';
+  const { data: filesData, isLoading: filesLoading } = useProjectFiles(project.id);
 
   const handleClick = () => {
     navigate(`/editor/projects/${project.id}`);
@@ -44,20 +47,22 @@ export function ProjectCard({ project, onDeleteRequest }: ProjectCardProps) {
       onClick={handleClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter') handleClick();
-        if (e.key === 'Delete') {
+        if (e.key === 'Delete' && onDeleteRequest) {
           e.preventDefault();
           onDeleteRequest(project);
         }
       }}
       className="group/card flex cursor-pointer flex-col overflow-hidden rounded-(--r12,12px) bg-(--sur) shadow-sm ring-1 ring-(--bor2)/50 transition-all duration-150 hover:-translate-y-px hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--cy)"
     >
-      <div className="flex aspect-16/10 items-center justify-center bg-(--sur2) text-(--cy)">
-        <span className="text-3xl font-extrabold tracking-tight opacity-30">{initial}</span>
-      </div>
+      <FirstSlidePreview
+        files={filesData?.data}
+        direction={project.direction}
+        isLoading={filesLoading}
+      />
 
       <div className="flex flex-col gap-2 p-(--space-card-pad,15px)">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 space-y-1">
+          <div className="min-w-0 flex-1 space-y-1">
             <h3 className="truncate text-[13px] font-bold text-(--t1)">{project.name}</h3>
             <p className="text-[11px] font-medium text-(--t3)">{typeName}</p>
           </div>
@@ -70,6 +75,13 @@ export function ProjectCard({ project, onDeleteRequest }: ProjectCardProps) {
           </Badge>
           <span className="text-[11px] font-medium text-(--t3)">{formattedDate}</span>
         </div>
+
+        {project.template_id || project.origin_template_name ? (
+          <ForkedFromLine
+            templateId={project.template_id}
+            fallbackName={project.origin_template_name}
+          />
+        ) : null}
       </div>
     </div>
   );

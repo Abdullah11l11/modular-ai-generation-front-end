@@ -1,0 +1,35 @@
+/* style.css — Annual report infographic (English, LTR).
+   Editorial / print-feel: paper-cream background, deep navy ink,
+   single warm copper accent for highlights. */
+
+:root {
+  --mgf-color-bg: #f6f1e7;
+  --mgf-color-surface: #ffffff;
+  --mgf-color-surface-2: #ede5d3;
+  --mgf-color-text-primary: #0e1a2c;
+  --mgf-color-text-secondary: #4a5567;
+  --mgf-color-text-inverse: #ffffff;
+  --mgf-color-accent: #b46a3a;
+  --mgf-color-accent-soft: rgba(180, 106, 58, 0.10);
+  --mgf-color-border: rgba(14, 26, 44, 0.10);
+  --mgf-color-border-strong: #0e1a2c;
+  --mgf-radius-md: 4px;
+  --mgf-radius-lg: 8px;
+  --mgf-space-2: 0.5rem;
+  --mgf-space-4: 1rem;
+  --mgf-space-6: 1.5rem;
+  --mgf-space-8: 2rem;
+  --mgf-text-sm: 0.875rem;
+  --mgf-text-base: 1rem;
+  --mgf-text-lg: 1.25rem;
+  --mgf-text-2xl: 2rem;
+  --mgf-text-3xl: 2.75rem;
+  --mgf-weight-medium: 500;
+  --mgf-weight-bold: 700;
+  --mgf-leading-tight: 1.2;
+  --mgf-leading-normal: 1.6;
+  --mgf-tracking-tight: -0.01em;
+  --mgf-tracking-wide: 0.04em;
+  --mgf-font-display: 'Playfair Display', Georgia, serif;
+  --mgf-font-body: 'Source Serif 4', Georgia, serif;
+}

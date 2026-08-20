@@ -1,0 +1,51 @@
+{
+  "_meta": {
+    "project": "Folio — an independent design studio",
+    "audience": "Brand & product teams looking for senior partners",
+    "brand_voice": "confident, opinionated, hand-crafted",
+    "output_target": "single-page-website",
+    "language": "en",
+    "direction": "ltr"
+  },
+  "site": {
+    "brand": "Folio",
+    "nav": [
+      { "label": "Work", "href": "#work" },
+      { "label": "Studio", "href": "#studio" },
+      { "label": "Contact", "href": "#contact" }
+    ],
+    "hero": {
+      "title": "Brands, books, and the occasional app",
+      "sub": "Folio is a five-person design studio working with founders and museum curators since 2014.",
+      "primary_cta": "See selected work",
+      "secondary_cta": "About the studio"
+    },
+    "features": {
+      "eyebrow": "What we do",
+      "title": "Three practices, one studio",
+      "items": [
+        { "icon": "A", "title": "Brand identity", "desc": "Naming, marks, type systems, and the guidelines to live with them." },
+        { "icon": "B", "title": "Editorial", "desc": "Books, catalogues, annual reports, and the typography that makes them work." },
+        { "icon": "C", "title": "Digital product", "desc": "Websites and small apps, hand-coded and shipped in 8 weeks or less." }
+      ]
+    },
+    "testimonial": {
+      "quote": "Folio made the new identity feel inevitable — like it had been there the whole time.",
+      "author": "Daniela Ortiz",
+      "role": "Director, Casa Moderno"
+    },
+    "faq": {
+      "title": "Working with us",
+      "items": [
+        { "q": "How big is the studio?", "a": "Five people, including two founding partners. We never subcontract." },
+        { "q": "What's the typical engagement length?", "a": "Brand identities run 8–12 weeks. Editorial varies wildly. Digital product is usually 6–8 weeks." }
+      ]
+    },
+    "cta": {
+      "title": "Got a project in mind?",
+      "body": "We open one new client per quarter. Send a brief and a deadline.",
+      "primary": "hello@folio.studio"
+    },
+    "footer": "© 2026 Folio — an independent design studio"
+  }
+}

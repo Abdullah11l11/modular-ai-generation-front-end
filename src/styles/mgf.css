@@ -1,0 +1,84 @@
+/* MGF Standard CSS Vocabulary
+ * Every AI-generated slide must use only these classes.
+ * No inline styles. No hardcoded colors (only the CSS vars below).
+ * Theme + layout layers only override values, never class names.
+ */
+
+:root {
+  /* Theme variables — every project gets a fresh set generated/edited by AI or user */
+  --mgf-bg: #ffffff;
+  --mgf-surface: #f8fafc;
+  --mgf-fg: #0f172a;
+  --mgf-muted: #64748b;
+  --mgf-accent: #2563eb;
+  --mgf-accent-fg: #ffffff;
+  --mgf-border: #e2e8f0;
+  --mgf-radius: 12px;
+  --mgf-pad: 24px;
+  --mgf-font-body: ui-sans-serif, system-ui, sans-serif;
+  --mgf-font-display: ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Layout */
+.mgf-slide { position: relative; display: flex; flex-direction: column; gap: var(--mgf-pad); padding: var(--mgf-pad); background: var(--mgf-bg); color: var(--mgf-fg); border-radius: var(--mgf-radius); font-family: var(--mgf-font-body); }
+.mgf-deck { display: flex; flex-direction: column; gap: calc(var(--mgf-pad) * 1.5); }
+.mgf-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--mgf-pad); }
+.mgf-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--mgf-pad); }
+.mgf-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--mgf-pad); }
+.mgf-split-left { display: grid; grid-template-columns: 1fr 1fr; gap: var(--mgf-pad); }
+.mgf-split-right { display: grid; grid-template-columns: 1fr 1fr; gap: var(--mgf-pad); }
+.mgf-full { position: absolute; inset: 0; }
+
+/* Typography */
+.mgf-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mgf-muted); }
+.mgf-title { font-family: var(--mgf-font-display); font-size: 28px; font-weight: 700; line-height: 1.15; margin: 0; }
+.mgf-title-lg { font-family: var(--mgf-font-display); font-size: 36px; font-weight: 800; line-height: 1.1; margin: 0; }
+.mgf-title-xl { font-family: var(--mgf-font-display); font-size: 48px; font-weight: 800; line-height: 1.05; margin: 0; }
+.mgf-subtitle { font-size: 18px; font-weight: 500; color: var(--mgf-muted); margin: 0; }
+.mgf-body { font-size: 15px; line-height: 1.55; margin: 0; }
+.mgf-body-sm { font-size: 13px; line-height: 1.5; color: var(--mgf-muted); margin: 0; }
+.mgf-caption { font-size: 11px; color: var(--mgf-muted); margin: 0; }
+.mgf-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mgf-accent); }
+
+/* Components */
+.mgf-card { background: var(--mgf-surface); border: 1px solid var(--mgf-border); border-radius: var(--mgf-radius); padding: var(--mgf-pad); }
+.mgf-card-accent { border-left: 3px solid var(--mgf-accent); }
+.mgf-accent-bar { height: 4px; width: 48px; background: var(--mgf-accent); border-radius: 2px; }
+.mgf-divider { height: 1px; background: var(--mgf-border); width: 100%; }
+.mgf-list { list-style: disc; padding-left: 1.25rem; margin: 0; }
+.mgf-list-check { list-style: none; padding-left: 0; margin: 0; }
+.mgf-list-check > li { padding-left: 1.5rem; position: relative; }
+.mgf-list-check > li::before { content: "✓"; position: absolute; left: 0; color: var(--mgf-accent); font-weight: 700; }
+.mgf-list-number { list-style: decimal; padding-left: 1.5rem; margin: 0; }
+.mgf-media { width: 100%; aspect-ratio: 16 / 9; background: var(--mgf-surface); border-radius: var(--mgf-radius); overflow: hidden; }
+.mgf-media > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mgf-stat-value { font-family: var(--mgf-font-display); font-size: 48px; font-weight: 800; line-height: 1; color: var(--mgf-fg); }
+.mgf-stat-label { font-size: 13px; color: var(--mgf-muted); margin-top: 4px; }
+.mgf-badge { display: inline-block; padding: 2px 10px; font-size: 11px; font-weight: 600; border-radius: 999px; background: var(--mgf-surface); color: var(--mgf-fg); border: 1px solid var(--mgf-border); }
+.mgf-callout { padding: var(--mgf-pad); border-radius: var(--mgf-radius); border: 1px solid var(--mgf-border); background: var(--mgf-surface); }
+.mgf-cta { color: var(--mgf-accent); text-decoration: underline; font-weight: 600; }
+.mgf-cta-solid { display: inline-block; padding: 10px 20px; background: var(--mgf-accent); color: var(--mgf-accent-fg); border-radius: var(--mgf-radius); font-weight: 600; text-decoration: none; }
+
+/* Backgrounds */
+.mgf-bg-surface { background: var(--mgf-surface); }
+.mgf-bg-accent { background: var(--mgf-accent); color: var(--mgf-accent-fg); }
+
+/* Utilities */
+.mgf-pad-sm { padding: calc(var(--mgf-pad) / 2); }
+.mgf-pad-md { padding: var(--mgf-pad); }
+.mgf-pad-lg { padding: calc(var(--mgf-pad) * 1.5); }
+.mgf-mt-sm { margin-top: calc(var(--mgf-pad) / 2); }
+.mgf-mt-md { margin-top: var(--mgf-pad); }
+.mgf-mt-lg { margin-top: calc(var(--mgf-pad) * 1.5); }
+.mgf-mb-sm { margin-bottom: calc(var(--mgf-pad) / 2); }
+.mgf-mb-md { margin-bottom: var(--mgf-pad); }
+.mgf-mb-lg { margin-bottom: calc(var(--mgf-pad) * 1.5); }
+.mgf-flex { display: flex; }
+.mgf-flex-col { display: flex; flex-direction: column; }
+.mgf-flex-center { display: flex; align-items: center; justify-content: center; }
+.mgf-text-center { text-align: center; }
+.mgf-text-left { text-align: left; }
+.mgf-text-right { text-align: right; }
+.mgf-text-accent { color: var(--mgf-accent); }
+.mgf-text-muted { color: var(--mgf-muted); }
+.mgf-text-bold { font-weight: 700; }

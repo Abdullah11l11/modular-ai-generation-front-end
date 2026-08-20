@@ -1,0 +1,80 @@
+{
+  "_meta": {
+    "project": "Cleartab — SMB credit in 60 seconds",
+    "audience": "Series A institutional investors",
+    "brand_voice": "confident, terse, data-led",
+    "output_target": "presentation-deck",
+    "total_slides": 7,
+    "language": "en",
+    "direction": "ltr"
+  },
+  "slides": [
+    {
+      "stem": "slide-01-cover",
+      "data": {
+        "title": "Cleartab",
+        "subtitle": "SMB credit decisions in 60 seconds",
+        "author": "Cleartab team",
+        "date": "Series A — 2026"
+      }
+    },
+    {
+      "stem": "slide-02-problem",
+      "data": {
+        "eyebrow": "Problem",
+        "title": "Small businesses are locked out of working capital",
+        "body": "70% of SMB loan applications to traditional banks are declined, and the average wait for a yes is 45 days.",
+        "points": [
+          "78% decline rate for sub-$500K requests",
+          "$220B unmet working-capital demand in MENA",
+          "Manual underwriting doesn't scale"
+        ]
+      }
+    },
+    {
+      "stem": "slide-03-solution",
+      "data": {
+        "eyebrow": "Solution",
+        "title": "Underwrite every invoice, in under a minute",
+        "body": "Cleartab's model reads the SMB's invoices, bank feeds, and accounting trail and returns a credit verdict in 60 seconds."
+      }
+    },
+    {
+      "stem": "slide-04-stats",
+      "data": {
+        "eyebrow": "Traction",
+        "title": "Numbers that compound",
+        "stats": [
+          { "value": "$48M", "label": "processed Q4 2025" },
+          { "value": "320", "label": "active SMB customers" },
+          { "value": "60s", "label": "median decision time" },
+          { "value": "97%", "label": "on-time repayment" }
+        ]
+      }
+    },
+    {
+      "stem": "slide-05-market",
+      "data": {
+        "eyebrow": "Market",
+        "title": "Where we play first",
+        "body": "GCC SMBs in retail, F&B, and light manufacturing. We pick the top decile by invoice volume and go deep there."
+      }
+    },
+    {
+      "stem": "slide-06-ask",
+      "data": {
+        "eyebrow": "Ask",
+        "title": "Raising $12M Series A",
+        "body": "To expand into the UAE and Saudi Arabia, and to double the engineering team in Cairo."
+      }
+    },
+    {
+      "stem": "slide-07-closing",
+      "data": {
+        "eyebrow": "Contact",
+        "title": "Let's talk",
+        "cta": "hello@cleartab.io"
+      }
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "_meta": {
+    "project": "Pulsestat — at-home cardiac monitoring",
+    "audience": "Seed extension — digital health funds",
+    "brand_voice": "calm, evidence-led, human",
+    "output_target": "presentation-deck",
+    "total_slides": 6,
+    "language": "en",
+    "direction": "ltr"
+  },
+  "slides": [
+    {
+      "stem": "slide-01-cover",
+      "data": {
+        "title": "Pulsestat",
+        "subtitle": "At-home cardiac monitoring, with a clinician in the loop",
+        "author": "Pulsestat team",
+        "date": "Seed extension — 2026"
+      }
+    },
+    {
+      "stem": "slide-02-problem",
+      "data": {
+        "eyebrow": "Problem",
+        "title": "Arrhythmia is found too late",
+        "body": "One in four adults over 60 develops a clinically actionable arrhythmia. Today, most cases are caught during a routine ECG — sometimes months after the first symptom."
+      }
+    },
+    {
+      "stem": "slide-03-solution",
+      "data": {
+        "eyebrow": "Solution",
+        "title": "A 7-day patch, read by a cardiologist",
+        "body": "Pulsestat pairs a low-irritation wearable patch with a clinician-reviewed dashboard. The patient gets a real diagnosis, not a fitness-trend guess."
+      }
+    },
+    {
+      "stem": "slide-04-evidence",
+      "data": {
+        "eyebrow": "Evidence",
+        "title": "What we've seen in the first 1,200 patients",
+        "stats": [
+          { "value": "1,204", "label": "patients enrolled" },
+          { "value": "11.3%", "label": "new arrhythmia diagnoses" },
+          { "value": "9 days", "label": "median time to specialist" },
+          { "value": "0.4%", "label": "patch-related skin events" }
+        ]
+      }
+    },
+    {
+      "stem": "slide-05-ask",
+      "data": {
+        "eyebrow": "Ask",
+        "title": "Closing a $4M extension",
+        "body": "To scale the patch manufacturing line and to add two clinical sites in the Gulf."
+      }
+    },
+    {
+      "stem": "slide-06-closing",
+      "data": {
+        "eyebrow": "Contact",
+        "title": "Let's talk",
+        "cta": "founders@pulsestat.health"
+      }
+    }
+  ]
+}

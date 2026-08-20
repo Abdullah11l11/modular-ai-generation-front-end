@@ -1,0 +1,66 @@
+<!doctype html>
+<html dir="rtl" lang="ar">
+  <head>
+    <meta charset="utf-8" />
+    <title>{{site.brand}}</title>
+  </head>
+  <body class="mgf-website">
+    <nav class="mgf-website-nav">
+      <a class="mgf-website-brand" href="/">{{site.brand}}</a>
+      <div class="mgf-website-links">
+        {{site.nav_links}}
+      </div>
+    </nav>
+
+    <section class="mgf-website-hero">
+      <h1 class="mgf-website-hero-title">{{site.hero.title}}</h1>
+      <p class="mgf-website-hero-sub">{{site.hero.sub}}</p>
+      <div class="mgf-website-hero-ctas">
+        <a class="mgf-cta mgf-cta-solid" href="#contact">{{site.hero.primary_cta}}</a>
+        <a class="mgf-cta" href="#work">{{site.hero.secondary_cta}}</a>
+      </div>
+    </section>
+
+    <section id="services" class="mgf-website-section">
+      <header class="mgf-website-section-header">
+        <span class="mgf-eyebrow">{{site.features.eyebrow}}</span>
+        <h2 class="mgf-website-section-title">{{site.features.title}}</h2>
+      </header>
+      <div class="mgf-grid-3">
+        {{site.features.cards}}
+      </div>
+    </section>
+
+    <section class="mgf-website-section">
+      <div class="mgf-website-testimonial">
+        <p class="mgf-quote-mark">❝</p>
+        <p class="mgf-quote-text">{{site.testimonial.quote}}</p>
+        <p class="mgf-quote-name">{{site.testimonial.author}}</p>
+        <p class="mgf-caption">{{site.testimonial.role}}</p>
+      </div>
+    </section>
+
+    <section class="mgf-website-section">
+      <header class="mgf-website-section-header">
+        <h2 class="mgf-website-section-title">{{site.faq.title}}</h2>
+      </header>
+      <div class="mgf-website-faq">
+        {{site.faq.items}}
+      </div>
+    </section>
+
+    <section id="contact" class="mgf-website-section mgf-bg-accent-soft">
+      <div class="mgf-website-cta">
+        <h2 class="mgf-website-cta-title">{{site.cta.title}}</h2>
+        <p class="mgf-website-cta-body">{{site.cta.body}}</p>
+        <a class="mgf-cta mgf-cta-solid mgf-cta-lg" href="mailto:{{site.cta.primary}}">
+          {{site.cta.primary}}
+        </a>
+      </div>
+    </section>
+
+    <footer class="mgf-website-footer">
+      <p class="mgf-caption">{{site.footer}}</p>
+    </footer>
+  </body>
+</html>

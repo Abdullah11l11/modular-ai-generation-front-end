@@ -1,0 +1,35 @@
+/* style.css — Arabic one-pager (executive summary, RTL).
+   Tighter palette than the pitch deck: white-on-navy for a
+   printed-report feel. */
+
+:root {
+  --mgf-color-bg: #0a1a2f;
+  --mgf-color-surface: #102542;
+  --mgf-color-surface-2: #1a3a66;
+  --mgf-color-text-primary: #f4f6fa;
+  --mgf-color-text-secondary: #b8c4d6;
+  --mgf-color-text-inverse: #0a1a2f;
+  --mgf-color-accent: #f0a500;
+  --mgf-color-accent-soft: rgba(240, 165, 0, 0.14);
+  --mgf-color-border: rgba(255, 255, 255, 0.10);
+  --mgf-color-border-strong: #1f3d6b;
+  --mgf-radius-md: 8px;
+  --mgf-radius-lg: 14px;
+  --mgf-space-2: 0.5rem;
+  --mgf-space-4: 1rem;
+  --mgf-space-6: 1.5rem;
+  --mgf-space-8: 2rem;
+  --mgf-text-sm: 0.875rem;
+  --mgf-text-base: 1rem;
+  --mgf-text-lg: 1.25rem;
+  --mgf-text-2xl: 2rem;
+  --mgf-text-3xl: 3rem;
+  --mgf-weight-medium: 500;
+  --mgf-weight-bold: 700;
+  --mgf-leading-tight: 1.18;
+  --mgf-leading-normal: 1.55;
+  --mgf-tracking-tight: -0.02em;
+  --mgf-tracking-wide: 0.08em;
+  --mgf-font-display: 'Cairo', 'Noto Naskh Arabic', Tahoma, sans-serif;
+  --mgf-font-body: 'Cairo', 'Noto Naskh Arabic', Tahoma, sans-serif;
+}

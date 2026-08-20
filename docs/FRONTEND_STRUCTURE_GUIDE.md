@@ -497,6 +497,48 @@ These components use the project CSS custom properties (e.g. `var(--cy)`, `var(-
 
 All three layout wrappers (`RootLayout`, `AuthLayout`, `EditorLayout`) wrap their `<Outlet />` in `<ErrorBoundary>` + `<Suspense fallback={<FullPageLoader />}>`.
 
+## File Model — Multi-File Slide Architecture
+
+Each slide in a project is represented by **3 files** sharing the same name stem, differentiated by `layer`:
+
+| `layer`   | Extension | Role                          | Example content                         |
+|-----------|-----------|-------------------------------|-----------------------------------------|
+| `slide`   | `.html`   | Slide structure (DOM layout)  | `<h1 class="title"></h1><p class="body"></p>` |
+| `style`   | `.css`    | Per-slide CSS variables/rules | `.title { font-size: 32px; color: #111; }`   |
+| `content` | `.json`   | Content data                  | `{"title": "Welcome", "body": "Hello"}`       |
+
+The naming convention groups them — files `slide-01.html`, `slide-01.css`, and `slide-01.json` all share the stem `slide-01` and belong to the same slide.
+
+**Schema fields:**
+
+```txt
+File {
+  id, project_id, template_id, layer, name,
+  extension, sort_order, content?, storage_url?, size_bytes?,
+  created_at, updated_at
+}
+```
+
+- `layer` determines the role: `slide` (HTML), `style` (CSS), or `content` (JSON).
+- `name` follows `<stem>.<ext>`. Files with the same stem form one slide.
+- Global files (e.g. `layer: style` without per-slide naming, `layer: layout`, `layer: context`) apply across the entire project.
+
+Client-side grouping from `useProjectFiles(projectId)`:
+
+```ts
+const getStem = (name: string) => name.replace(/\.[^.]+$/, '');
+
+const slideGroups = files
+  .filter(f => f.layer === 'slide')
+  .reduce((acc, f) => {
+    const stem = getStem(f.name);
+    (acc[stem] ??= []).push(f);
+    return acc;
+  }, {} as Record<string, ProjectFile[]>);
+```
+
+This model is backward compatible — existing files without per-slide naming are unaffected.
+
 ## Toast/Notifications
 
 The `sonner` library is wired at the app root via `<Toaster richColors closeButton position="top-right" />` inside `AppProviders`. A thin wrapper at `src/lib/toast.ts` provides three helpers:
