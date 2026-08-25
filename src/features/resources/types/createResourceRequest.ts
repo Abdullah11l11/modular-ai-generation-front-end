@@ -4,7 +4,7 @@ export type CreateResourceRequest = {
   kind: ResourceKind;
   name: string;
   description?: string | null;
-  body: string;
+  content: string;
   visibility?: Visibility;
   tags?: string[];
 };
