@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import type { Project } from '@/types/api';
 import { Badge } from '@/components/ui/badge';
+import { TypeBadge } from '@/features/types/components/TypeBadge';
 import { ProjectCardActions } from '@/features/projects/components/ProjectCardActions';
 import { ForkedFromLine } from '@/features/projects/components/ForkedFromLine';
 import { useProjectFiles } from '@/features/files/hooks/useProjectFiles';
@@ -27,7 +28,6 @@ type ProjectCardProps = {
 export function ProjectCard({ project, onDeleteRequest }: ProjectCardProps) {
   const navigate = useNavigate();
   const status = statusConfig[project.status];
-  const typeName = project.type?.name ?? 'Untyped';
   const { data: filesData, isLoading: filesLoading } = useProjectFiles(project.id);
 
   const handleClick = () => {
@@ -64,7 +64,7 @@ export function ProjectCard({ project, onDeleteRequest }: ProjectCardProps) {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1 space-y-1">
             <h3 className="truncate text-[13px] font-bold text-(--t1)">{project.name}</h3>
-            <p className="text-[11px] font-medium text-(--t3)">{typeName}</p>
+            <TypeBadge type={project.type} showArchetype />
           </div>
           <ProjectCardActions project={project} onDeleteRequest={onDeleteRequest} />
         </div>

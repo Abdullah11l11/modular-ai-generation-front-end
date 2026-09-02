@@ -3,6 +3,11 @@ import { useEditorContext } from '@/features/editor/hooks/useEditorStore';
 import { useAssemblePreview, assemblePreviewHtml } from '@/features/editor/hooks/useAssemblePreview';
 import { groupSlides } from '@/features/editor/utils/groupSlides';
 import { PreviewFrame } from '@/features/editor/components/Preview/PreviewFrame';
+import {
+  readProjectSize,
+  naturalDimensionsForSize,
+  getOutputTypeInfo,
+} from '@/features/types/types/outputTypeMap';
 import { Button } from '@/components/ui/button';
 import type { ProjectFile } from '@/types/api';
 
@@ -21,6 +26,12 @@ export function PreviewCanvas({
   const { state, dispatch } = useEditorContext();
   const { data: filesResponse } = useProjectFiles(state.projectId);
   const files = filesResponse?.data ?? [];
+
+  // Aspect ratio for the preview canvas. The persisted meta.json size
+  // wins; otherwise fall back to the selected type's default size.
+  const { width: naturalWidth, height: naturalHeight } = naturalDimensionsForSize(
+    readProjectSize(files) ?? getOutputTypeInfo(state.projectType).defaultSize,
+  );
 
   const isPerSlide = state.editorMode === 'per-slide';
   const slides = groupSlides(files);
@@ -128,7 +139,7 @@ export function PreviewCanvas({
   }
 
   return (
-    <div className="relative flex flex-1 items-center justify-center p-8">
+    <div className="relative flex flex-1 justify-center p-8">
       {state.selectedElement && (
         <span className="absolute left-4 top-4 z-10 rounded-xs bg-(--cy) px-2 py-0.5 text-xs font-medium text-(--cy-fg)">
           {state.selectedElement}
@@ -146,8 +157,13 @@ export function PreviewCanvas({
         />
       )}
 
-      <div className="w-full max-w-3xl">
-        <PreviewFrame srcDoc={srcDoc} onElementClick={handleElementClick} />
+      <div className="h-full w-full max-w-3xl">
+        <PreviewFrame
+          srcDoc={srcDoc}
+          onElementClick={handleElementClick}
+          naturalWidth={naturalWidth}
+          naturalHeight={naturalHeight}
+        />
       </div>
     </div>
   );

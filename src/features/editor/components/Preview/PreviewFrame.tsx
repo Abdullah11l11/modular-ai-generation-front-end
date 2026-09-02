@@ -4,6 +4,10 @@ import { ScaledIframe } from './ScaledIframe';
 type PreviewFrameProps = {
   srcDoc: string;
   onElementClick?: (selector: string) => void;
+  /** Override the natural width used for scale calculation (defaults to 1280). */
+  naturalWidth?: number;
+  /** Override the natural height used for scale calculation (defaults to 720). */
+  naturalHeight?: number;
 };
 
 /**
@@ -13,7 +17,12 @@ type PreviewFrameProps = {
  * `element-click` postMessage from `useAssemblePreview`'s injected
  * handler.
  */
-export function PreviewFrame({ srcDoc, onElementClick }: PreviewFrameProps) {
+export function PreviewFrame({
+  srcDoc,
+  onElementClick,
+  naturalWidth,
+  naturalHeight,
+}: PreviewFrameProps) {
   const handleMessage = useCallback(
     (e: MessageEvent) => {
       if (e.data?.type === 'element-click' && onElementClick) {
@@ -33,6 +42,8 @@ export function PreviewFrame({ srcDoc, onElementClick }: PreviewFrameProps) {
       srcDoc={srcDoc}
       sandbox="allow-same-origin allow-scripts"
       title="Preview"
+      naturalWidth={naturalWidth}
+      naturalHeight={naturalHeight}
       className="rounded-lg border border-(--bor2) bg-white shadow-sm"
     />
   );

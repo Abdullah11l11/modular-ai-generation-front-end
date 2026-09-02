@@ -28,9 +28,11 @@ type ScaledIframeProps = {
  * and apply a CSS `transform: scale()` so it shrinks to fit whatever
  * container it's placed in — no scrollbars, no overflow.
  *
- * The wrapper keeps the slide's aspect ratio (`16/9` by default), so
- * the scaled iframe fills it without letterboxing. Uses a ResizeObserver
- * so the scale updates as the container resizes.
+ * The wrapper fills its parent entirely (`w-full h-full`). A
+ * ResizeObserver measures the actual available space and computes the
+ * largest scale factor that fits the slide inside both dimensions while
+ * preserving the natural aspect ratio. The iframe is centred within the
+ * wrapper so equal letter-/pillar-boxing appears on both axes.
  */
 export function ScaledIframe({
   srcDoc,
@@ -48,6 +50,7 @@ export function ScaledIframe({
     if (!el) return;
     const observer = new ResizeObserver((entries) => {
       const { width, height } = entries[0].contentRect;
+      if (width === 0 || height === 0) return;
       const s = Math.min(width / naturalWidth, height / naturalHeight, 1);
       setScale(s);
     });
@@ -55,11 +58,14 @@ export function ScaledIframe({
     return () => observer.disconnect();
   }, [naturalWidth, naturalHeight]);
 
+  const scaledW = naturalWidth * scale;
+  const scaledH = naturalHeight * scale;
+
   return (
     <div
       ref={wrapperRef}
-      className={`relative w-full overflow-hidden ${className ?? ''}`}
-      style={{ aspectRatio: `${naturalWidth} / ${naturalHeight}` }}
+      className={`relative overflow-hidden ${className ?? ''}`}
+      style={{ width: '100%', height: '100%' }}
     >
       <iframe
         title={title}
@@ -70,6 +76,11 @@ export function ScaledIframe({
           height: `${naturalHeight}px`,
           transform: `scale(${scale})`,
           transformOrigin: 'top left',
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          marginTop: `${-scaledH / 2}px`,
+          marginLeft: `${-scaledW / 2}px`,
           border: '0',
         }}
       />

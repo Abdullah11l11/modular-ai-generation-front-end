@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const createProjectSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   type_id: z.string().min(1, 'Type is required'),
+  size: z.enum(['16:9', '3:4', 'square', 'a4', 'full']).optional(),
   description: z.string().optional(),
   visibility: z.enum(['public', 'private', 'unlisted']).optional(),
   tags: z.array(z.string()).optional(),

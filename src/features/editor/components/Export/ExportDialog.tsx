@@ -31,6 +31,7 @@ import {
 import { runExport, downloadExportResult, type ExportFormat, type ExportProgress } from '@/features/editor/utils/runExport';
 import { isScrollableType } from '@/features/editor/utils/editorMode';
 import { useEditorContext } from '@/features/editor/hooks/useEditorStore';
+import { readProjectSize, getOutputTypeInfo } from '@/features/types/types/outputTypeMap';
 import type { ProjectFile } from '@/types/api';
 
 type ExportDialogProps = {
@@ -69,10 +70,19 @@ function humanBytes(n: number): string {
 
 export function ExportDialog({ open, onOpenChange, files, projectName }: ExportDialogProps) {
   const { state } = useEditorContext();
+
+  // Default PDF page size follows the project's persisted size (A4
+  // projects export as A4; everything else uses the slide aspect).
+  // Declared before the useState below so the lazy initializer can
+  // use it safely.
+  const projectSize = readProjectSize(files) ?? getOutputTypeInfo(state.projectType).defaultSize;
+
   const [format, setFormat] = useState<ExportFormat>('zip');
   const [scale, setScale] = useState<number>(2);
   const [jpgQuality, setJpgQuality] = useState<number>(92);
-  const [pdfPageSize, setPdfPageSize] = useState<'slide' | 'a4' | 'letter'>('slide');
+  const [pdfPageSize, setPdfPageSize] = useState<'slide' | 'a4' | 'letter'>(
+    () => (projectSize === 'a4' ? 'a4' : 'slide'),
+  );
   const [progress, setProgress] = useState<ExportProgress | null>(null);
   const [done, setDone] = useState<{ filename: string; bytes: number } | null>(null);
   const [error, setError] = useState<string | null>(null);

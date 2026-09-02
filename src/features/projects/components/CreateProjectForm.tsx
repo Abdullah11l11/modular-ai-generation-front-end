@@ -2,7 +2,11 @@ import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { useCreateProject } from '@/features/projects/hooks/useCreateProject';
+import { createProjectFile } from '@/features/files/api/createProjectFile';
 import { useTypes } from '@/features/types/hooks/useTypes';
+import { TypePicker } from '@/features/types/components/TypePicker';
+import { SizeSelector } from '@/features/types/components/SizeSelector';
+import { getOutputTypeInfo } from '@/features/types/types/outputTypeMap';
 import {
   createProjectSchema,
   type CreateProjectFormValues,
@@ -42,6 +46,7 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
     defaultValues: {
       name: '',
       type_id: '',
+      size: undefined,
       description: '',
       visibility: 'private',
       tags: [],
@@ -53,10 +58,43 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
   const typeId = useWatch({ control, name: 'type_id' });
   const visibility = useWatch({ control, name: 'visibility' });
   const direction = useWatch({ control, name: 'direction' });
+  const selectedSize = useWatch({ control, name: 'size' });
+
+  const selectedType = types?.find((t) => t.id === typeId);
+  const selectedInfo = getOutputTypeInfo(selectedType?.name);
+
+  const handleTypeChange = (id: string) => {
+    setValue('type_id', id);
+    const info = getOutputTypeInfo(types?.find((t) => t.id === id)?.name);
+    setValue('size', info.defaultSize);
+  };
 
   const onSubmit = async (data: CreateProjectFormValues) => {
     try {
-      const project = await createProject.mutateAsync(data);
+      const project = await createProject.mutateAsync({
+        name: data.name,
+        type_id: data.type_id,
+        description: data.description,
+        visibility: data.visibility,
+        tags: data.tags,
+        direction: data.direction,
+      });
+
+      // Persist the chosen size to the project's meta.json file. The
+      // size isn't a backend project field, so we store it on the
+      // `meta` file layer (frontend-only) and read it back in the
+      // editor preview + export defaults. Fire-and-forget: navigation
+      // proceeds regardless, and the editor falls back to the type
+      // default if this write is missing/fails.
+      if (data.size) {
+        void createProjectFile(project.id, {
+          layer: 'meta',
+          name: 'meta.json',
+          extension: 'json',
+          content: JSON.stringify({ size: data.size }, null, 2),
+        });
+      }
+
       toastSuccess(`Project "${project.name}" created`);
       onSuccess?.();
       navigate(`/editor/projects/${project.id}`);
@@ -79,18 +117,19 @@ export function CreateProjectForm({ onSuccess }: CreateProjectFormProps) {
         <Field>
           <FieldLabel>Type</FieldLabel>
           <FieldContent>
-            <Select value={typeId} onValueChange={(v) => setValue('type_id', v)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={typesLoading ? 'Loading...' : 'Select type'} />
-              </SelectTrigger>
-              <SelectContent>
-                {types?.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <TypePicker
+              types={types}
+              value={typeId}
+              onValueChange={handleTypeChange}
+              loading={typesLoading}
+            />
+            {selectedType && (
+              <SizeSelector
+                sizes={selectedInfo.allowedSizes}
+                value={selectedSize ?? selectedInfo.defaultSize}
+                onChange={(size) => setValue('size', size)}
+              />
+            )}
             <FieldError errors={errors.type_id && [{ message: errors.type_id.message }]} />
           </FieldContent>
         </Field>
