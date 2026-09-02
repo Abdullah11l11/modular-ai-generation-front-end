@@ -63,7 +63,7 @@ export function CreateResourceForm({ onSuccess }: CreateResourceFormProps) {
       name: '',
       kind: 'prompt',
       description: '',
-      body: '',
+      content : '',
       visibility: 'public',
       tags: [],
     },
@@ -79,7 +79,7 @@ export function CreateResourceForm({ onSuccess }: CreateResourceFormProps) {
         kind: data.kind,
         name: data.name,
         description: data.description?.trim() ? data.description : null,
-        body: data.body,
+        content : data.body,
         visibility: data.visibility,
         tags: data.tags,
       });
