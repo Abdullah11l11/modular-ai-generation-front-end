@@ -26,7 +26,7 @@ const createResourceSchema = z.object({
     .max(120, 'Name must be 120 characters or fewer'),
   kind: z.enum(['prompt', 'skill', 'agent', 'rule', 'mcp', 'design_doc', 'hook'] as const),
   description: z.string().max(500, 'Description must be 500 characters or fewer').optional(),
-  body: z.string().min(1, 'Content is required'),
+  content: z.string().min(1, 'Content is required'),
   visibility: z.enum(['public', 'unlisted', 'private'] as const),
   tags: z.array(z.string()).max(20, 'At most 20 tags').optional(),
 });
@@ -63,7 +63,7 @@ export function CreateResourceForm({ onSuccess }: CreateResourceFormProps) {
       name: '',
       kind: 'prompt',
       description: '',
-      content : '',
+      content: '',
       visibility: 'public',
       tags: [],
     },
@@ -79,7 +79,7 @@ export function CreateResourceForm({ onSuccess }: CreateResourceFormProps) {
         kind: data.kind,
         name: data.name,
         description: data.description?.trim() ? data.description : null,
-        content : data.body,
+        content: data.content,
         visibility: data.visibility,
         tags: data.tags,
       });
@@ -163,12 +163,12 @@ export function CreateResourceForm({ onSuccess }: CreateResourceFormProps) {
           <FieldLabel>Content</FieldLabel>
           <FieldContent>
             <Textarea
-              {...register('body')}
+              {...register('content')}
               placeholder="Paste or write the resource content. Use {{placeholder}} for variables."
               rows={10}
               className="font-mono text-xs"
             />
-            <FieldError errors={errors.body && [{ message: errors.body.message }]} />
+            <FieldError errors={errors.content && [{ message: errors.content.message }]} />
           </FieldContent>
         </Field>
 
