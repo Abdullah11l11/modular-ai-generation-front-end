@@ -24,7 +24,7 @@ import { assemblePreviewHtml } from '@/features/editor/hooks/useAssemblePreview'
 import { groupSlides } from './groupSlides';
 import { rasterizeHtml, type RasterizeOptions } from './rasterize';
 import { buildPdfFromPages, type PdfPageSpec, type PdfPageSize } from './exportPdf';
-import { buildPptxPresentation } from './mgfPptx';
+import { buildHybridPptxPresentation } from './pptxHybrid';
 import { buildZip, downloadBytes } from '@/lib/zip';
 
 export type ExportFormat = 'zip' | 'html' | 'pptx' | 'pdf' | 'png' | 'jpg';
@@ -125,8 +125,10 @@ function mimeFor(format: ExportFormat): string {
 }
 
 /** Build the assembled HTML document for one slide (deck) or the whole
- *  project (single-page / scrollable). Always uses `interactive: false`. */
-function assembleSlideHtml(
+ *  project (single-page / scrollable). Always uses `interactive: false`.
+ *  Exported so the PPTX hybrid pipeline can reuse the same assembler as
+ *  PDF/PNG/JPG — one HTML output, multiple consumers. */
+export function assembleSlideHtml(
   files: ProjectFile[],
   opts: { projectType: string | undefined; direction: 'ltr' | 'rtl' },
   slideIdx?: number,
@@ -301,11 +303,19 @@ export async function runExport(input: ExportRunInput): Promise<ExportRunResult>
 
   // ── pptx ───────────────────────────────────────────────────────────────
   if (input.format === 'pptx') {
-    report(input, { phase: 'encoding', current: 0, total: 1, message: 'Building PPTX…' });
-    const bytes = await buildPptxPresentation({
+    // Hybrid pipeline: render each slide as a PNG, set it as the slide
+    // background, and overlay native PptxGenJS text boxes for every
+    // `[data-field]` element so the user gets a pixel-perfect preview
+    // they can still edit text in PowerPoint. Replaces the
+    // component-by-component rebuild in `mgfPptx.ts` which couldn't
+    // reach visual fidelity.
+    report(input, { phase: 'rasterizing', current: 0, total: 1, message: 'Building PPTX…' });
+    const bytes = await buildHybridPptxPresentation({
       files: input.files,
       projectName: input.projectName,
+      projectType: input.projectType,
       direction: input.direction,
+      signal: input.signal,
     });
     report(input, { phase: 'done', current: 1, total: 1 });
     return { filename: `${baseName}.pptx`, mime: mimeFor('pptx'), bytes };
