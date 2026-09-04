@@ -196,7 +196,7 @@ export function ResourceDetailPage() {
         payload: {
           name: editName,
           description: editDescription || null,
-          body: editContent,
+          content: editContent,
           kind: editKind,
           visibility: editVisibility,
         },
@@ -237,7 +237,7 @@ export function ResourceDetailPage() {
         kind: resource.kind,
         name: `${resource.name} (filled)`,
         description: resource.description ?? null,
-        body: filled,
+        content: filled,
         visibility: 'private',
         tags: resource.tags,
       });
