@@ -9,6 +9,16 @@
       content="MGF — Modular Generation Framework. Build presentations, dashboards, and sites with AI. Start from a template or generate from a brief."
     />
     <title>MGF — Modular Generation Framework</title>
+    <script>
+      // Apply the saved theme before first paint to avoid a flash of light mode.
+      (function () {
+        try {
+          var stored = localStorage.getItem('mgf.theme');
+          var dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -32,7 +32,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
         if (!v) handleReset();
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-auto">
         <DialogHeader>
           <DialogTitle>New Project</DialogTitle>
           <DialogDescription>Choose how to start your project.</DialogDescription>

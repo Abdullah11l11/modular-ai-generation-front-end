@@ -2,11 +2,19 @@ import { useState, useMemo, useEffect } from 'react';
 import { useProjects } from '@/features/projects/hooks/useProjects';
 import { ProjectGrid } from '@/features/projects/components/ProjectGrid';
 import { CreateProjectModal } from '@/features/projects/components/CreateProjectModal';
+import { useTypes } from '@/features/types/hooks/useTypes';
 import { PageHeader } from '@/components/page-header';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorFallback } from '@/components/error-fallback';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDebounce } from '@/hooks/useDebounce';
 import { PlusIcon, FolderOpenIcon, SearchIcon, Loader2Icon } from 'lucide-react';
@@ -25,9 +33,11 @@ const statusValue = (v: string): Project['status'] | undefined =>
 export default function DashboardPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(1);
   const [loadedProjects, setLoadedProjects] = useState<Project[]>([]);
+  const { data: types } = useTypes();
 
   const debouncedSearch = useDebounce(searchInput, 300);
 
@@ -43,8 +53,12 @@ export default function DashboardPage() {
 
   const { data, isLoading, isFetching, isError, error, refetch } = useProjects(params);
   const hasMore = data ? data.meta.current_page < data.meta.last_page : false;
-
   const filterKey = `${statusFilter}:${debouncedSearch}`;
+
+  const visibleProjects = useMemo(() => {
+    if (typeFilter === 'all') return loadedProjects;
+    return loadedProjects.filter((p) => p.type?.name === typeFilter);
+  }, [loadedProjects, typeFilter]);
 
   // Sync pagination + accumulated list when filter key or page changes.
   // Done in an effect (not during render) to avoid the React 18
@@ -95,19 +109,35 @@ export default function DashboardPage() {
           />
         </div>
 
-        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-          <TabsList variant="line">
-            {statusTabs.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value}>
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-wrap items-center gap-3">
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="All types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All types</SelectItem>
+              {types?.map((t) => (
+                <SelectItem key={t.id} value={t.name}>
+                  {t.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+            <TabsList variant="line">
+              {statusTabs.map((tab) => (
+                <TabsTrigger key={tab.value} value={tab.value}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
-      {!isLoading && loadedProjects.length === 0 ? (
-        statusFilter !== 'all' || debouncedSearch.length > 0 ? (
+      {!isLoading && visibleProjects.length === 0 ? (
+        statusFilter !== 'all' || debouncedSearch.length > 0 || typeFilter !== 'all' ? (
           <EmptyState
             title="No matching projects"
             description={
@@ -121,6 +151,7 @@ export default function DashboardPage() {
                 size="sm"
                 onClick={() => {
                   setStatusFilter('all');
+                  setTypeFilter('all');
                   setSearchInput('');
                 }}
               >
@@ -143,7 +174,7 @@ export default function DashboardPage() {
         )
       ) : (
         <>
-          <ProjectGrid projects={loadedProjects} isLoading={isLoading} />
+          <ProjectGrid projects={visibleProjects} isLoading={isLoading} />
           {hasMore && (
             <div className="mt-6 flex justify-center">
               <Button
