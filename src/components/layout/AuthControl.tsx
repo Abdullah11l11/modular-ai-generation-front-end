@@ -83,11 +83,6 @@ export function AuthControl() {
         <DropdownMenuItem asChild>
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
-        {user.role === 'admin' ? (
-          <DropdownMenuItem asChild>
-            <Link to="/admin">Admin</Link>
-          </DropdownMenuItem>
-        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={(event) => {

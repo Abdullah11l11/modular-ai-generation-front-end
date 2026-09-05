@@ -1,8 +1,9 @@
-import { useEffect, useState ,useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import type { Id, OutputType, Template } from '@/types/api';
 import { TemplateGrid } from '@/features/templates/components/TemplateGrid';
+import { CreateProjectModal } from '@/features/projects/components/CreateProjectModal';
 import { useTemplates } from '@/features/templates/hooks/useTemplates';
 import { useTypes } from '@/features/types/hooks/useTypes';
 import { PageHeader } from '@/components/page-header';
@@ -31,6 +32,7 @@ const PER_PAGE = 20;
 
 export function TemplatesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [modalOpen, setModalOpen] = useState(false);
   const typeParam = searchParams.get('type') as Id | null;
   const qParam = searchParams.get('q') ?? '';
   const sortParam = (searchParams.get('sort') as SortKey | null) ?? 'popular';
@@ -39,17 +41,13 @@ export function TemplatesPage() {
   const [search, setSearch] = useState(qParam);
   const [page, setPage] = useState(1);
   const [allTemplates, setAllTemplates] = useState<Template[]>([]);
- const isFirstSearchRun=useRef(true) ;
   const typesQuery = useTypes();
   const types: OutputType[] = typesQuery.data ?? [];
 
   // Sync search input → URL after a short debounce; reset paging.
   useEffect(() => {
-     if(isFirstSearchRun.current) {
-      isFirstSearchRun.current=false ;
-      return ;
-     }
-     const timer = setTimeout(() => {
+    if (search === qParam) return;
+    const timer = setTimeout(() => {
       const next = new URLSearchParams(searchParams);
       if (search) next.set('q', search);
       else next.delete('q');
@@ -59,7 +57,7 @@ export function TemplatesPage() {
     }, 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+  }, [search, qParam]);
 
   // Reset paging when type or sort changes.
   useEffect(() => {
@@ -105,11 +103,9 @@ export function TemplatesPage() {
           meta?.total ? `${meta.total} templates` : 'Start from a polished template'
         }
         actions={
-          <Button asChild size="sm">
-            <Link to="/templates/new">
-              <Plus className="size-4" />
-              New template
-            </Link>
+          <Button size="sm" onClick={() => setModalOpen(true)}>
+            <Plus className="size-4" />
+            New template
           </Button>
         }
       />
@@ -204,6 +200,11 @@ export function TemplatesPage() {
           )}
         </>
       )}
+      <CreateProjectModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title="Create new template"
+      />
     </div>
   );
 }
