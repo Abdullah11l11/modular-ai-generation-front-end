@@ -308,6 +308,11 @@ export async function runExport(input: ExportRunInput): Promise<ExportRunResult>
       files: input.files,
       projectName: input.projectName,
       direction: input.direction,
+      // Tier 2D: load each slide in an iframe so the renderer can
+      // read live computed styles (border-radius, fill, border,
+      // box-shadow) instead of hard-coded token defaults. Adds ~200ms
+      // per slide in exchange for close-to-preview fidelity.
+      useProbe: true,
     });
     report(input, { phase: 'done', current: 1, total: 1 });
     return { filename: `${baseName}.pptx`, mime: mimeFor('pptx'), bytes };

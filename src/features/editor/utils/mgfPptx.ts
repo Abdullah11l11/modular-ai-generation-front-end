@@ -25,6 +25,7 @@
 
 import PptxGenJS from 'pptxgenjs';
 import type { ProjectFile } from '@/types/api';
+import { withStyleProbe, type StyleProbe } from './styleProbe';
 
 // 16:9 at PowerPoint's standard 13.33 × 7.5 in.
 export const SLIDE_W_IN = 13.333;
@@ -655,27 +656,57 @@ function addCard(
   w: number,
   h: number,
   variant: 'plain' | 'accent' | 'solid' = 'plain',
+  probe?: StyleProbe | null,
+  probeSelector?: string,
 ): void {
+  // Probe-driven style overrides. When the renderer is invoked with a
+  // probe and a selector, we read the live computed style of the
+  // matching element (border-radius, fill, border, box-shadow) and
+  // use those values instead of the hard-coded token defaults. Missing
+  // probe or no-match falls back to the token defaults (preserves the
+  // behavior every test depends on).
+  const probed = probe && probeSelector ? probe(probeSelector) : null;
   const fill =
-    variant === 'solid'
+    probed?.backgroundColor ||
+    (variant === 'solid'
       ? tokens.accent
       : variant === 'accent'
         ? tokens.surface
-        : tokens.surface;
+        : tokens.surface);
   const line =
-    variant === 'solid'
+    probed?.borderColor ||
+    (variant === 'solid'
       ? tokens.accent
       : variant === 'accent'
         ? tokens.accent
-        : tokens.border;
+        : tokens.border);
+  const rectRadiusIn = probed ? Math.min(probed.borderTopLeftRadiusPx / 96, Math.min(w, h) / 2) : 0.05;
+  const lineWidth = probed ? Math.max(0.5, probed.borderWidthPt || (variant === 'accent' ? 0.75 : 1)) : variant === 'accent' ? 0.75 : 1;
+
+  // Render an offset background rect for hard box-shadow (neo-brutal,
+  // brutal-border, etc.). PptxGenJS has no native box-shadow, so we
+  // approximate with a sibling rect drawn beneath the card. Skip
+  // soft / blurred / colored shadows — those we can't represent.
+  if (probed?.boxShadow && probed.boxShadow.blurPx === 0) {
+    slide.addShape('rect', {
+      x: x + probed.boxShadow.offsetXPx / 96,
+      y: y + probed.boxShadow.offsetYPx / 96,
+      w,
+      h,
+      fill: { color: probed.boxShadow.color },
+      line: { type: 'none' },
+      rectRadius: rectRadiusIn,
+    });
+  }
+
   slide.addShape('rect', {
     x,
     y,
     w,
     h,
     fill: { color: fill },
-    line: { color: line, width: variant === 'accent' ? 0.75 : 1 },
-    rectRadius: 0.05,
+    line: { color: line, width: lineWidth },
+    rectRadius: rectRadiusIn,
   });
 }
 
@@ -761,7 +792,7 @@ function resolveSlideImage(data: SlideData): string | null {
   return null;
 }
 
-function renderCover(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderCover(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const subtitle = getString(data, 'subtitle');
@@ -834,7 +865,7 @@ function renderCover(slide: Slide, data: SlideData, tokens: Tokens, idx: number)
   addSlideNumber(slide, tokens, idx > 0 ? String(idx + 1).padStart(2, '0') : '01');
 }
 
-function renderProblem(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderProblem(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const body = getString(data, 'body');
@@ -874,7 +905,7 @@ function renderProblem(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderFeatures(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderFeatures(slide: Slide, data: SlideData, tokens: Tokens, idx: number, probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const subtitle = getString(data, 'subtitle');
@@ -918,7 +949,7 @@ function renderFeatures(slide: Slide, data: SlideData, tokens: Tokens, idx: numb
     const row = Math.floor(i / 3);
     const x = tokens.padX + col * (cardW + gap);
     const y = cardY + row * (cardH + gap);
-    addCard(slide, tokens, x, y, cardW, cardH);
+    addCard(slide, tokens, x, y, cardW, cardH, 'plain', probe, '.mgf-card');
     if (f.icon) {
       slide.addText(f.icon, {
         x: x + 0.2,
@@ -957,7 +988,7 @@ function renderFeatures(slide: Slide, data: SlideData, tokens: Tokens, idx: numb
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderStats(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderStats(slide: Slide, data: SlideData, tokens: Tokens, idx: number, probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   // Standard shape: `data.stats` is an array. Brutalist-style decks
@@ -991,7 +1022,7 @@ function renderStats(slide: Slide, data: SlideData, tokens: Tokens, idx: number)
     stats.slice(0, n).forEach((s, i) => {
       const x = tokens.padX + i * (cardW + gap);
       const isFirst = i === 0 && n === 3;
-      addCard(slide, tokens, x, cardY, cardW, cardH, isFirst ? 'solid' : 'accent');
+      addCard(slide, tokens, x, cardY, cardW, cardH, isFirst ? 'solid' : 'accent', probe, '.mgf-card-accent');
       const valueColor = isFirst ? tokens.textInverse : tokens.accent;
       slide.addText(s.value ?? '', {
         x,
@@ -1038,7 +1069,7 @@ function renderStats(slide: Slide, data: SlideData, tokens: Tokens, idx: number)
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderImageText(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderImageText(slide: Slide, data: SlideData, tokens: Tokens, idx: number, probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const body = getString(data, 'body');
@@ -1080,7 +1111,7 @@ function renderImageText(slide: Slide, data: SlideData, tokens: Tokens, idx: num
   } else {
     // Media placeholder when no image was supplied (or the URL was
     // remote and CORS-blocked the fetch).
-    addCard(slide, tokens, mediaX, splitY, colW, splitH);
+    addCard(slide, tokens, mediaX, splitY, colW, splitH, 'plain', probe, '.mgf-media');
     slide.addText('📷  Image placeholder', {
       x: mediaX,
       y: splitY + splitH / 2 - 0.25,
@@ -1096,7 +1127,7 @@ function renderImageText(slide: Slide, data: SlideData, tokens: Tokens, idx: num
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderPricing(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderPricing(slide: Slide, data: SlideData, tokens: Tokens, idx: number, probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const plans = getArray<PlanItem>(data, 'plans');
@@ -1117,7 +1148,7 @@ function renderPricing(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   plans.slice(0, 3).forEach((p, i) => {
     const x = tokens.padX + i * (cardW + gap);
     const isMiddle = i === 1;
-    addCard(slide, tokens, x, cardY, cardW, cardH, isMiddle ? 'solid' : 'plain');
+    addCard(slide, tokens, x, cardY, cardW, cardH, isMiddle ? 'solid' : 'plain', probe, '.mgf-card-solid');
 
     const labelColor = isMiddle ? tokens.textInverse : tokens.textSecondary;
     const priceColor = isMiddle ? tokens.textInverse : tokens.textPrimary;
@@ -1186,7 +1217,7 @@ function renderPricing(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderComparison(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderComparison(slide: Slide, data: SlideData, tokens: Tokens, idx: number, probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const leftHeader = getString(data, 'left_header');
@@ -1206,7 +1237,7 @@ function renderComparison(slide: Slide, data: SlideData, tokens: Tokens, idx: nu
   const colW = (SLIDE_W_IN - 2 * tokens.padX - 0.4) / 2;
   const colH = SLIDE_H_IN - cy - tokens.padY - 0.4;
   // Left column
-  addCard(slide, tokens, tokens.padX, cy, colW, colH);
+  addCard(slide, tokens, tokens.padX, cy, colW, colH, 'plain', probe, '.mgf-comparison-col');
   slide.addText(leftHeader.toUpperCase(), {
     x: tokens.padX + 0.25,
     y: cy + 0.2,
@@ -1235,7 +1266,7 @@ function renderComparison(slide: Slide, data: SlideData, tokens: Tokens, idx: nu
   );
   // Right column
   const rightX = tokens.padX + colW + 0.4;
-  addCard(slide, tokens, rightX, cy, colW, colH, 'accent');
+  addCard(slide, tokens, rightX, cy, colW, colH, 'accent', probe, '.mgf-comparison-col');
   slide.addText(rightHeader.toUpperCase(), {
     x: rightX + 0.25,
     y: cy + 0.2,
@@ -1265,7 +1296,7 @@ function renderComparison(slide: Slide, data: SlideData, tokens: Tokens, idx: nu
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderTeam(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderTeam(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const members = getArray<MemberItem>(data, 'members');
@@ -1343,7 +1374,7 @@ function renderTeam(slide: Slide, data: SlideData, tokens: Tokens, idx: number):
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderClosing(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderClosing(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   // `lede` is the brutalist alternative to the standard `body`.
@@ -1435,7 +1466,7 @@ function renderClosing(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderTimeline(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderTimeline(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const label = getString(data, 'label');
@@ -1524,7 +1555,7 @@ function renderTimeline(slide: Slide, data: SlideData, tokens: Tokens, idx: numb
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderQuote(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderQuote(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const quote = getString(data, 'quote');
   const author = getString(data, 'author');
@@ -1585,7 +1616,7 @@ function renderQuote(slide: Slide, data: SlideData, tokens: Tokens, idx: number)
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderTestimonial(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderTestimonial(slide: Slide, data: SlideData, tokens: Tokens, idx: number, probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const quote = getString(data, 'quote');
   const author = getString(data, 'author');
@@ -1603,7 +1634,7 @@ function renderTestimonial(slide: Slide, data: SlideData, tokens: Tokens, idx: n
   const cardY = cy + 0.2;
   const cardW = 8.5;
   const cardH = 4.0;
-  addCard(slide, tokens, cardX, cardY, cardW, cardH, 'accent');
+  addCard(slide, tokens, cardX, cardY, cardW, cardH, 'accent', probe, '.mgf-card-accent');
 
   slide.addText(quote, {
     x: cardX + 0.4,
@@ -1663,7 +1694,7 @@ function renderTestimonial(slide: Slide, data: SlideData, tokens: Tokens, idx: n
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderProcess(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderProcess(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const steps = getArray<{ num?: string; title?: string; desc?: string }>(data, 'steps');
@@ -1760,7 +1791,7 @@ function renderProcess(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderFaq(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderFaq(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const items = getArray<{ q?: string; a?: string }>(data, 'items');
@@ -1831,7 +1862,7 @@ function renderFaq(slide: Slide, data: SlideData, tokens: Tokens, idx: number): 
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderAnnouncement(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderAnnouncement(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const badge = getString(data, 'badge');
   const title = getString(data, 'title');
@@ -1914,7 +1945,7 @@ function renderAnnouncement(slide: Slide, data: SlideData, tokens: Tokens, idx: 
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderGeneric(slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string): void {
+function renderGeneric(slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   // Try to render anything that looks like eyebrow + title + body
   // content. After the cover-regex fix in `identifyComponent`,
@@ -1961,7 +1992,7 @@ function renderGeneric(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
  * optional media placeholder. The shape that "homepage hero" /
  * "landing-page hero" slides expect.
  */
-function renderHero(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderHero(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const eyebrow = getString(data, 'eyebrow');
   const title = getString(data, 'title');
@@ -2028,7 +2059,7 @@ function renderHero(slide: Slide, data: SlideData, tokens: Tokens, idx: number):
  * shape that "section divider" slides expect, with the same vertical
  * rhythm as problem / features / stats so a deck reads consistently.
  */
-function renderSection(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderSection(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   let cy = tokens.padY;
   if (getString(data, 'eyebrow')) {
@@ -2055,7 +2086,7 @@ function renderSection(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
  * bold title + body. Variants (info / success / warning / danger) tint
  * the accent stripe.
  */
-function renderCallout(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderCallout(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const body = getString(data, 'body') || getString(data, 'subtitle');
@@ -2140,7 +2171,7 @@ function renderCallout(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
  * on the slide. If multiple badges are present in `badges[]`, render
  * them as a row.
  */
-function renderBadge(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderBadge(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const badges = getArray<{ text?: string; variant?: string }>(data, 'badges');
   const texts: { text: string; variant: string }[] = badges.length > 0
@@ -2218,7 +2249,7 @@ function renderBadge(slide: Slide, data: SlideData, tokens: Tokens, idx: number)
  * three macOS dots) and a body block of monospace code text. Used by
  * slides that demonstrate code, commands, or config snippets.
  */
-function renderCodeCard(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderCodeCard(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const filename = getString(data, 'filename') || getString(data, 'code_card_title') || 'untitled';
@@ -2313,7 +2344,7 @@ function renderCodeCard(slide: Slide, data: SlideData, tokens: Tokens, idx: numb
  * slide has exactly one `kpi` cell; multi-cell slides route to the
  * stats renderer instead.
  */
-function renderKPI(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderKPI(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const eyebrow = getString(data, 'eyebrow');
   const value = getString(data, 'kpi_value') || getString(data, 'value');
@@ -2367,7 +2398,7 @@ function renderKPI(slide: Slide, data: SlideData, tokens: Tokens, idx: number): 
  * proportional to `value` against the max, rendered as a filled rect
  * with the value overlaid above and the label below.
  */
-function renderBarChart(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderBarChart(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const bars = getArray<{ label?: string; value?: number | string }>(data, 'bars');
@@ -2439,7 +2470,7 @@ function renderBarChart(slide: Slide, data: SlideData, tokens: Tokens, idx: numb
  * track (full-width surface rect) plus a value-bar (accent rect) sized
  * proportionally to the max.
  */
-function renderHBarChart(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderHBarChart(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const rows = getArray<{ label?: string; value?: number | string }>(data, 'rows');
@@ -2501,7 +2532,7 @@ function renderHBarChart(slide: Slide, data: SlideData, tokens: Tokens, idx: num
  * as a thin rect with a bottom border and two text rows. The brand is
  * bold; the links are secondary-coloured.
  */
-function renderNav(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderNav(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const brand = getString(data, 'brand') || getString(data, 'nav_brand') || getString(data, 'title');
   const links = getStringArray(data, 'links').length > 0
@@ -2569,7 +2600,7 @@ function renderNav(slide: Slide, data: SlideData, tokens: Tokens, idx: number): 
 /**
  * Page footer strip — centered text + link row. Mirrors `mgf-footer`.
  */
-function renderFooter(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderFooter(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const text = getString(data, 'text') || getString(data, 'footer_text') || getString(data, 'title');
   const links = getStringArray(data, 'links').length > 0
@@ -2623,33 +2654,33 @@ function renderFooter(slide: Slide, data: SlideData, tokens: Tokens, idx: number
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-const COMPONENT_RENDERERS: Record<string, (slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string) => void> = {
-  cover: (s, d, t, i) => renderCover(s, d, t, i),
-  problem: (s, d, t, i) => renderProblem(s, d, t, i),
-  features: (s, d, t, i) => renderFeatures(s, d, t, i),
-  stats: (s, d, t, i) => renderStats(s, d, t, i),
-  'image-text': (s, d, t, i) => renderImageText(s, d, t, i),
-  pricing: (s, d, t, i) => renderPricing(s, d, t, i),
-  comparison: (s, d, t, i) => renderComparison(s, d, t, i),
-  team: (s, d, t, i) => renderTeam(s, d, t, i),
-  closing: (s, d, t, i) => renderClosing(s, d, t, i),
-  timeline: (s, d, t, i) => renderTimeline(s, d, t, i),
-  quote: (s, d, t, i) => renderQuote(s, d, t, i),
-  testimonial: (s, d, t, i) => renderTestimonial(s, d, t, i),
-  process: (s, d, t, i) => renderProcess(s, d, t, i),
-  faq: (s, d, t, i) => renderFaq(s, d, t, i),
-  announcement: (s, d, t, i) => renderAnnouncement(s, d, t, i),
-  hero: (s, d, t, i) => renderHero(s, d, t, i),
-  section: (s, d, t, i) => renderSection(s, d, t, i),
-  callout: (s, d, t, i) => renderCallout(s, d, t, i),
-  badge: (s, d, t, i) => renderBadge(s, d, t, i),
-  'code-card': (s, d, t, i) => renderCodeCard(s, d, t, i),
-  kpi: (s, d, t, i) => renderKPI(s, d, t, i),
-  'bar-chart': (s, d, t, i) => renderBarChart(s, d, t, i),
-  'hbar-chart': (s, d, t, i) => renderHBarChart(s, d, t, i),
-  nav: (s, d, t, i) => renderNav(s, d, t, i),
-  footer: (s, d, t, i) => renderFooter(s, d, t, i),
-  generic: (s, d, t, i, h) => renderGeneric(s, d, t, i, h),
+const COMPONENT_RENDERERS: Record<string, (slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string, probe?: StyleProbe | null) => void> = {
+  cover: (s, d, t, i, _h, p) => renderCover(s, d, t, i, p),
+  problem: (s, d, t, i, _h, p) => renderProblem(s, d, t, i, p),
+  features: (s, d, t, i, _h, p) => renderFeatures(s, d, t, i, p),
+  stats: (s, d, t, i, _h, p) => renderStats(s, d, t, i, p),
+  'image-text': (s, d, t, i, _h, p) => renderImageText(s, d, t, i, p),
+  pricing: (s, d, t, i, _h, p) => renderPricing(s, d, t, i, p),
+  comparison: (s, d, t, i, _h, p) => renderComparison(s, d, t, i, p),
+  team: (s, d, t, i, _h, p) => renderTeam(s, d, t, i, p),
+  closing: (s, d, t, i, _h, p) => renderClosing(s, d, t, i, p),
+  timeline: (s, d, t, i, _h, p) => renderTimeline(s, d, t, i, p),
+  quote: (s, d, t, i, _h, p) => renderQuote(s, d, t, i, p),
+  testimonial: (s, d, t, i, _h, p) => renderTestimonial(s, d, t, i, p),
+  process: (s, d, t, i, _h, p) => renderProcess(s, d, t, i, p),
+  faq: (s, d, t, i, _h, p) => renderFaq(s, d, t, i, p),
+  announcement: (s, d, t, i, _h, p) => renderAnnouncement(s, d, t, i, p),
+  hero: (s, d, t, i, _h, p) => renderHero(s, d, t, i, p),
+  section: (s, d, t, i, _h, p) => renderSection(s, d, t, i, p),
+  callout: (s, d, t, i, _h, p) => renderCallout(s, d, t, i, p),
+  badge: (s, d, t, i, _h, p) => renderBadge(s, d, t, i, p),
+  'code-card': (s, d, t, i, _h, p) => renderCodeCard(s, d, t, i, p),
+  kpi: (s, d, t, i, _h, p) => renderKPI(s, d, t, i, p),
+  'bar-chart': (s, d, t, i, _h, p) => renderBarChart(s, d, t, i, p),
+  'hbar-chart': (s, d, t, i, _h, p) => renderHBarChart(s, d, t, i, p),
+  nav: (s, d, t, i, _h, p) => renderNav(s, d, t, i, p),
+  footer: (s, d, t, i, _h, p) => renderFooter(s, d, t, i, p),
+  generic: (s, d, t, i, h, p) => renderGeneric(s, d, t, i, h, p),
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -2664,6 +2695,16 @@ export type BuildPptxOptions = {
    * PowerPoint renders them right-to-left. Default LTR.
    */
   direction?: 'ltr' | 'rtl';
+  /**
+   * When true, each slide's HTML is loaded in a hidden iframe before
+   * rendering so the renderer can read live computed styles
+   * (border-radius, background-color, box-shadow, etc.) and use
+   * those values instead of the hard-coded token defaults. Adds
+   * meaningful latency per slide (iframe create + 2 animation
+   * frames + tear-down), so it defaults to `false` for fast tests;
+   * the editor sets it to `true` when the user clicks Export.
+   */
+  useProbe?: boolean;
 };
 
 function findFile(files: ProjectFile[], layer: string, name: string): ProjectFile | undefined {
@@ -2681,7 +2722,7 @@ function findFile(files: ProjectFile[], layer: string, name: string): ProjectFil
  *    lookup was case-sensitive and missed every mixed-case key. Lower
  *    + dash-normalize before lookup so mixed-case prompts still work.
  */
-function findRenderer(component: string): (slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string) => void {
+function findRenderer(component: string): (slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string, probe?: StyleProbe | null) => void {
   const key = component.toLowerCase().replace(/_/g, '-');
   if (Object.prototype.hasOwnProperty.call(COMPONENT_RENDERERS, key)) {
     return COMPONENT_RENDERERS[key];
@@ -2999,6 +3040,7 @@ export async function buildPptxPresentation({
   files,
   projectName,
   direction = 'ltr',
+  useProbe = false,
 }: BuildPptxOptions): Promise<Uint8Array> {
   const styleCss = findFile(files, 'style', 'style.css')?.content ?? '';
   const tokens = extractTokens(styleCss);
@@ -3069,7 +3111,26 @@ export async function buildPptxPresentation({
     const slide = pptx.addSlide();
     try {
       const renderer = findRenderer(component);
-      renderer(slide, data, tokens, i, html);
+      if (useProbe) {
+        // Probe-driven styling (Tier 2D): render the slide's HTML in a
+        // hidden iframe so the renderer can read the live computed
+        // CSS (border-radius, background-color, box-shadow, etc.) and
+        // use those values instead of the hard-coded token defaults.
+        // The probe falls back to token defaults when an element
+        // isn't matched, so this is safe in any environment; we just
+        // skip it when the caller wants the fast token-only path.
+        await withStyleProbe(
+          html,
+          Math.round(SLIDE_W_IN * 96), // 1280 CSS px (LAYOUT_WIDE = 13.333 in)
+          Math.round(SLIDE_H_IN * 96), // 720 CSS px
+          (probe) => {
+            renderer(slide, data, tokens, i, html, probe);
+          },
+          { timeoutMs: 8000 },
+        );
+      } else {
+        renderer(slide, data, tokens, i, html, null);
+      }
     } catch (err) {
       // One bad slide must never abort the whole export. Surface a
       // placeholder slide with the failure cause so the user can still
