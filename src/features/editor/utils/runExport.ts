@@ -24,7 +24,7 @@ import { assemblePreviewHtml } from '@/features/editor/hooks/useAssemblePreview'
 import { groupSlides } from './groupSlides';
 import { rasterizeHtml, type RasterizeOptions } from './rasterize';
 import { buildPdfFromPages, type PdfPageSpec, type PdfPageSize } from './exportPdf';
-import { buildNativePptxPresentation } from './pptxNative';
+import { buildPptxPresentation } from './mgfPptx';
 import { buildZip, downloadBytes } from '@/lib/zip';
 
 export type ExportFormat = 'zip' | 'html' | 'pptx' | 'pdf' | 'png' | 'jpg';
@@ -303,19 +303,11 @@ export async function runExport(input: ExportRunInput): Promise<ExportRunResult>
 
   // ── pptx ───────────────────────────────────────────────────────────────
   if (input.format === 'pptx') {
-    // Native pipeline: render each slide in an iframe (no rasterization),
-    // walk the DOM, emit one PptxGenJS shape per visible element. Every
-    // text box, card, accent bar, ellipse, divider, and image becomes a
-    // real PowerPoint object the user can edit. Replaces the old
-    // component-by-component rebuild in `mgfPptx.ts` which hard-coded
-    // positions and silently dropped content the renderer didn't know.
     report(input, { phase: 'encoding', current: 0, total: 1, message: 'Building PPTX…' });
-    const bytes = await buildNativePptxPresentation({
+    const bytes = await buildPptxPresentation({
       files: input.files,
       projectName: input.projectName,
-      projectType: input.projectType,
       direction: input.direction,
-      signal: input.signal,
     });
     report(input, { phase: 'done', current: 1, total: 1 });
     return { filename: `${baseName}.pptx`, mime: mimeFor('pptx'), bytes };
