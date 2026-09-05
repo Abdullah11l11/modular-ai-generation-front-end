@@ -240,12 +240,22 @@ export async function buildNativePptxPresentation(
         height: dims.height,
         signal,
       });
+      // Defensive: if the walker returned zero shapes (e.g. iframe
+      // layout hadn't flushed in time and every rect came back as
+      // 0×0), fall back to extracting the data-field text content
+      // from the slide HTML and emit a vertical stack of text boxes.
+      // This guarantees the slide is *never* blank.
+      let emitted = elements;
+      if (emitted.length === 0) {
+        console.warn(`[pptxNative] slide ${i + 1} walker returned 0 elements; using data-field fallback`);
+        emitted = fallbackFromHtml(html, direction);
+      }
       // PPTX renders shapes in z-order; we want text drawn AFTER its
       // container background so the text isn't covered. The walker
       // already produces container shapes before children (we emit the
       // container then recurse), so iterating in array order preserves
       // the correct stacking.
-      for (const el of elements) {
+      for (const el of emitted) {
         emitElement(slide, el);
       }
     } catch (err) {
@@ -273,4 +283,59 @@ export async function buildNativePptxPresentation(
 
   const buf = await pptx.write({ outputType: 'arraybuffer' });
   return new Uint8Array(buf as ArrayBuffer);
+}
+
+/**
+ * Last-resort fallback: parse the slide HTML with `DOMParser` and emit
+ * one text box per `[data-field]` element at a fixed vertical position.
+ * Used when the iframe-based walker returns no shapes (typically
+ * because all elements measured 0×0 due to a layout-not-flushed race).
+ * Each text box is a real native PowerPoint object so the user can
+ * still edit the content.
+ */
+function fallbackFromHtml(html: string, direction: 'ltr' | 'rtl'): TextElement[] {
+  const out: TextElement[] = [];
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const fields = Array.from(doc.querySelectorAll('[data-field]'));
+  // Stack fields top-to-bottom with a small gap, leaving room for the
+  // first field at y=1in (16px-equivalent padding from the top).
+  const startYIn = 1;
+  const rowHIn = 0.6;
+  const align: 'left' | 'right' = direction === 'rtl' ? 'right' : 'left';
+  for (let i = 0; i < fields.length; i++) {
+    const el = fields[i] as HTMLElement;
+    const text = (el.innerText ?? el.textContent ?? '').trim();
+    if (!text) continue;
+    out.push({
+      kind: 'text',
+      x: 0.83,
+      y: startYIn + i * rowHIn,
+      w: 11.67,
+      h: rowHIn,
+      text,
+      fontFace: 'Calibri',
+      fontSize: 16,
+      color: 'FFFFFF',
+      bold: el.tagName === 'H1' || el.tagName === 'H2',
+      align,
+      valign: 'top',
+    });
+  }
+  if (out.length === 0) {
+    // Truly nothing — at least emit a placeholder so the slide isn't
+    // completely blank.
+    out.push({
+      kind: 'text',
+      x: 0.83,
+      y: 3.25,
+      w: 11.67,
+      h: 1,
+      text: '(empty slide)',
+      fontFace: 'Calibri',
+      fontSize: 14,
+      color: '94A3B8',
+      align,
+    });
+  }
+  return out;
 }

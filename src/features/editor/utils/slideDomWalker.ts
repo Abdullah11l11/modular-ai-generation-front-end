@@ -930,6 +930,14 @@ async function waitForIframeReady(doc: Document, win: Window, timeoutMs: number)
       tick();
     });
   }
+  // Wait for two animation frames so the iframe's layout has settled.
+  // Without this, `getBoundingClientRect()` can return all zeros because
+  // the browser hasn't yet flushed layout for the iframe's content.
+  // Two frames is the minimum to escape the immediate-post-load
+  // microtask queue and reach the first paint cycle. A `setTimeout(0)`
+  // resolves before the next frame, so it would not be enough.
+  await new Promise<void>((resolve) => win.requestAnimationFrame(() => resolve()));
+  await new Promise<void>((resolve) => win.requestAnimationFrame(() => resolve()));
 }
 
 function buildHiddenIframe(width: number, height: number): {
