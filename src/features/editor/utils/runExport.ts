@@ -24,7 +24,7 @@ import { assemblePreviewHtml } from '@/features/editor/hooks/useAssemblePreview'
 import { groupSlides } from './groupSlides';
 import { rasterizeHtml, type RasterizeOptions } from './rasterize';
 import { buildPdfFromPages, type PdfPageSpec, type PdfPageSize } from './exportPdf';
-import { buildHybridPptxPresentation } from './pptxHybrid';
+import { buildNativePptxPresentation } from './pptxNative';
 import { buildZip, downloadBytes } from '@/lib/zip';
 
 export type ExportFormat = 'zip' | 'html' | 'pptx' | 'pdf' | 'png' | 'jpg';
@@ -303,14 +303,14 @@ export async function runExport(input: ExportRunInput): Promise<ExportRunResult>
 
   // ── pptx ───────────────────────────────────────────────────────────────
   if (input.format === 'pptx') {
-    // Hybrid pipeline: render each slide as a PNG, set it as the slide
-    // background, and overlay native PptxGenJS text boxes for every
-    // `[data-field]` element so the user gets a pixel-perfect preview
-    // they can still edit text in PowerPoint. Replaces the
-    // component-by-component rebuild in `mgfPptx.ts` which couldn't
-    // reach visual fidelity.
-    report(input, { phase: 'rasterizing', current: 0, total: 1, message: 'Building PPTX…' });
-    const bytes = await buildHybridPptxPresentation({
+    // Native pipeline: render each slide in an iframe (no rasterization),
+    // walk the DOM, emit one PptxGenJS shape per visible element. Every
+    // text box, card, accent bar, ellipse, divider, and image becomes a
+    // real PowerPoint object the user can edit. Replaces the old
+    // component-by-component rebuild in `mgfPptx.ts` which hard-coded
+    // positions and silently dropped content the renderer didn't know.
+    report(input, { phase: 'encoding', current: 0, total: 1, message: 'Building PPTX…' });
+    const bytes = await buildNativePptxPresentation({
       files: input.files,
       projectName: input.projectName,
       projectType: input.projectType,
