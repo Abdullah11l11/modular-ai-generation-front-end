@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDownIcon, ChevronRightIcon, ExternalLinkIcon, FileTextIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronRightIcon, ExternalLinkIcon, FileTextIcon, EyeIcon } from 'lucide-react';
 import { TemplateFileViewer } from '@/features/templates/components/TemplateFileViewer';
+import { SlidePreviewModal } from '@/features/templates/components/SlidePreviewModal';
 import { formatBytes } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import type { ProjectFile } from '@/types/api';
+import type { Direction, ProjectFile } from '@/types/api';
 
 const LAYER_ORDER: ProjectFile['layer'][] = [
   'slide',
@@ -33,11 +34,13 @@ const DEFAULT_EXPANDED: ProjectFile['layer'][] = ['slide', 'style', 'layout', 'c
 
 type TemplateFileListProps = {
   files: ProjectFile[];
+  direction: Direction;
 };
 
-export function TemplateFileList({ files }: TemplateFileListProps) {
+export function TemplateFileList({ files, direction }: TemplateFileListProps) {
   const [expanded, setExpanded] = useState<Set<ProjectFile['layer']>>(new Set(DEFAULT_EXPANDED));
   const [openFile, setOpenFile] = useState<ProjectFile | null>(null);
+  const [previewSlide, setPreviewSlide] = useState<ProjectFile | null>(null);
 
   const grouped = LAYER_ORDER.map((layer) => ({
     layer,
@@ -96,6 +99,17 @@ export function TemplateFileList({ files }: TemplateFileListProps) {
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <span className="text-[var(--t3)]">{formatBytes(file.size_bytes)}</span>
+                        {file.layer === 'slide' && file.content != null ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPreviewSlide(file)}
+                            aria-label={`Preview slide ${file.name}`}
+                          >
+                            <EyeIcon className="size-3.5" />
+                            Preview
+                          </Button>
+                        ) : null}
                         {file.content != null || file.storage_url ? (
                           <Button
                             variant="ghost"
@@ -115,6 +129,13 @@ export function TemplateFileList({ files }: TemplateFileListProps) {
         })}
       </div>
       <TemplateFileViewer file={openFile} open={openFile != null} onOpenChange={(o) => !o && setOpenFile(null)} />
+      <SlidePreviewModal
+        slideFile={previewSlide}
+        files={files}
+        direction={direction}
+        open={previewSlide != null}
+        onOpenChange={(o) => !o && setPreviewSlide(null)}
+      />
     </section>
   );
 }
