@@ -1,4 +1,4 @@
-import { useEffect, useState ,useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import type { Id, OutputType, Template } from '@/types/api';
@@ -39,17 +39,13 @@ export function TemplatesPage() {
   const [search, setSearch] = useState(qParam);
   const [page, setPage] = useState(1);
   const [allTemplates, setAllTemplates] = useState<Template[]>([]);
- const isFirstSearchRun=useRef(true) ;
   const typesQuery = useTypes();
   const types: OutputType[] = typesQuery.data ?? [];
 
   // Sync search input → URL after a short debounce; reset paging.
   useEffect(() => {
-     if(isFirstSearchRun.current) {
-      isFirstSearchRun.current=false ;
-      return ;
-     }
-     const timer = setTimeout(() => {
+    if (search === qParam) return;
+    const timer = setTimeout(() => {
       const next = new URLSearchParams(searchParams);
       if (search) next.set('q', search);
       else next.delete('q');
@@ -59,7 +55,7 @@ export function TemplatesPage() {
     }, 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+  }, [search, qParam]);
 
   // Reset paging when type or sort changes.
   useEffect(() => {
