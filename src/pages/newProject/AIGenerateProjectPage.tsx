@@ -52,6 +52,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ScaledIframe } from '@/features/editor/components/Preview/ScaledIframe';
 import { assemblePreviewHtml } from '@/features/editor/hooks/useAssemblePreview';
 import { useTypes } from '@/features/types/hooks/useTypes';
+import { getOutputTypeInfo } from '@/features/types/types/outputTypeMap';
 import { minimaxService } from '@/lib/ai/providers/minimax';
 import {
   buildPromptFor,
@@ -270,6 +271,11 @@ export function AIGenerateProjectPage() {
     [typesQuery.data, typeId],
   );
 
+  // Single-page archetypes (e.g. poster) always produce exactly one
+  // slide — fixed at 1 and the slide count input is hidden.
+  const isSingleType = getOutputTypeInfo(archetypeName).archetype === 'single';
+  const effectiveSlideCount = isSingleType ? 1 : slideCount;
+
   // ----- Handlers -----
 
   const handleGenerate = useCallback(async () => {
@@ -326,7 +332,7 @@ export function AIGenerateProjectPage() {
       `<theme>${THEME_PRESETS[theme].label}</theme>`,
       `<archetype>${archetypeName}</archetype>`,
       `<output_target>${archetypeName}</output_target>`,
-      `<target_slide_count>${slideCount}</target_slide_count>`,
+      `<target_slide_count>${effectiveSlideCount}</target_slide_count>`,
       ``,
       `Respond with a single JSON object matching standards/output-schema.md.`,
       `No markdown fences. No preamble. No postamble.`,
@@ -385,7 +391,7 @@ export function AIGenerateProjectPage() {
         },
       },
     );
-  }, [prompt, theme, archetypeName, slideCount, slideFiles.length]);
+  }, [prompt, theme, archetypeName, effectiveSlideCount, slideFiles.length]);
 
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
@@ -513,24 +519,33 @@ export function AIGenerateProjectPage() {
               </Select>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="ai-gen-count">Slide count</Label>
-              <Input
-                id="ai-gen-count"
-                type="number"
-                min={3}
-                max={20}
-                value={slideCount}
-                onChange={(e) => {
-                  const n = Number(e.target.value);
-                  if (Number.isFinite(n)) {
-                    setSlideCount(Math.max(3, Math.min(20, Math.round(n))));
-                  }
-                }}
-                className="h-8 font-mono"
-                disabled={isLocked}
-              />
-            </div>
+            {!isSingleType ? (
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="ai-gen-count">Slide count</Label>
+                <Input
+                  id="ai-gen-count"
+                  type="number"
+                  min={3}
+                  max={20}
+                  value={slideCount}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    if (Number.isFinite(n)) {
+                      setSlideCount(Math.max(3, Math.min(20, Math.round(n))));
+                    }
+                  }}
+                  className="h-8 font-mono"
+                  disabled={isLocked}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1">
+                <Label>Slide count</Label>
+                <div className="flex h-8 items-center rounded-md border border-(--bor2) bg-(--bg) px-2.5 text-xs text-(--t3)">
+                  Single page — fixed at 1
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
