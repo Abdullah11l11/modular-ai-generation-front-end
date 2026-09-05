@@ -215,12 +215,18 @@ export function FullScreenPreview({ files, onClose }: FullScreenPreviewProps) {
             style={{ minHeight: '100vh' }}
           />
         ) : (
-          <div className="flex max-h-full max-w-6xl items-center justify-center">
+          // After 11d5054 ScaledIframe fills its parent instead of
+          // self-dictating aspectRatio. The wrapping div must therefore
+          // have explicit dimensions — `h-full w-full max-w-6xl` — so the
+          // wrapper doesn't collapse to 0×0 and the slide lands inside a
+          // bounded viewport. ScaledIframe self-centers its iframe via
+          // absolute + negative margin, so we drop items-center here.
+          <div className="h-full w-full max-w-6xl">
             <ScaledIframe
               srcDoc={html}
               sandbox="allow-same-origin allow-scripts allow-popups"
               title="Full-screen preview"
-              className="w-full rounded-lg bg-white shadow-2xl"
+              className="rounded-lg bg-white shadow-2xl"
             />
           </div>
         )}
