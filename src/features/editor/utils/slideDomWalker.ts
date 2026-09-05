@@ -994,6 +994,14 @@ export type WalkSlideOptions = {
   height: number;
   signal?: AbortSignal;
   timeoutMs?: number;
+  /**
+   * When true, resize the iframe after load to the body's actual
+   * `scrollHeight`. Required for scrollable single-page types whose
+   * assembled document height is unknown up front (posters, infographics,
+   * documents) so elements below the initial viewport are measured at
+   * their actual y rather than being treated as off-slide.
+   */
+  fitContent?: boolean;
 };
 
 /**
@@ -1004,6 +1012,7 @@ export type WalkSlideOptions = {
 export async function walkSlide(opts: WalkSlideOptions): Promise<SlideElement[]> {
   const { html, width, height, signal } = opts;
   const timeoutMs = opts.timeoutMs ?? 15000;
+  const fitContent = opts.fitContent ?? false;
   if (!html) throw new Error('walkSlide: html is empty');
   if (width <= 0 || height <= 0) throw new Error('walkSlide: width/height must be positive');
   if (signal?.aborted) throw new Error('aborted');
@@ -1012,6 +1021,27 @@ export async function walkSlide(opts: WalkSlideOptions): Promise<SlideElement[]>
   try {
     const { doc, win } = await loadIntoIframe(iframe, html);
     await waitForIframeReady(doc, win, timeoutMs);
+
+    // Scrollable: resize the iframe to the actual document height so
+    // every element is measured at its real on-slide y. Without this,
+    // any content below `height` lands outside the viewport, has
+    // `getBoundingClientRect().y > height`, and ends up at y > slide
+    // height in the PPTX (invisible). Mirrors the `fitContent` branch
+    // in rasterize.ts.
+    if (fitContent) {
+      const scrollH = Math.max(
+        doc.body.scrollHeight,
+        doc.documentElement.scrollHeight,
+      );
+      if (scrollH > height) {
+        iframe.style.height = `${scrollH}px`;
+        // Re-run fonts.ready because the layout change can trigger
+        // font re-fetching.
+        await new Promise<void>((resolve) => win.requestAnimationFrame(() => resolve()));
+        await new Promise<void>((resolve) => win.requestAnimationFrame(() => resolve()));
+      }
+    }
+
     return walkSlideDom(doc);
   } finally {
     teardown();

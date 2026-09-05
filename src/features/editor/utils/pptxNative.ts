@@ -211,17 +211,39 @@ export async function buildNativePptxPresentation(
   opts: NativePptxOptions,
 ): Promise<Uint8Array> {
   const { files, projectName, projectType, direction, signal } = opts;
+  const scrollable = isScrollableType(projectType);
   const dims = naturalDims(projectType);
 
   // Scrollable = one virtual slide containing the whole document; deck
   // = one slide per slide file. Empty projects get a single empty
   // slide so PowerPoint doesn't reject the file.
-  const total = isScrollableType(projectType)
-    ? 1
-    : Math.max(groupSlides(files).length, 1);
+  const total = scrollable ? 1 : Math.max(groupSlides(files).length, 1);
 
   const pptx = new PptxGenJS();
-  pptx.layout = 'LAYOUT_WIDE';
+  // The PPTX slide geometry must match the walker's measurement frame.
+  // For 16:9 deck projects LAYOUT_WIDE (13.333 ×7.5 in) matches the
+  // 1280×720 CSS-pixel iframe exactly. For scrollable / non-16:9
+  // projects (posters, infographics, A4, 1:1, etc.) we define a custom
+  // layout using the project's natural dimensions. Without this,
+  // elements measured at y > 7.5 in would land off-slide and be
+  // invisible — a poster taller than 720 px gets squashed into a 16:9
+  // slide and most of its content disappears.
+  if (scrollable) {
+    // Use LAYOUT_WIDE if the project's natural dims already match
+    // 16:9, otherwise define a custom layout.
+    if (dims.width === 1280 && dims.height === 720) {
+      pptx.layout = 'LAYOUT_WIDE';
+    } else {
+      pptx.defineLayout({
+        name: 'MGF_PROJECT',
+        width: dims.width / 96,
+        height: dims.height / 96,
+      });
+      pptx.layout = 'MGF_PROJECT';
+    }
+  } else {
+    pptx.layout = 'LAYOUT_WIDE';
+  }
   pptx.title = projectName;
   pptx.company = 'MGF';
   pptx.author = 'MGF Editor';
@@ -232,13 +254,22 @@ export async function buildNativePptxPresentation(
     opts.onProgress?.(i + 1, total);
 
     const slide = pptx.addSlide();
+    // Always set a dark background so empty space isn't pure white —
+    // a blank-looking slide with no shapes is visually indistinguishable
+    // from a missing one. The walker may emit additional rect shapes
+    // that cover this for content-rich slides.
+    slide.background = { color: '0B0F17' };
     try {
-      const html = buildSlideHtml(files, isScrollableType(projectType) ? 0 : i, projectType, direction);
+      const html = buildSlideHtml(files, scrollable ? 0 : i, projectType, direction);
       const elements = await walkSlide({
         html,
         width: dims.width,
         height: dims.height,
         signal,
+        // Scrollable types need fitContent so the iframe grows to
+        // contain the full document and elements below the fold are
+        // measured at their real y.
+        fitContent: scrollable,
       });
       // Defensive: if the walker returned zero shapes (e.g. iframe
       // layout hadn't flushed in time and every rect came back as
@@ -264,7 +295,6 @@ export async function buildNativePptxPresentation(
       // Placeholder slide — solid background + a small note in the
       // center. Keeps the deck valid even if one slide's HTML fails to
       // render in the iframe.
-      slide.background = { color: '0B0F17' };
       slide.addText(
         `[Slide ${i + 1} could not be rendered — ${reason}]`,
         {
