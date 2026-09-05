@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import JSZip from 'jszip';
 import {
   SLIDE_W_IN,
   SLIDE_H_IN,
@@ -1120,5 +1121,338 @@ describe('buildPptxPresentation — synthesizes slides from data.json-only proje
     // "MARKET REALITY" (15 chars) > "THE PROBLEM" (11 chars), so the
     // eyebrow helper's output should be measurably larger.
     expect(withEyebrow.byteLength).toBeGreaterThan(fallbackOnly.byteLength);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// Tier 1B — extended archetype coverage
+//
+// Each block below exercises one of the ten renderers added on top of
+// the original 15. Tests check that the build succeeds (no throw),
+// emits a valid PPTX, and that the slide XML carries the supplied
+// content (so we know the renderer actually used the data instead of
+// dropping it).
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('buildPptxPresentation — extended archetypes (Tier 1B)', () => {
+  const STYLE_CSS = ':root{--mgf-color-bg:#0b0f17;--mgf-color-accent:#22d3ee;--mgf-color-text-primary:#f4f6fa;--mgf-color-text-secondary:#94a3b8;--mgf-color-surface:#0f1218;--mgf-color-surface-2:#1a1f2b;--mgf-color-border:#1e2535;--mgf-font-display:"Calibri";--mgf-font-body:"Calibri";--mgf-font-mono:"Consolas";}';
+
+  it('renders hero with eyebrow + title + sub + cta', async () => {
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: STYLE_CSS }),
+      file({
+        layer: 'content',
+        name: 'data.json',
+        content: JSON.stringify({
+          slides: [
+            {
+              stem: 'slide-01-hero',
+              data: {
+                eyebrow: 'INTRODUCTION',
+                title: 'Welcome to MGF',
+                subtitle: 'A modular AI content generator',
+                primary_cta: 'Get started',
+                secondary_cta: 'Learn more',
+              },
+            },
+          ],
+        }),
+      }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'Hero' });
+    expect(bytes.byteLength).toBeGreaterThan(1000);
+    // Verify the title actually lands on a slide.
+    const zip = await JSZip.loadAsync(bytes);
+    const slide1 = await zip.file('ppt/slides/slide1.xml')?.async('string');
+    expect(slide1).toContain('Welcome to MGF');
+    expect(slide1).toContain('GET STARTED');
+  });
+
+  it('renders section header with eyebrow + title + sub', async () => {
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: STYLE_CSS }),
+      file({
+        layer: 'content',
+        name: 'data.json',
+        content: JSON.stringify({
+          slides: [
+            {
+              stem: 'slide-02-section',
+              data: {
+                eyebrow: 'CHAPTER 3',
+                title: 'Implementation',
+                subtitle: 'How the system works in practice',
+              },
+            },
+          ],
+        }),
+      }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'S' });
+    const zip = await JSZip.loadAsync(bytes);
+    const slide1 = await zip.file('ppt/slides/slide1.xml')?.async('string');
+    expect(slide1).toContain('CHAPTER 3');
+    expect(slide1).toContain('Implementation');
+  });
+
+  it('renders callout with title + body + variant color', async () => {
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: STYLE_CSS }),
+      file({
+        layer: 'content',
+        name: 'data.json',
+        content: JSON.stringify({
+          slides: [
+            {
+              stem: 'slide-03-callout',
+              data: {
+                title: 'Heads up',
+                body: 'This is an important warning about the data.',
+                variant: 'warning',
+                icon: '⚠',
+              },
+            },
+          ],
+        }),
+      }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'C' });
+    const zip = await JSZip.loadAsync(bytes);
+    const slide1 = await zip.file('ppt/slides/slide1.xml')?.async('string');
+    expect(slide1).toContain('Heads up');
+    expect(slide1).toContain('warning');
+  });
+
+  it('renders badge row from badges[]', async () => {
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: STYLE_CSS }),
+      file({
+        layer: 'content',
+        name: 'data.json',
+        content: JSON.stringify({
+          slides: [
+            {
+              stem: 'slide-04-badges',
+              data: {
+                badges: [
+                  { text: 'NEW', variant: 'accent' },
+                  { text: 'BETA', variant: 'default' },
+                ],
+              },
+            },
+          ],
+        }),
+      }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'B' });
+    const zip = await JSZip.loadAsync(bytes);
+    const slide1 = await zip.file('ppt/slides/slide1.xml')?.async('string');
+    expect(slide1).toContain('NEW');
+    expect(slide1).toContain('BETA');
+  });
+
+  it('renders code card with filename + language + body', async () => {
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: STYLE_CSS }),
+      file({
+        layer: 'content',
+        name: 'data.json',
+        content: JSON.stringify({
+          slides: [
+            {
+              stem: 'slide-05-code',
+              data: {
+                title: 'Configuration',
+                filename: 'app.config.ts',
+                lang: 'ts',
+                code: 'export default { enabled: true };',
+              },
+            },
+          ],
+        }),
+      }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'K' });
+    const zip = await JSZip.loadAsync(bytes);
+    const slide1 = await zip.file('ppt/slides/slide1.xml')?.async('string');
+    expect(slide1).toContain('app.config.ts');
+    expect(slide1).toContain('export default');
+  });
+
+  it('renders KPI with value + label', async () => {
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: STYLE_CSS }),
+      file({
+        layer: 'content',
+        name: 'data.json',
+        content: JSON.stringify({
+          slides: [
+            {
+              stem: 'slide-06-kpi',
+              data: {
+                eyebrow: 'TODAY',
+                value: '$1.2M',
+                label: 'Revenue',
+              },
+            },
+          ],
+        }),
+      }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'KPI' });
+    const zip = await JSZip.loadAsync(bytes);
+    const slide1 = await zip.file('ppt/slides/slide1.xml')?.async('string');
+    expect(slide1).toContain('$1.2M');
+    expect(slide1).toContain('REVENUE');
+  });
+
+  it('renders vertical bar chart from bars[]', async () => {
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: STYLE_CSS }),
+      file({
+        layer: 'content',
+        name: 'data.json',
+        content: JSON.stringify({
+          slides: [
+            {
+              stem: 'slide-07-bar',
+              data: {
+                title: 'Q1 performance',
+                bars: [
+                  { label: 'Jan', value: 30 },
+                  { label: 'Feb', value: 45 },
+                  { label: 'Mar', value: 80 },
+                ],
+              },
+            },
+          ],
+        }),
+      }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'BC' });
+    const zip = await JSZip.loadAsync(bytes);
+    const slide1 = await zip.file('ppt/slides/slide1.xml')?.async('string');
+    expect(slide1).toContain('Q1 performance');
+    // Each label appears as a category caption below its bar.
+    expect(slide1).toContain('Jan');
+    expect(slide1).toContain('Feb');
+    expect(slide1).toContain('Mar');
+  });
+
+  it('renders horizontal bar chart from rows[]', async () => {
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: STYLE_CSS }),
+      file({
+        layer: 'content',
+        name: 'data.json',
+        content: JSON.stringify({
+          slides: [
+            {
+              stem: 'slide-08-hbar',
+              data: {
+                title: 'Engagement by channel',
+                rows: [
+                  { label: 'Email', value: 80 },
+                  { label: 'Twitter', value: 45 },
+                  { label: 'LinkedIn', value: 95 },
+                ],
+              },
+            },
+          ],
+        }),
+      }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'HBC' });
+    const zip = await JSZip.loadAsync(bytes);
+    const slide1 = await zip.file('ppt/slides/slide1.xml')?.async('string');
+    expect(slide1).toContain('Engagement by channel');
+    expect(slide1).toContain('Email');
+  });
+
+  it('renders nav with brand + links', async () => {
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: STYLE_CSS }),
+      file({
+        layer: 'content',
+        name: 'data.json',
+        content: JSON.stringify({
+          slides: [
+            {
+              stem: 'slide-09-nav',
+              data: {
+                brand: 'MGF',
+                links: ['Docs', 'Pricing', 'Contact'],
+                body: 'Main landing area below the navigation.',
+              },
+            },
+          ],
+        }),
+      }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'N' });
+    const zip = await JSZip.loadAsync(bytes);
+    const slide1 = await zip.file('ppt/slides/slide1.xml')?.async('string');
+    expect(slide1).toContain('MGF');
+    expect(slide1).toContain('Docs');
+    expect(slide1).toContain('Pricing');
+    expect(slide1).toContain('Contact');
+  });
+
+  it('renders footer with centered text + links', async () => {
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: STYLE_CSS }),
+      file({
+        layer: 'content',
+        name: 'data.json',
+        content: JSON.stringify({
+          slides: [
+            {
+              stem: 'slide-10-footer',
+              data: {
+                body: 'Page body content above the footer.',
+                text: '© 2026 MGF',
+                links: ['Twitter', 'GitHub', 'Email'],
+              },
+            },
+          ],
+        }),
+      }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'F' });
+    const zip = await JSZip.loadAsync(bytes);
+    const slide1 = await zip.file('ppt/slides/slide1.xml')?.async('string');
+    expect(slide1).toContain('2026 MGF');
+    expect(slide1).toContain('Twitter');
+  });
+
+  it('routes an unknown seed stem via data-shape inference (covers Tier-1B shapes)', async () => {
+    // A "slide-02-hero" stem isn't a registered component — the
+    // dispatcher falls back to data-shape inference, which now picks
+    // `hero` because the payload carries `primary_cta` + `subtitle`.
+    const files: ProjectFile[] = [
+      file({ layer: 'style', name: 'style.css', content: STYLE_CSS }),
+      file({
+        layer: 'content',
+        name: 'data.json',
+        content: JSON.stringify({
+          slides: [
+            {
+              stem: 'slide-02-hero',
+              data: {
+                title: 'Inferred hero',
+                subtitle: 'Picked up by inferComponentFromData',
+                primary_cta: 'Continue',
+              },
+            },
+          ],
+        }),
+      }),
+    ];
+    const bytes = await buildPptxPresentation({ files, projectName: 'Inf' });
+    const zip = await JSZip.loadAsync(bytes);
+    const slide1 = await zip.file('ppt/slides/slide1.xml')?.async('string');
+    // Hero renderer should have emitted the title, sub, and CTA.
+    expect(slide1).toContain('Inferred hero');
+    expect(slide1).toContain('CONTINUE');
   });
 });
