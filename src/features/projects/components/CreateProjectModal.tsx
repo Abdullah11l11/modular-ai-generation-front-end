@@ -14,9 +14,14 @@ import { FilePlusIcon, LayoutTemplateIcon, SparklesIcon } from 'lucide-react';
 type CreateProjectModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  title?: string;
 };
 
-export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalProps) {
+export function CreateProjectModal({
+  open,
+  onOpenChange,
+  title = 'New Project',
+}: CreateProjectModalProps) {
   const [showForm, setShowForm] = useState(false);
   const navigate = useNavigate();
 
@@ -34,7 +39,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
     >
       <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-auto">
         <DialogHeader>
-          <DialogTitle>New Project</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>Choose how to start your project.</DialogDescription>
         </DialogHeader>
 
