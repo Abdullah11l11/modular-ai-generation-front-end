@@ -31,6 +31,7 @@ import {
   FileJsonIcon,
   FileTextIcon,
   Loader2Icon,
+  PaletteIcon,
   RefreshCwIcon,
   SparklesIcon,
   SquareIcon,
@@ -86,7 +87,7 @@ const STEPS: { key: Step; label: string; hint: string }[] = [
 const STEP_ORDER: Step[] = ['input', 'streaming', 'preview', 'saving'];
 const indexOfStep = (s: Step): number => STEP_ORDER.indexOf(s);
 
-type ThemeKey = 'dark' | 'light' | 'warm';
+type ThemeKey = 'dark' | 'light' | 'warm' | 'custom';
 
 type ThemePreset = {
   key: ThemeKey;
@@ -164,12 +165,52 @@ const THEME_PRESETS: Record<ThemeKey, ThemePreset> = {
       '</theme-preset>',
     ].join('\n'),
   },
+  // The `custom` preset has no fixed swatch or prompt — the prompt is
+  // built at submit time from the user's prose description in
+  // `customThemePrompt`. The empty strings here let the preset row
+  // reuse the same button shape without conditional rendering
+  // everywhere it's referenced.
+  custom: {
+    key: 'custom',
+    label: 'Custom',
+    swatch: '',
+    prompt: '',
+  },
 };
 
-const THEME_KEYS: ThemeKey[] = ['dark', 'light', 'warm'];
+/**
+ * Placeholder shown inside the custom-theme textarea. Example-only —
+ * picking "Custom" leaves the box empty so the user types their own
+ * theme description. The model receives this same shape (see
+ * `buildCustomThemePrompt`).
+ */
+const CUSTOM_THEME_PLACEHOLDER =
+  'A calm, misty morning palette: deep slate background, warm cream text, sage accent that reads as natural and unforced. Generous whitespace, soft borders, never neon.';
 
-const parseTheme = (raw: string | null): ThemeKey =>
-  raw === 'light' || raw === 'warm' ? raw : 'dark';
+/**
+ * Wrap the user's natural-language theme description in the same
+ * `<theme-preset>` envelope the `THEME_PRESETS` use. The directive
+ * tells the AI to translate the prose into a `:root { --mgf-color-* }`
+ * block using only the variables defined in `tokens.md`, instead of
+ * expecting the user to hand-write the CSS themselves.
+ */
+function buildCustomThemePrompt(description: string): string {
+  return [
+    '<theme-preset name="custom">',
+    'The user described the theme in plain English. Translate their description into a `:root { --mgf-color-* }` block using ONLY the variables defined in `tokens.md` (do not invent new variable names). Pick concrete hex values that capture the intent — dark/bright/warm/cool should be unambiguous. Emit that `:root` block as part of the emitted `style.css`. Keep every other `--mgf-*` variable at its `tokens.md` default.',
+    '<user-theme-description>',
+    description.trim(),
+    '</user-theme-description>',
+    '</theme-preset>',
+  ].join('\n');
+}
+
+const THEME_KEYS: ThemeKey[] = ['dark', 'light', 'warm', 'custom'];
+
+const parseTheme = (raw: string | null): ThemeKey => {
+  if (raw === 'light' || raw === 'warm' || raw === 'custom') return raw;
+  return 'dark';
+};
 
 const parseCount = (raw: string | null): number => {
   const n = Number(raw ?? '5');
@@ -203,6 +244,7 @@ export function AIGenerateProjectPage() {
   const initialTypeId = searchParams.get('type') ?? '';
   const [typeId, setTypeId] = useState<string>(initialTypeId);
   const [theme, setTheme] = useState<ThemeKey>(parseTheme(searchParams.get('theme')));
+  const [customThemePrompt, setCustomThemePrompt] = useState<string>(searchParams.get('customThemePrompt') ?? '');
   const [slideCount, setSlideCount] = useState<number>(parseCount(searchParams.get('count')));
 
   // ----- Generation / parse state -----
@@ -281,6 +323,13 @@ export function AIGenerateProjectPage() {
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) return;
 
+    // Custom theme needs the user's prose description before we even
+    // hit the AI — without it the model has nothing to translate.
+    if (theme === 'custom' && !customThemePrompt.trim()) {
+      setError('Custom theme is empty — describe the look you want before generating.');
+      return;
+    }
+
     const providerId = readPreferredProviderId();
     if (!providerId) {
       setError(
@@ -311,7 +360,11 @@ export function AIGenerateProjectPage() {
         (await STANDARDS_TOKENS()).default,
         (await STANDARDS_LAYOUT_RULES()).default,
       ]);
-      extras = [schema, classes, tokens, layoutRules, THEME_PRESETS[theme].prompt];
+      const themeBlock =
+        theme === 'custom'
+          ? buildCustomThemePrompt(customThemePrompt)
+          : THEME_PRESETS[theme].prompt;
+      extras = [schema, classes, tokens, layoutRules, themeBlock];
     } catch (err) {
       setError(
         err instanceof Error
@@ -324,12 +377,16 @@ export function AIGenerateProjectPage() {
 
     const system = buildPromptFor('full-project', extras);
 
+    const themeTag =
+      theme === 'custom'
+        ? 'Custom (user-supplied `:root` block)'
+        : THEME_PRESETS[theme].label;
     const userMessage = [
       `<project-brief>`,
       prompt.trim(),
       `</project-brief>`,
       ``,
-      `<theme>${THEME_PRESETS[theme].label}</theme>`,
+      `<theme>${themeTag}</theme>`,
       `<archetype>${archetypeName}</archetype>`,
       `<output_target>${archetypeName}</output_target>`,
       `<target_slide_count>${effectiveSlideCount}</target_slide_count>`,
@@ -391,7 +448,7 @@ export function AIGenerateProjectPage() {
         },
       },
     );
-  }, [prompt, theme, archetypeName, effectiveSlideCount, slideFiles.length]);
+  }, [prompt, theme, customThemePrompt, archetypeName, effectiveSlideCount, slideFiles.length]);
 
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
@@ -555,6 +612,7 @@ export function AIGenerateProjectPage() {
             {THEME_KEYS.map((key) => {
               const preset = THEME_PRESETS[key];
               const active = theme === key;
+              const isCustom = key === 'custom';
               return (
                 <button
                   type="button"
@@ -568,17 +626,39 @@ export function AIGenerateProjectPage() {
                   } ${isLocked ? 'cursor-not-allowed opacity-60' : ''}`}
                   data-testid={`ai-gen-theme-${key}`}
                 >
-                  <span
-                    className="inline-block size-3.5 rounded-full border border-(--bor2)"
-                    style={{ backgroundColor: preset.swatch }}
-                    aria-hidden
-                  />
+                  {isCustom ? (
+                    <PaletteIcon className="size-3.5 text-(--t3)" aria-hidden />
+                  ) : (
+                    <span
+                      className="inline-block size-3.5 rounded-full border border-(--bor2)"
+                      style={{ backgroundColor: preset.swatch }}
+                      aria-hidden
+                    />
+                  )}
                   {preset.label}
                 </button>
               );
             })}
           </div>
         </div>
+
+        {theme === 'custom' ? (
+          <div className="mt-3 flex flex-col gap-1">
+            <Label htmlFor="ai-gen-custom-theme">Custom theme prompt</Label>
+            <Textarea
+              id="ai-gen-custom-theme"
+              value={customThemePrompt}
+              onChange={(e) => setCustomThemePrompt(e.target.value)}
+              placeholder={CUSTOM_THEME_PLACEHOLDER}
+              className="min-h-24 text-xs"
+              disabled={isLocked}
+              data-testid="ai-gen-custom-theme"
+            />
+            <p className="text-[10px] text-(--t3)">
+              Describe the look you want — mood, palette, contrast, spacing. The AI translates it into the project's <span className="font-mono">style.css</span>.
+            </p>
+          </div>
+        ) : null}
 
         <div className="mt-4 flex items-center justify-end gap-2">
           {step === 'streaming' ? (
