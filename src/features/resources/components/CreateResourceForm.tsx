@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,7 +18,58 @@ import {
 import { TagInput } from '@/components/ui/tag-input';
 import { toastSuccess, toastError } from '@/lib/toast';
 import { Loader2Icon } from 'lucide-react';
-import type { ResourceKind, Visibility } from '@/types/api';
+import type { ResourceKind, ResourcePlaceholder, Visibility } from '@/types/api';
+
+const PLACEHOLDER_REGEX = /\{\{(\w+)\}\}/g;
+const TEXTAREA_KEYS = new Set([
+  'code',
+  'snippet',
+  'body',
+  'content',
+  'notes',
+  'description',
+  'examples',
+  'template',
+  'input',
+  'output',
+  'message',
+  'prompt',
+  'response',
+  'query',
+  'bullets',
+  'request',
+  'reply',
+  'report',
+]);
+
+function humanizeKey(key: string): string {
+  return key
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function inferPlaceholderType(key: string): 'text' | 'textarea' {
+  return TEXTAREA_KEYS.has(key.toLowerCase()) ? 'textarea' : 'text';
+}
+
+function extractPlaceholders(content: string): ResourcePlaceholder[] {
+  const seen = new Set<string>();
+  const out: ResourcePlaceholder[] = [];
+  PLACEHOLDER_REGEX.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = PLACEHOLDER_REGEX.exec(content)) !== null) {
+    const key = m[1];
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      key,
+      label: humanizeKey(key),
+      default: '',
+      type: inferPlaceholderType(key),
+    });
+  }
+  return out;
+}
 
 const createResourceSchema = z.object({
   name: z
@@ -72,6 +124,8 @@ export function CreateResourceForm({ onSuccess }: CreateResourceFormProps) {
   const kind = useWatch({ control, name: 'kind' });
   const visibility = useWatch({ control, name: 'visibility' });
   const tags = useWatch({ control, name: 'tags' }) ?? [];
+  const content = useWatch({ control, name: 'content' }) ?? '';
+  const detectedPlaceholders = useMemo(() => extractPlaceholders(content), [content]);
 
   const onSubmit = async (data: CreateResourceFormValues) => {
     try {
@@ -80,6 +134,7 @@ export function CreateResourceForm({ onSuccess }: CreateResourceFormProps) {
         name: data.name,
         description: data.description?.trim() ? data.description : null,
         content: data.content,
+        placeholders: detectedPlaceholders,
         visibility: data.visibility,
         tags: data.tags,
       });
@@ -168,6 +223,13 @@ export function CreateResourceForm({ onSuccess }: CreateResourceFormProps) {
               rows={10}
               className="font-mono text-xs"
             />
+            <p className="text-xs text-(--t3)">
+              {detectedPlaceholders.length === 0
+                ? 'No {{placeholder}} variables detected yet.'
+                : `Detected ${detectedPlaceholders.length} placeholder${
+                    detectedPlaceholders.length === 1 ? '' : 's'
+                  }: ${detectedPlaceholders.map((p) => `{{${p.key}}}`).join(', ')}`}
+            </p>
             <FieldError errors={errors.content && [{ message: errors.content.message }]} />
           </FieldContent>
         </Field>

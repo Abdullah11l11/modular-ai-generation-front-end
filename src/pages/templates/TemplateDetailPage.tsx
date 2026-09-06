@@ -218,7 +218,9 @@ export function TemplateDetailPage() {
         </section>
       ) : null}
 
-      {!filesError && filesList.length > 0 ? <TemplateFileList files={filesList} /> : null}
+      {!filesError && filesList.length > 0 ? (
+        <TemplateFileList files={filesList} direction={template.direction} />
+      ) : null}
 
       <CommentsSection target="templates" targetId={template.id} />
 

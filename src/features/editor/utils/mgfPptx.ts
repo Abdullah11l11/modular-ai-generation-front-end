@@ -25,6 +25,7 @@
 
 import PptxGenJS from 'pptxgenjs';
 import type { ProjectFile } from '@/types/api';
+import { withStyleProbe, type StyleProbe } from './styleProbe';
 
 // 16:9 at PowerPoint's standard 13.33 × 7.5 in.
 export const SLIDE_W_IN = 13.333;
@@ -335,6 +336,20 @@ export function identifyComponent(html: string): string {
   // slide has them everywhere. Without this, grid/card combos never
   // matched and every multi-line deck classified as `cover`.
   const classMap: [RegExp, string][] = [
+    // New archetypes (Tier 1B) — checked before the original ones
+    // because `mgf-chart-bar` / `mgf-code-card` / `mgf-callout` etc.
+    // would otherwise fall through to a less-specific match.
+    [/mgf-callout/, 'callout'],
+    [/mgf-code-card/, 'code-card'],
+    [/mgf-chart-bar|mgf-chart-hbar/, 'bar-chart'], // narrowed below
+    [/mgf-chart-hbar/, 'hbar-chart'],
+    [/mgf-chart-bar/, 'bar-chart'],
+    [/mgf-nav/, 'nav'],
+    [/mgf-footer/, 'footer'],
+    [/mgf-kpi(?!\s|;|-value|-label)/, 'kpi'], // bare `mgf-kpi` not followed by value/label
+    [/mgf-hero/, 'hero'],
+    [/mgf-section/, 'section'],
+    [/mgf-badge(?!-)/, 'badge'], // `mgf-badge` not followed by variant suffix
     [/mgf-timeline/, 'timeline'],
     [/mgf-comparison/, 'comparison'],
     [/mgf-team-grid/, 'team'],
@@ -346,7 +361,7 @@ export function identifyComponent(html: string): string {
     [/mgf-stat-group|mgf-grid-3[\s\S]*?mgf-stat-value/, 'stats'],
     [/mgf-grid-3[\s\S]*?mgf-card|mgf-grid-4[\s\S]*?mgf-card|mgf-feature/, 'features'],
     [/mgf-split-left|mgf-split-right|mgf-media/, 'image-text'],
-    [/mgf-badge|mgf-announcement/, 'announcement'],
+    [/mgf-announcement/, 'announcement'],
     // Cover only when the slide actually carries a display title
     // inside an `<h1 data-field="title">` element. We previously
     // also matched `mgf-title-xl|mgf-title-lg`, but those classes
@@ -641,27 +656,57 @@ function addCard(
   w: number,
   h: number,
   variant: 'plain' | 'accent' | 'solid' = 'plain',
+  probe?: StyleProbe | null,
+  probeSelector?: string,
 ): void {
+  // Probe-driven style overrides. When the renderer is invoked with a
+  // probe and a selector, we read the live computed style of the
+  // matching element (border-radius, fill, border, box-shadow) and
+  // use those values instead of the hard-coded token defaults. Missing
+  // probe or no-match falls back to the token defaults (preserves the
+  // behavior every test depends on).
+  const probed = probe && probeSelector ? probe(probeSelector) : null;
   const fill =
-    variant === 'solid'
+    probed?.backgroundColor ||
+    (variant === 'solid'
       ? tokens.accent
       : variant === 'accent'
         ? tokens.surface
-        : tokens.surface;
+        : tokens.surface);
   const line =
-    variant === 'solid'
+    probed?.borderColor ||
+    (variant === 'solid'
       ? tokens.accent
       : variant === 'accent'
         ? tokens.accent
-        : tokens.border;
+        : tokens.border);
+  const rectRadiusIn = probed ? Math.min(probed.borderTopLeftRadiusPx / 96, Math.min(w, h) / 2) : 0.05;
+  const lineWidth = probed ? Math.max(0.5, probed.borderWidthPt || (variant === 'accent' ? 0.75 : 1)) : variant === 'accent' ? 0.75 : 1;
+
+  // Render an offset background rect for hard box-shadow (neo-brutal,
+  // brutal-border, etc.). PptxGenJS has no native box-shadow, so we
+  // approximate with a sibling rect drawn beneath the card. Skip
+  // soft / blurred / colored shadows — those we can't represent.
+  if (probed?.boxShadow && probed.boxShadow.blurPx === 0) {
+    slide.addShape('rect', {
+      x: x + probed.boxShadow.offsetXPx / 96,
+      y: y + probed.boxShadow.offsetYPx / 96,
+      w,
+      h,
+      fill: { color: probed.boxShadow.color },
+      line: { type: 'none' },
+      rectRadius: rectRadiusIn,
+    });
+  }
+
   slide.addShape('rect', {
     x,
     y,
     w,
     h,
     fill: { color: fill },
-    line: { color: line, width: variant === 'accent' ? 0.75 : 1 },
-    rectRadius: 0.05,
+    line: { color: line, width: lineWidth },
+    rectRadius: rectRadiusIn,
   });
 }
 
@@ -747,7 +792,7 @@ function resolveSlideImage(data: SlideData): string | null {
   return null;
 }
 
-function renderCover(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderCover(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const subtitle = getString(data, 'subtitle');
@@ -820,7 +865,7 @@ function renderCover(slide: Slide, data: SlideData, tokens: Tokens, idx: number)
   addSlideNumber(slide, tokens, idx > 0 ? String(idx + 1).padStart(2, '0') : '01');
 }
 
-function renderProblem(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderProblem(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const body = getString(data, 'body');
@@ -860,7 +905,7 @@ function renderProblem(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderFeatures(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderFeatures(slide: Slide, data: SlideData, tokens: Tokens, idx: number, probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const subtitle = getString(data, 'subtitle');
@@ -904,7 +949,7 @@ function renderFeatures(slide: Slide, data: SlideData, tokens: Tokens, idx: numb
     const row = Math.floor(i / 3);
     const x = tokens.padX + col * (cardW + gap);
     const y = cardY + row * (cardH + gap);
-    addCard(slide, tokens, x, y, cardW, cardH);
+    addCard(slide, tokens, x, y, cardW, cardH, 'plain', probe, '.mgf-card');
     if (f.icon) {
       slide.addText(f.icon, {
         x: x + 0.2,
@@ -943,7 +988,7 @@ function renderFeatures(slide: Slide, data: SlideData, tokens: Tokens, idx: numb
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderStats(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderStats(slide: Slide, data: SlideData, tokens: Tokens, idx: number, probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   // Standard shape: `data.stats` is an array. Brutalist-style decks
@@ -977,7 +1022,7 @@ function renderStats(slide: Slide, data: SlideData, tokens: Tokens, idx: number)
     stats.slice(0, n).forEach((s, i) => {
       const x = tokens.padX + i * (cardW + gap);
       const isFirst = i === 0 && n === 3;
-      addCard(slide, tokens, x, cardY, cardW, cardH, isFirst ? 'solid' : 'accent');
+      addCard(slide, tokens, x, cardY, cardW, cardH, isFirst ? 'solid' : 'accent', probe, '.mgf-card-accent');
       const valueColor = isFirst ? tokens.textInverse : tokens.accent;
       slide.addText(s.value ?? '', {
         x,
@@ -1024,7 +1069,7 @@ function renderStats(slide: Slide, data: SlideData, tokens: Tokens, idx: number)
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderImageText(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderImageText(slide: Slide, data: SlideData, tokens: Tokens, idx: number, probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const body = getString(data, 'body');
@@ -1066,7 +1111,7 @@ function renderImageText(slide: Slide, data: SlideData, tokens: Tokens, idx: num
   } else {
     // Media placeholder when no image was supplied (or the URL was
     // remote and CORS-blocked the fetch).
-    addCard(slide, tokens, mediaX, splitY, colW, splitH);
+    addCard(slide, tokens, mediaX, splitY, colW, splitH, 'plain', probe, '.mgf-media');
     slide.addText('📷  Image placeholder', {
       x: mediaX,
       y: splitY + splitH / 2 - 0.25,
@@ -1082,7 +1127,7 @@ function renderImageText(slide: Slide, data: SlideData, tokens: Tokens, idx: num
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderPricing(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderPricing(slide: Slide, data: SlideData, tokens: Tokens, idx: number, probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const plans = getArray<PlanItem>(data, 'plans');
@@ -1103,7 +1148,7 @@ function renderPricing(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   plans.slice(0, 3).forEach((p, i) => {
     const x = tokens.padX + i * (cardW + gap);
     const isMiddle = i === 1;
-    addCard(slide, tokens, x, cardY, cardW, cardH, isMiddle ? 'solid' : 'plain');
+    addCard(slide, tokens, x, cardY, cardW, cardH, isMiddle ? 'solid' : 'plain', probe, '.mgf-card-solid');
 
     const labelColor = isMiddle ? tokens.textInverse : tokens.textSecondary;
     const priceColor = isMiddle ? tokens.textInverse : tokens.textPrimary;
@@ -1172,7 +1217,7 @@ function renderPricing(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderComparison(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderComparison(slide: Slide, data: SlideData, tokens: Tokens, idx: number, probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const leftHeader = getString(data, 'left_header');
@@ -1192,7 +1237,7 @@ function renderComparison(slide: Slide, data: SlideData, tokens: Tokens, idx: nu
   const colW = (SLIDE_W_IN - 2 * tokens.padX - 0.4) / 2;
   const colH = SLIDE_H_IN - cy - tokens.padY - 0.4;
   // Left column
-  addCard(slide, tokens, tokens.padX, cy, colW, colH);
+  addCard(slide, tokens, tokens.padX, cy, colW, colH, 'plain', probe, '.mgf-comparison-col');
   slide.addText(leftHeader.toUpperCase(), {
     x: tokens.padX + 0.25,
     y: cy + 0.2,
@@ -1221,7 +1266,7 @@ function renderComparison(slide: Slide, data: SlideData, tokens: Tokens, idx: nu
   );
   // Right column
   const rightX = tokens.padX + colW + 0.4;
-  addCard(slide, tokens, rightX, cy, colW, colH, 'accent');
+  addCard(slide, tokens, rightX, cy, colW, colH, 'accent', probe, '.mgf-comparison-col');
   slide.addText(rightHeader.toUpperCase(), {
     x: rightX + 0.25,
     y: cy + 0.2,
@@ -1251,7 +1296,7 @@ function renderComparison(slide: Slide, data: SlideData, tokens: Tokens, idx: nu
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderTeam(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderTeam(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const members = getArray<MemberItem>(data, 'members');
@@ -1329,7 +1374,7 @@ function renderTeam(slide: Slide, data: SlideData, tokens: Tokens, idx: number):
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderClosing(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderClosing(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   // `lede` is the brutalist alternative to the standard `body`.
@@ -1421,7 +1466,7 @@ function renderClosing(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderTimeline(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderTimeline(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const label = getString(data, 'label');
@@ -1510,7 +1555,7 @@ function renderTimeline(slide: Slide, data: SlideData, tokens: Tokens, idx: numb
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderQuote(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderQuote(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const quote = getString(data, 'quote');
   const author = getString(data, 'author');
@@ -1571,7 +1616,7 @@ function renderQuote(slide: Slide, data: SlideData, tokens: Tokens, idx: number)
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderTestimonial(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderTestimonial(slide: Slide, data: SlideData, tokens: Tokens, idx: number, probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const quote = getString(data, 'quote');
   const author = getString(data, 'author');
@@ -1589,7 +1634,7 @@ function renderTestimonial(slide: Slide, data: SlideData, tokens: Tokens, idx: n
   const cardY = cy + 0.2;
   const cardW = 8.5;
   const cardH = 4.0;
-  addCard(slide, tokens, cardX, cardY, cardW, cardH, 'accent');
+  addCard(slide, tokens, cardX, cardY, cardW, cardH, 'accent', probe, '.mgf-card-accent');
 
   slide.addText(quote, {
     x: cardX + 0.4,
@@ -1649,7 +1694,7 @@ function renderTestimonial(slide: Slide, data: SlideData, tokens: Tokens, idx: n
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderProcess(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderProcess(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const steps = getArray<{ num?: string; title?: string; desc?: string }>(data, 'steps');
@@ -1746,7 +1791,7 @@ function renderProcess(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderFaq(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderFaq(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const title = getString(data, 'title');
   const items = getArray<{ q?: string; a?: string }>(data, 'items');
@@ -1817,7 +1862,7 @@ function renderFaq(slide: Slide, data: SlideData, tokens: Tokens, idx: number): 
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderAnnouncement(slide: Slide, data: SlideData, tokens: Tokens, idx: number): void {
+function renderAnnouncement(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   const badge = getString(data, 'badge');
   const title = getString(data, 'title');
@@ -1900,7 +1945,7 @@ function renderAnnouncement(slide: Slide, data: SlideData, tokens: Tokens, idx: 
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-function renderGeneric(slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string): void {
+function renderGeneric(slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string, _probe?: StyleProbe | null): void {
   addBackground(slide, tokens);
   // Try to render anything that looks like eyebrow + title + body
   // content. After the cover-regex fix in `identifyComponent`,
@@ -1932,23 +1977,710 @@ function renderGeneric(slide: Slide, data: SlideData, tokens: Tokens, idx: numbe
   addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
 }
 
-const COMPONENT_RENDERERS: Record<string, (slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string) => void> = {
-  cover: (s, d, t, i) => renderCover(s, d, t, i),
-  problem: (s, d, t, i) => renderProblem(s, d, t, i),
-  features: (s, d, t, i) => renderFeatures(s, d, t, i),
-  stats: (s, d, t, i) => renderStats(s, d, t, i),
-  'image-text': (s, d, t, i) => renderImageText(s, d, t, i),
-  pricing: (s, d, t, i) => renderPricing(s, d, t, i),
-  comparison: (s, d, t, i) => renderComparison(s, d, t, i),
-  team: (s, d, t, i) => renderTeam(s, d, t, i),
-  closing: (s, d, t, i) => renderClosing(s, d, t, i),
-  timeline: (s, d, t, i) => renderTimeline(s, d, t, i),
-  quote: (s, d, t, i) => renderQuote(s, d, t, i),
-  testimonial: (s, d, t, i) => renderTestimonial(s, d, t, i),
-  process: (s, d, t, i) => renderProcess(s, d, t, i),
-  faq: (s, d, t, i) => renderFaq(s, d, t, i),
-  announcement: (s, d, t, i) => renderAnnouncement(s, d, t, i),
-  generic: (s, d, t, i, h) => renderGeneric(s, d, t, i, h),
+// ─────────────────────────────────────────────────────────────────────────
+// Additional archetypes (Tier 1B — extended coverage)
+//
+// These close the gap between the original 15 renderers and the
+// full mgf-* class catalog. Anything that doesn't fall into one of the
+// older archetypes (and would previously have landed on `renderGeneric`
+// as a bare title + body) now routes to a layout that matches its
+// design-system shape.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Hero block — eyebrow, large display title, subhead, optional CTA row,
+ * optional media placeholder. The shape that "homepage hero" /
+ * "landing-page hero" slides expect.
+ */
+function renderHero(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
+  addBackground(slide, tokens);
+  const eyebrow = getString(data, 'eyebrow');
+  const title = getString(data, 'title');
+  const sub = getString(data, 'subtitle') || getString(data, 'body');
+  const primaryCta = getString(data, 'primary_cta') || getString(data, 'cta');
+  const secondaryCta = getString(data, 'secondary_cta');
+  const hasMedia = typeof data.image === 'string' && data.image.trim();
+
+  const mediaH = 3.4;
+  const mediaY = (SLIDE_H_IN - mediaH) / 2;
+  const textY = hasMedia ? tokens.padY + 0.4 : mediaY;
+
+  let cy = textY;
+  if (eyebrow) {
+    addEyebrow(slide, tokens, eyebrow.toUpperCase(), tokens.padX, cy, 8);
+    cy += 0.4;
+  }
+  // Hero title is bigger than the regular title slot — use 'lg'.
+  if (title) {
+    addTitle(slide, tokens, title, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX, 'lg');
+    cy += 1.2;
+  }
+  if (sub) {
+    addBody(slide, tokens, sub, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX, 2);
+    cy += 0.9;
+  }
+  if (primaryCta || secondaryCta) {
+    let cx = tokens.padX;
+    if (primaryCta) {
+      addCtaSolid(slide, tokens, primaryCta, cx, cy, 1.8, 0.5);
+      cx += 1.95;
+    }
+    if (secondaryCta) {
+      addCtaText(slide, tokens, secondaryCta, cx, cy + 0.05, 2.5, 0.4);
+    }
+  }
+  if (hasMedia) {
+    slide.addShape('rect', {
+      x: tokens.padX,
+      y: mediaY,
+      w: SLIDE_W_IN - 2 * tokens.padX,
+      h: mediaH,
+      fill: { color: tokens.surface2 },
+      line: { color: tokens.border, width: 1 },
+      rectRadius: 0.08,
+    });
+    slide.addText('Image', {
+      x: tokens.padX,
+      y: mediaY + mediaH / 2 - 0.2,
+      w: SLIDE_W_IN - 2 * tokens.padX,
+      h: 0.4,
+      fontFace: tokens.fontBody,
+      fontSize: 14,
+      color: tokens.textSecondary,
+      align: 'center',
+      valign: 'middle',
+    });
+  }
+  addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
+}
+
+/**
+ * Section header block — eyebrow + section title + optional sub. The
+ * shape that "section divider" slides expect, with the same vertical
+ * rhythm as problem / features / stats so a deck reads consistently.
+ */
+function renderSection(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
+  addBackground(slide, tokens);
+  let cy = tokens.padY;
+  if (getString(data, 'eyebrow')) {
+    addEyebrow(slide, tokens, getString(data, 'eyebrow').toUpperCase(), tokens.padX, cy, 8);
+    cy += 0.4;
+  }
+  cy += 0.05;
+  addAccentBar(slide, tokens, tokens.padX, cy);
+  cy += 0.3;
+  const title = getString(data, 'title');
+  if (title) {
+    addTitle(slide, tokens, title, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX, 'lg');
+    cy += 1.1;
+  }
+  const sub = getString(data, 'subtitle') || getString(data, 'body');
+  if (sub) {
+    addBody(slide, tokens, sub, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX, 3);
+  }
+  addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
+}
+
+/**
+ * Callout / info box — colored left accent stripe + optional icon +
+ * bold title + body. Variants (info / success / warning / danger) tint
+ * the accent stripe.
+ */
+function renderCallout(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
+  addBackground(slide, tokens);
+  const title = getString(data, 'title');
+  const body = getString(data, 'body') || getString(data, 'subtitle');
+  const icon = getString(data, 'icon');
+
+  // Detect variant from the data — `variant` field wins, otherwise
+  // fall back to a sensible default.
+  const variantRaw = (getString(data, 'variant') || 'info').toLowerCase();
+  const variant: 'info' | 'success' | 'warning' | 'danger' =
+    variantRaw === 'success' || variantRaw === 'warning' || variantRaw === 'danger'
+      ? variantRaw
+      : 'info';
+  const variantColor =
+    variant === 'success' ? '22C55E' : variant === 'warning' ? 'F59E0B' : variant === 'danger' ? 'EF4444' : tokens.accent;
+
+  // Outer card
+  const cw = SLIDE_W_IN - 2 * tokens.padX;
+  const ch = 2.4;
+  const cx = tokens.padX;
+  const cy = (SLIDE_H_IN - ch) / 2;
+  slide.addShape('roundRect', {
+    x: cx,
+    y: cy,
+    w: cw,
+    h: ch,
+    fill: { color: tokens.surface },
+    line: { color: tokens.border, width: 1 },
+    rectRadius: 0.06,
+  });
+  // Left stripe
+  slide.addShape('rect', {
+    x: cx,
+    y: cy,
+    w: 0.08,
+    h: ch,
+    fill: { color: variantColor },
+    line: { type: 'none' },
+  });
+  if (icon) {
+    slide.addText(icon, {
+      x: cx + 0.35,
+      y: cy + 0.3,
+      w: 0.6,
+      h: 0.6,
+      fontFace: tokens.fontBody,
+      fontSize: 28,
+      color: variantColor,
+      align: 'center',
+      valign: 'middle',
+    });
+  }
+  if (title) {
+    slide.addText(title, {
+      x: cx + (icon ? 1.1 : 0.4),
+      y: cy + 0.3,
+      w: cw - (icon ? 1.3 : 0.6),
+      h: 0.4,
+      fontFace: tokens.fontDisplay,
+      fontSize: 16,
+      bold: true,
+      color: tokens.textPrimary,
+      valign: 'top',
+    });
+  }
+  if (body) {
+    slide.addText(body, {
+      x: cx + (icon ? 1.1 : 0.4),
+      y: cy + 0.85,
+      w: cw - (icon ? 1.3 : 0.6),
+      h: ch - 1.1,
+      fontFace: tokens.fontBody,
+      fontSize: 12,
+      color: tokens.textSecondary,
+      valign: 'top',
+    });
+  }
+  addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
+}
+
+/**
+ * Single badge / pill — the "AI COURSE" / "NEW" / status chip. Centred
+ * on the slide. If multiple badges are present in `badges[]`, render
+ * them as a row.
+ */
+function renderBadge(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
+  addBackground(slide, tokens);
+  const badges = getArray<{ text?: string; variant?: string }>(data, 'badges');
+  const texts: { text: string; variant: string }[] = badges.length > 0
+    ? badges.map((b) => ({ text: b.text ?? '', variant: b.variant ?? 'default' }))
+    : [{ text: getString(data, 'text') || getString(data, 'badge') || getString(data, 'eyebrow'), variant: getString(data, 'variant') || 'default' }];
+
+  // Filter empties
+  const items = texts.filter((b) => b.text);
+  if (items.length === 0) {
+    // Nothing to render — fall through to a title + body if data has them.
+    const title = getString(data, 'title');
+    if (title) addTitle(slide, tokens, title, tokens.padX, (SLIDE_H_IN - 1) / 2, SLIDE_W_IN - 2 * tokens.padX, 'md');
+    addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
+    return;
+  }
+
+  // Centre the row of pills horizontally and vertically.
+  const pillW = 1.6;
+  const pillH = 0.42;
+  const gap = 0.25;
+  const totalW = items.length * pillW + (items.length - 1) * gap;
+  const startX = (SLIDE_W_IN - totalW) / 2;
+  const cy = SLIDE_H_IN / 2 - pillH / 2;
+
+  items.forEach((b, i) => {
+    const x = startX + i * (pillW + gap);
+    let fill = tokens.surface2;
+    let color = tokens.textPrimary;
+    switch (b.variant) {
+      case 'accent':
+        fill = tokens.accent;
+        color = tokens.textInverse;
+        break;
+      case 'success':
+        fill = tokens.surface2;
+        color = '4ADE80';
+        break;
+      case 'warning':
+        fill = tokens.surface2;
+        color = 'FBBF24';
+        break;
+      case 'muted':
+        fill = tokens.surface2;
+        color = tokens.textSecondary;
+        break;
+    }
+    slide.addShape('roundRect', {
+      x,
+      y: cy,
+      w: pillW,
+      h: pillH,
+      fill: { color: fill },
+      line: b.variant === 'accent' ? { type: 'none' } : { color: tokens.border, width: 0.75 },
+      rectRadius: 0.21,
+    });
+    slide.addText(b.text.toUpperCase(), {
+      x,
+      y: cy,
+      w: pillW,
+      h: pillH,
+      fontFace: tokens.fontBody,
+      fontSize: 10,
+      bold: true,
+      color,
+      charSpacing: 4,
+      align: 'center',
+      valign: 'middle',
+    });
+  });
+  addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
+}
+
+/**
+ * Code-card mockup — windowed frame with a header bar (filename + the
+ * three macOS dots) and a body block of monospace code text. Used by
+ * slides that demonstrate code, commands, or config snippets.
+ */
+function renderCodeCard(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
+  addBackground(slide, tokens);
+  const title = getString(data, 'title');
+  const filename = getString(data, 'filename') || getString(data, 'code_card_title') || 'untitled';
+  const lang = getString(data, 'lang') || getString(data, 'language') || '';
+  const code = getString(data, 'code') || getString(data, 'body') || '';
+
+  let cy = tokens.padY;
+  if (title) {
+    addTitle(slide, tokens, title, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX);
+    cy += 0.9;
+  }
+
+  const cw = SLIDE_W_IN - 2 * tokens.padX;
+  const ch = SLIDE_H_IN - cy - 0.6;
+  const cx = tokens.padX;
+  const headerH = 0.45;
+
+  slide.addShape('roundRect', {
+    x: cx,
+    y: cy,
+    w: cw,
+    h: ch,
+    fill: { color: tokens.surface },
+    line: { color: tokens.border, width: 1 },
+    rectRadius: 0.06,
+  });
+  // Header strip
+  slide.addShape('rect', {
+    x: cx,
+    y: cy,
+    w: cw,
+    h: headerH,
+    fill: { color: tokens.surface2 },
+    line: { type: 'none' },
+  });
+  // Three macOS dots
+  ['EF4444', 'F59E0B', '22C55E'].forEach((dotColor, i) => {
+    slide.addShape('ellipse', {
+      x: cx + 0.18 + i * 0.25,
+      y: cy + (headerH - 0.16) / 2,
+      w: 0.16,
+      h: 0.16,
+      fill: { color: dotColor },
+      line: { type: 'none' },
+    });
+  });
+  // Filename
+  slide.addText(filename, {
+    x: cx + 1.0,
+    y: cy,
+    w: cw - 2.0,
+    h: headerH,
+    fontFace: tokens.fontMono,
+    fontSize: 11,
+    bold: true,
+    color: tokens.textPrimary,
+    align: 'center',
+    valign: 'middle',
+  });
+  // Language tag
+  if (lang) {
+    slide.addText(lang.toUpperCase(), {
+      x: cx + cw - 1.0,
+      y: cy,
+      w: 0.85,
+      h: headerH,
+      fontFace: tokens.fontBody,
+      fontSize: 9,
+      bold: true,
+      color: tokens.textSecondary,
+      charSpacing: 4,
+      align: 'right',
+      valign: 'middle',
+    });
+  }
+  // Code body
+  slide.addText(code, {
+    x: cx + 0.3,
+    y: cy + headerH + 0.2,
+    w: cw - 0.6,
+    h: ch - headerH - 0.4,
+    fontFace: tokens.fontMono,
+    fontSize: 11,
+    color: tokens.textPrimary,
+    valign: 'top',
+  });
+  addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
+}
+
+/**
+ * Single KPI block — bold value + small uppercase label. Uses when a
+ * slide has exactly one `kpi` cell; multi-cell slides route to the
+ * stats renderer instead.
+ */
+function renderKPI(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
+  addBackground(slide, tokens);
+  const eyebrow = getString(data, 'eyebrow');
+  const value = getString(data, 'kpi_value') || getString(data, 'value');
+  const label = getString(data, 'kpi_label') || getString(data, 'label');
+
+  let cy = tokens.padY;
+  if (eyebrow) {
+    addEyebrow(slide, tokens, eyebrow.toUpperCase(), tokens.padX, cy, 6);
+    cy += 0.4;
+  }
+  cy += 0.1;
+  addAccentBar(slide, tokens, tokens.padX, cy);
+  cy += 0.5;
+
+  const cx = SLIDE_W_IN / 2;
+  if (value) {
+    slide.addText(value, {
+      x: cx - 4,
+      y: cy,
+      w: 8,
+      h: 1.6,
+      fontFace: tokens.fontDisplay,
+      fontSize: 64,
+      bold: true,
+      color: tokens.textPrimary,
+      align: 'center',
+      valign: 'middle',
+    });
+    cy += 1.7;
+  }
+  if (label) {
+    slide.addText(label.toUpperCase(), {
+      x: cx - 4,
+      y: cy,
+      w: 8,
+      h: 0.4,
+      fontFace: tokens.fontBody,
+      fontSize: 12,
+      bold: true,
+      color: tokens.accent,
+      charSpacing: 4,
+      align: 'center',
+      valign: 'top',
+    });
+  }
+  addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
+}
+
+/**
+ * Vertical bar chart — `bars: [{ label, value }]`. Each bar's height is
+ * proportional to `value` against the max, rendered as a filled rect
+ * with the value overlaid above and the label below.
+ */
+function renderBarChart(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
+  addBackground(slide, tokens);
+  const title = getString(data, 'title');
+  const bars = getArray<{ label?: string; value?: number | string }>(data, 'bars');
+
+  let cy = tokens.padY;
+  if (title) {
+    addTitle(slide, tokens, title, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX);
+    cy += 0.9;
+  }
+
+  // Bar geometry
+  const chartTop = cy + 0.4;
+  const chartH = 4.5;
+  const labelH = 0.4;
+  const valueH = 0.3;
+  const n = Math.min(bars.length, 12);
+  const cw = SLIDE_W_IN - 2 * tokens.padX;
+  const colGap = 0.2;
+  const barW = (cw - colGap * (n - 1)) / n;
+  const maxVal = Math.max(1, ...bars.slice(0, n).map((b) => Number(b.value) || 0));
+
+  bars.slice(0, n).forEach((b, i) => {
+    const v = Number(b.value) || 0;
+    const ratio = v / maxVal;
+    const h = Math.max(0.05, ratio * (chartH - valueH - labelH));
+    const x = tokens.padX + i * (barW + colGap);
+    const y = chartTop + valueH + (chartH - valueH - labelH) - h;
+
+    slide.addShape('rect', {
+      x,
+      y,
+      w: barW * 0.8,
+      h,
+      fill: { color: tokens.accent },
+      line: { type: 'none' },
+      rectRadius: 0.03,
+    });
+    // Value label (above the bar)
+    slide.addText(String(v), {
+      x: x - 0.1,
+      y: y - valueH - 0.05,
+      w: barW + 0.2,
+      h: valueH,
+      fontFace: tokens.fontBody,
+      fontSize: 10,
+      bold: true,
+      color: tokens.textPrimary,
+      align: 'center',
+      valign: 'bottom',
+    });
+    // Category label (below the chart)
+    slide.addText(b.label ?? '', {
+      x: x - 0.1,
+      y: chartTop + chartH - labelH + 0.1,
+      w: barW + 0.2,
+      h: labelH,
+      fontFace: tokens.fontBody,
+      fontSize: 10,
+      color: tokens.textSecondary,
+      align: 'center',
+      valign: 'top',
+    });
+  });
+  addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
+}
+
+/**
+ * Horizontal bar chart — `rows: [{ label, value }]`. Each row gets a
+ * track (full-width surface rect) plus a value-bar (accent rect) sized
+ * proportionally to the max.
+ */
+function renderHBarChart(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
+  addBackground(slide, tokens);
+  const title = getString(data, 'title');
+  const rows = getArray<{ label?: string; value?: number | string }>(data, 'rows');
+
+  let cy = tokens.padY;
+  if (title) {
+    addTitle(slide, tokens, title, tokens.padX, cy, SLIDE_W_IN - 2 * tokens.padX);
+    cy += 0.9;
+  }
+
+  const labelW = 2.0;
+  const trackX = tokens.padX + labelW + 0.3;
+  const trackW = SLIDE_W_IN - tokens.padX - trackX;
+  const rowH = 0.42;
+  const gap = 0.18;
+  const maxVal = Math.max(1, ...rows.map((r) => Number(r.value) || 0));
+
+  rows.forEach((r, i) => {
+    const y = cy + i * (rowH + gap);
+    const v = Number(r.value) || 0;
+    const ratio = v / maxVal;
+    // Label
+    slide.addText(r.label ?? '', {
+      x: tokens.padX,
+      y,
+      w: labelW,
+      h: rowH,
+      fontFace: tokens.fontBody,
+      fontSize: 11,
+      color: tokens.textPrimary,
+      valign: 'middle',
+    });
+    // Track
+    slide.addShape('rect', {
+      x: trackX,
+      y: y + rowH * 0.25,
+      w: trackW,
+      h: rowH * 0.5,
+      fill: { color: tokens.surface2 },
+      line: { type: 'none' },
+      rectRadius: 0.02,
+    });
+    // Value bar
+    slide.addShape('rect', {
+      x: trackX,
+      y: y + rowH * 0.25,
+      w: Math.max(0.05, trackW * ratio),
+      h: rowH * 0.5,
+      fill: { color: tokens.accent },
+      line: { type: 'none' },
+      rectRadius: 0.02,
+    });
+  });
+  addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
+}
+
+/**
+ * Top navigation bar — brand on the left, link row on the right. Renders
+ * as a thin rect with a bottom border and two text rows. The brand is
+ * bold; the links are secondary-coloured.
+ */
+function renderNav(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
+  addBackground(slide, tokens);
+  const brand = getString(data, 'brand') || getString(data, 'nav_brand') || getString(data, 'title');
+  const links = getStringArray(data, 'links').length > 0
+    ? getStringArray(data, 'links')
+    : getStringArray(data, 'nav_links');
+
+  const barH = 0.9;
+  const y = tokens.padY;
+  // Surface strip
+  slide.addShape('rect', {
+    x: 0,
+    y,
+    w: SLIDE_W_IN,
+    h: barH,
+    fill: { color: tokens.surface },
+    line: { type: 'none' },
+  });
+  // Bottom border
+  slide.addShape('line', {
+    x: 0,
+    y: y + barH,
+    w: SLIDE_W_IN,
+    h: 0,
+    line: { color: tokens.border, width: 1 },
+  });
+  // Brand
+  if (brand) {
+    slide.addText(brand, {
+      x: tokens.padX,
+      y,
+      w: 4,
+      h: barH,
+      fontFace: tokens.fontDisplay,
+      fontSize: 16,
+      bold: true,
+      color: tokens.textPrimary,
+      valign: 'middle',
+    });
+  }
+  // Links
+  let linkX = SLIDE_W_IN - tokens.padX - 1.2;
+  for (let i = links.length - 1; i >= 0; i--) {
+    const text = links[i];
+    slide.addText(text, {
+      x: linkX - 1.2,
+      y,
+      w: 1.1,
+      h: barH,
+      fontFace: tokens.fontBody,
+      fontSize: 11,
+      color: tokens.textSecondary,
+      align: 'right',
+      valign: 'middle',
+    });
+    linkX -= 1.2;
+  }
+  // Body content (title / subtitle if present) below the nav.
+  const body = getString(data, 'subtitle') || getString(data, 'body');
+  if (body) {
+    addBody(slide, tokens, body, tokens.padX, y + barH + 1.0, SLIDE_W_IN - 2 * tokens.padX, 3);
+  }
+  addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
+}
+
+/**
+ * Page footer strip — centered text + link row. Mirrors `mgf-footer`.
+ */
+function renderFooter(slide: Slide, data: SlideData, tokens: Tokens, idx: number, _probe?: StyleProbe | null): void {
+  addBackground(slide, tokens);
+  const text = getString(data, 'text') || getString(data, 'footer_text') || getString(data, 'title');
+  const links = getStringArray(data, 'links').length > 0
+    ? getStringArray(data, 'links')
+    : getStringArray(data, 'footer_links');
+
+  // Optional body above the footer
+  const body = getString(data, 'subtitle') || getString(data, 'body');
+  if (body) {
+    addBody(slide, tokens, body, tokens.padX, tokens.padY, SLIDE_W_IN - 2 * tokens.padX, 4);
+  }
+
+  // Footer strip near the bottom
+  const fh = 1.2;
+  const fy = SLIDE_H_IN - fh - 0.2;
+  // Top border line
+  slide.addShape('line', {
+    x: tokens.padX,
+    y: fy,
+    w: SLIDE_W_IN - 2 * tokens.padX,
+    h: 0,
+    line: { color: tokens.border, width: 1 },
+  });
+  if (text) {
+    slide.addText(text, {
+      x: tokens.padX,
+      y: fy + 0.2,
+      w: SLIDE_W_IN - 2 * tokens.padX,
+      h: 0.4,
+      fontFace: tokens.fontBody,
+      fontSize: 11,
+      color: tokens.textSecondary,
+      align: 'center',
+      valign: 'middle',
+    });
+  }
+  if (links.length > 0) {
+    const linkText = links.join('   ·   ');
+    slide.addText(linkText, {
+      x: tokens.padX,
+      y: fy + 0.6,
+      w: SLIDE_W_IN - 2 * tokens.padX,
+      h: 0.4,
+      fontFace: tokens.fontBody,
+      fontSize: 10,
+      color: tokens.textSecondary,
+      align: 'center',
+      valign: 'middle',
+    });
+  }
+  addSlideNumber(slide, tokens, String(idx + 1).padStart(2, '0'));
+}
+
+const COMPONENT_RENDERERS: Record<string, (slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string, probe?: StyleProbe | null) => void> = {
+  cover: (s, d, t, i, _h, p) => renderCover(s, d, t, i, p),
+  problem: (s, d, t, i, _h, p) => renderProblem(s, d, t, i, p),
+  features: (s, d, t, i, _h, p) => renderFeatures(s, d, t, i, p),
+  stats: (s, d, t, i, _h, p) => renderStats(s, d, t, i, p),
+  'image-text': (s, d, t, i, _h, p) => renderImageText(s, d, t, i, p),
+  pricing: (s, d, t, i, _h, p) => renderPricing(s, d, t, i, p),
+  comparison: (s, d, t, i, _h, p) => renderComparison(s, d, t, i, p),
+  team: (s, d, t, i, _h, p) => renderTeam(s, d, t, i, p),
+  closing: (s, d, t, i, _h, p) => renderClosing(s, d, t, i, p),
+  timeline: (s, d, t, i, _h, p) => renderTimeline(s, d, t, i, p),
+  quote: (s, d, t, i, _h, p) => renderQuote(s, d, t, i, p),
+  testimonial: (s, d, t, i, _h, p) => renderTestimonial(s, d, t, i, p),
+  process: (s, d, t, i, _h, p) => renderProcess(s, d, t, i, p),
+  faq: (s, d, t, i, _h, p) => renderFaq(s, d, t, i, p),
+  announcement: (s, d, t, i, _h, p) => renderAnnouncement(s, d, t, i, p),
+  hero: (s, d, t, i, _h, p) => renderHero(s, d, t, i, p),
+  section: (s, d, t, i, _h, p) => renderSection(s, d, t, i, p),
+  callout: (s, d, t, i, _h, p) => renderCallout(s, d, t, i, p),
+  badge: (s, d, t, i, _h, p) => renderBadge(s, d, t, i, p),
+  'code-card': (s, d, t, i, _h, p) => renderCodeCard(s, d, t, i, p),
+  kpi: (s, d, t, i, _h, p) => renderKPI(s, d, t, i, p),
+  'bar-chart': (s, d, t, i, _h, p) => renderBarChart(s, d, t, i, p),
+  'hbar-chart': (s, d, t, i, _h, p) => renderHBarChart(s, d, t, i, p),
+  nav: (s, d, t, i, _h, p) => renderNav(s, d, t, i, p),
+  footer: (s, d, t, i, _h, p) => renderFooter(s, d, t, i, p),
+  generic: (s, d, t, i, h, p) => renderGeneric(s, d, t, i, h, p),
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1963,6 +2695,16 @@ export type BuildPptxOptions = {
    * PowerPoint renders them right-to-left. Default LTR.
    */
   direction?: 'ltr' | 'rtl';
+  /**
+   * When true, each slide's HTML is loaded in a hidden iframe before
+   * rendering so the renderer can read live computed styles
+   * (border-radius, background-color, box-shadow, etc.) and use
+   * those values instead of the hard-coded token defaults. Adds
+   * meaningful latency per slide (iframe create + 2 animation
+   * frames + tear-down), so it defaults to `false` for fast tests;
+   * the editor sets it to `true` when the user clicks Export.
+   */
+  useProbe?: boolean;
 };
 
 function findFile(files: ProjectFile[], layer: string, name: string): ProjectFile | undefined {
@@ -1980,7 +2722,7 @@ function findFile(files: ProjectFile[], layer: string, name: string): ProjectFil
  *    lookup was case-sensitive and missed every mixed-case key. Lower
  *    + dash-normalize before lookup so mixed-case prompts still work.
  */
-function findRenderer(component: string): (slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string) => void {
+function findRenderer(component: string): (slide: Slide, data: SlideData, tokens: Tokens, idx: number, html: string, probe?: StyleProbe | null) => void {
   const key = component.toLowerCase().replace(/_/g, '-');
   if (Object.prototype.hasOwnProperty.call(COMPONENT_RENDERERS, key)) {
     return COMPONENT_RENDERERS[key];
@@ -2064,6 +2806,50 @@ function inferComponentFromData(data: SlideData): string | null {
       return 'testimonial';
     }
     return 'quote';
+  }
+
+  // Chart shapes — bars[] vs rows[].
+  if (Array.isArray(data.bars) && data.bars.length > 0) return 'bar-chart';
+  if (Array.isArray(data.rows) && data.rows.length > 0) return 'hbar-chart';
+
+  // Code card — either `code` string or `language` + `filename`.
+  if (typeof data.code === 'string' && data.code.trim()) return 'code-card';
+  if (typeof data.filename === 'string' && data.filename.trim()) return 'code-card';
+
+  // Callout — distinguished by `variant` field or the presence of
+  // both `title` and `body` on a non-problem slide.
+  if (typeof data.variant === 'string' &&
+      ['info', 'success', 'warning', 'danger'].includes(data.variant.toLowerCase())) {
+    return 'callout';
+  }
+
+  // Nav / Footer — distinguished by the presence of a brand + links
+  // pair, or a centered text + link row.
+  if (Array.isArray(data.links) && data.links.length > 0 &&
+      typeof data.brand === 'string') {
+    return 'nav';
+  }
+  if (Array.isArray(data.links) && data.links.length > 0 &&
+      typeof data.text === 'string') {
+    return 'footer';
+  }
+
+  // Badge — `badges[]` array of chip objects, or single `text`/`badge` string.
+  if (Array.isArray(data.badges) && data.badges.length > 0) return 'badge';
+
+  // KPI — single big metric (value + label, not in an array).
+  if (typeof data.value === 'string' && typeof data.label === 'string' &&
+      !Array.isArray(data.value) && !Array.isArray(data.label)) {
+    return 'kpi';
+  }
+
+  // Hero / section — both are distinguished by having `subtitle` or
+  // `primary_cta` fields without the heavier problem/stats/feature
+  // shape.
+  if (typeof data.primary_cta === 'string' || typeof data.cta === 'string') {
+    if (typeof data.subtitle === 'string' || typeof data.body === 'string') {
+      return 'hero';
+    }
   }
 
   return null;
@@ -2254,6 +3040,7 @@ export async function buildPptxPresentation({
   files,
   projectName,
   direction = 'ltr',
+  useProbe = false,
 }: BuildPptxOptions): Promise<Uint8Array> {
   const styleCss = findFile(files, 'style', 'style.css')?.content ?? '';
   const tokens = extractTokens(styleCss);
@@ -2324,7 +3111,26 @@ export async function buildPptxPresentation({
     const slide = pptx.addSlide();
     try {
       const renderer = findRenderer(component);
-      renderer(slide, data, tokens, i, html);
+      if (useProbe) {
+        // Probe-driven styling (Tier 2D): render the slide's HTML in a
+        // hidden iframe so the renderer can read the live computed
+        // CSS (border-radius, background-color, box-shadow, etc.) and
+        // use those values instead of the hard-coded token defaults.
+        // The probe falls back to token defaults when an element
+        // isn't matched, so this is safe in any environment; we just
+        // skip it when the caller wants the fast token-only path.
+        await withStyleProbe(
+          html,
+          Math.round(SLIDE_W_IN * 96), // 1280 CSS px (LAYOUT_WIDE = 13.333 in)
+          Math.round(SLIDE_H_IN * 96), // 720 CSS px
+          (probe) => {
+            renderer(slide, data, tokens, i, html, probe);
+          },
+          { timeoutMs: 8000 },
+        );
+      } else {
+        renderer(slide, data, tokens, i, html, null);
+      }
     } catch (err) {
       // One bad slide must never abort the whole export. Surface a
       // placeholder slide with the failure cause so the user can still

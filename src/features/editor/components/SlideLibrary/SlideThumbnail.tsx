@@ -54,7 +54,7 @@ export function SlideThumbnail({
          (no same-origin, no scripts) because it's purely visual — we
          don't need click-to-select at this scale, and the lighter
          sandbox is cheaper to spin up per row. */}
-      <div className="overflow-hidden rounded-md bg-(--bg)">
+      <div className="aspect-video w-full overflow-hidden rounded-md bg-(--bg)">
         <ScaledIframe
           srcDoc={srcDoc}
           sandbox=""

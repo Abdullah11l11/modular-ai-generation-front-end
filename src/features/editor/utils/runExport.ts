@@ -125,8 +125,10 @@ function mimeFor(format: ExportFormat): string {
 }
 
 /** Build the assembled HTML document for one slide (deck) or the whole
- *  project (single-page / scrollable). Always uses `interactive: false`. */
-function assembleSlideHtml(
+ *  project (single-page / scrollable). Always uses `interactive: false`.
+ *  Exported so the PPTX hybrid pipeline can reuse the same assembler as
+ *  PDF/PNG/JPG — one HTML output, multiple consumers. */
+export function assembleSlideHtml(
   files: ProjectFile[],
   opts: { projectType: string | undefined; direction: 'ltr' | 'rtl' },
   slideIdx?: number,
@@ -306,6 +308,11 @@ export async function runExport(input: ExportRunInput): Promise<ExportRunResult>
       files: input.files,
       projectName: input.projectName,
       direction: input.direction,
+      // Tier 2D: load each slide in an iframe so the renderer can
+      // read live computed styles (border-radius, fill, border,
+      // box-shadow) instead of hard-coded token defaults. Adds ~200ms
+      // per slide in exchange for close-to-preview fidelity.
+      useProbe: true,
     });
     report(input, { phase: 'done', current: 1, total: 1 });
     return { filename: `${baseName}.pptx`, mime: mimeFor('pptx'), bytes };

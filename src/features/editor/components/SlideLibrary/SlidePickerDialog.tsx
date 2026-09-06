@@ -148,11 +148,16 @@ export function SlidePickerDialog({
                 onClick={() => onPick(slide.stem)}
                 className="group flex flex-col gap-2 rounded-lg border border-(--bor2) bg-(--sur) p-2 text-left transition-colors hover:border-(--cy) hover:bg-(--cy-d)/20"
               >
-                <ScaledIframe
-                  srcDoc={srcDoc}
-                  className="rounded-md bg-(--bg)"
-                  title={`Slide ${i + 1} preview`}
-                />
+                <div
+                  className="w-full overflow-hidden rounded-md bg-(--bg)"
+                  style={{ aspectRatio: '1280 / 720' }}
+                >
+                  <ScaledIframe
+                    srcDoc={srcDoc}
+                    className="rounded-md"
+                    title={`Slide ${i + 1} preview`}
+                  />
+                </div>
                 <div className="flex items-center justify-between px-1">
                   <span className="truncate text-xs font-medium text-(--t2)">{slide.title}</span>
                   <span className="shrink-0 text-[10px] text-(--t3)">#{i + 1}</span>

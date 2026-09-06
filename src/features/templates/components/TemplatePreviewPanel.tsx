@@ -92,6 +92,10 @@ export function TemplatePreviewPanel({ files, direction, isLoading }: TemplatePr
         </Button>
       ) : null}
       <div className="min-w-0 flex-1 space-y-2">
+        {/* The aspect-video wrapper gives ScaledIframe's 100%×100% wrapper
+            a defined height so the scale-to-fit transform has something
+            to measure. Without it the wrapper collapses to 0 and the
+            1280×720 iframe is clipped to a thin line. */}
         <div className="aspect-video w-full">
           <ScaledIframe
             srcDoc={srcDoc}
